@@ -19,13 +19,13 @@
 	},
 	"layouts": {
 		"items": [
-			"Layout 1"
+			"Game"
 		],
 		"subfolders": []
 	},
 	"eventSheets": {
 		"items": [
-			"Event sheet 1"
+			"GameEvents"
 		],
 		"subfolders": []
 	},
@@ -41,7 +41,22 @@
 					}
 				}
 			],
-			"subfolders": []
+			"subfolders": [
+				{
+					"items": [
+						{
+							"name": "gameClient.js",
+							"type": "application/javascript",
+							"sid": 397287593748410,
+							"script-info": {
+								"purpose": "none"
+							}
+						}
+					],
+					"subfolders": [],
+					"name": "gameClient"
+				}
+			]
 		},
 		"sound": {
 			"items": [],
