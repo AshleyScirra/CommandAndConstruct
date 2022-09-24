@@ -14,7 +14,7 @@ runOnStartup(async runtime =>
 async function OnBeforeProjectStart(runtime)
 {
 	// Once the project has finished loading, start up the game server web worker.
-	const messagePort = await runtime.createWorker("gameServer/gameServer.js", {
+	const messagePort = await runtime.createWorker("gameServer/serverWorker.js", {
 		name: "GameServer",
 		type: "module"
 	});

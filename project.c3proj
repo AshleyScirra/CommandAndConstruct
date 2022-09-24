@@ -141,7 +141,7 @@
 				{
 					"items": [
 						{
-							"name": "gameServer.js",
+							"name": "serverWorker.js",
 							"type": "application/javascript",
 							"sid": 670017738482309,
 							"file-info": {
