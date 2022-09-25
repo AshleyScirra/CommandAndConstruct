@@ -67,6 +67,28 @@
 					],
 					"subfolders": [],
 					"name": "gameClient"
+				},
+				{
+					"items": [
+						{
+							"name": "clientUnit.js",
+							"type": "application/javascript",
+							"sid": 713207232371656,
+							"script-info": {
+								"purpose": "none"
+							}
+						},
+						{
+							"name": "clientPlatform.js",
+							"type": "application/javascript",
+							"sid": 164988207903823,
+							"script-info": {
+								"purpose": "none"
+							}
+						}
+					],
+					"subfolders": [],
+					"name": "clientUnits"
 				}
 			]
 		},
