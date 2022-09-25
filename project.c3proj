@@ -5,10 +5,21 @@
 	"runtime": "c3",
 	"useWorker": "worker",
 	"bundleAddons": false,
-	"usedAddons": [],
+	"usedAddons": [
+		{
+			"type": "plugin",
+			"id": "Sprite",
+			"name": "Sprite",
+			"author": "Scirra",
+			"version": "r311",
+			"bundled": false
+		}
+	],
 	"uniqueId": "nrrpzelemnm",
 	"objectTypes": {
-		"items": [],
+		"items": [
+			"TankPlatform"
+		],
 		"subfolders": []
 	},
 	"autosaveData": null,
@@ -19,7 +30,8 @@
 	},
 	"layouts": {
 		"items": [
-			"Game"
+			"Game",
+			"ObjectBank"
 		],
 		"subfolders": []
 	},
@@ -157,7 +169,68 @@
 							}
 						}
 					],
-					"subfolders": [],
+					"subfolders": [
+						{
+							"items": [
+								{
+									"name": "unitPlatform.js",
+									"type": "application/javascript",
+									"sid": 686585613538645,
+									"file-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "unit.js",
+									"type": "application/javascript",
+									"sid": 144911673018641,
+									"file-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "movableUnitPlatform.js",
+									"type": "application/javascript",
+									"sid": 281161574381978,
+									"file-info": {
+										"purpose": "none"
+									}
+								}
+							],
+							"subfolders": [],
+							"name": "units"
+						},
+						{
+							"items": [
+								{
+									"name": "positionedObject.js",
+									"type": "application/javascript",
+									"sid": 866746407871402,
+									"file-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "positionedAndAngledObject.js",
+									"type": "application/javascript",
+									"sid": 176447193185107,
+									"file-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "movableObject.js",
+									"type": "application/javascript",
+									"sid": 278147279429960,
+									"file-info": {
+										"purpose": "none"
+									}
+								}
+							],
+							"subfolders": [],
+							"name": "classes"
+						}
+					],
 					"name": "gameServer"
 				}
 			]

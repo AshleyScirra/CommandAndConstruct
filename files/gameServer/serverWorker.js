@@ -16,7 +16,8 @@ self.addEventListener("message", e =>
 	}
 });
 
-// Map of message types and the function to call to handle them.
+// Map of message types that can be received from the client
+// and the function to call to handle them.
 const MESSAGE_MAP = new Map([
 	["init", OnInit],
 	["release", OnRelease]
@@ -45,14 +46,8 @@ function OnMessageFromRuntime(e)
 // Called when the runtime wants to initialise the GameServer.
 function OnInit()
 {
-	// Initialise GameServer.
-	gameServer = new GameServer();
-	
-	// Post a test message back to the runtime so we can see communication working
-	messagePort.postMessage({
-		"type": "test",
-		"message": "Hello world!"
-	});
+	// Initialise GameServer, passing it the function that can send a message to the runtime.
+	gameServer = new GameServer(SendMessageToRuntime);
 }
 
 // Called when the runtime is ending the game.
@@ -60,4 +55,10 @@ function OnRelease()
 {
 	gameServer.Release();
 	gameServer = null;
+}
+
+// Helper function for posting a message.
+function SendMessageToRuntime(msg)
+{
+	messagePort.postMessage(msg);
 }

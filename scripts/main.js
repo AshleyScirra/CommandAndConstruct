@@ -54,9 +54,33 @@ function OnEndGameLayout()
 	});
 }
 
+// Map of message types that can be received from GameServer
+// and the function to call to handle each of them.
+const MESSAGE_MAP = new Map([
+	["create-initial-state", OnCreateInitialState]
+]);
+
+// Called when a message is received from the game server.
 function HandleGameServerMessage(e)
 {
+	// Look up the function to call for this message type in the message map.
 	const data = e.data;
+	const messageType = data["type"];
+	const handlerFunc = MESSAGE_MAP.get(messageType);
 	
-	console.log(`[Runtime] Message from GameServer: `, data);
+	if (handlerFunc)
+	{
+		// Call the message handler function with the provided data.
+		handlerFunc(data);
+	}
+	else
+	{
+		// Messages should always have a handler, so log an error if it's not found.
+		console.error(`[GameServer] No message handler for type '${messageType}'`);
+	}
+}
+
+function OnCreateInitialState(data)
+{
+	gameClient.CreateInitialState(data);
 }
