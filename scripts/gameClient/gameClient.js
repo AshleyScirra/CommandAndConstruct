@@ -1,5 +1,6 @@
 
 import { ClientUnit } from "../clientUnits/clientUnit.js";
+import { SelectionManager } from "./selectionManager.js";
 
 // The GameClient class is created while on a game layout, and handles representing the
 // state of the game for the runtime. Note that the authoritative state of the game lives
@@ -8,17 +9,22 @@ import { ClientUnit } from "../clientUnits/clientUnit.js";
 export class GameClient {
 
 	// Private fields
-	#runtime;				// Construct runtime
-	#allUnits = new Set();	// Set of all created units
+	#runtime;						// Construct runtime
+	#allUnits = new Set();			// Set of all created units
+	
+	#selectionManager;				// SelectionManager class
 	
 	constructor(runtime)
 	{
 		this.#runtime = runtime;
+		
+		// Create SelectionManager which handles unit selections.
+		this.#selectionManager = new SelectionManager(this);
 	}
 	
 	Release()
 	{
-		// TODO
+		this.#selectionManager.Release();
 	}
 	
 	GetRuntime()
@@ -36,5 +42,16 @@ export class GameClient {
 			const clientUnit = ClientUnit.CreateFromInitialData(this, unitData);
 			this.#allUnits.add(clientUnit);
 		}
+	}
+	
+	GetSelectionManager()
+	{
+		return this.#selectionManager;
+	}
+	
+	// Iterates all units in the game.
+	allUnits()
+	{
+		return this.#allUnits.values();
 	}
 }

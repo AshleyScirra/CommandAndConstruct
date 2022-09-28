@@ -2,7 +2,40 @@
 	"name": "Game",
 	"layers": [
 		{
-			"name": "Layer 0",
+			"name": "SelectionBoxes",
+			"overriden": 0,
+			"subLayers": [],
+			"instances": [],
+			"sid": 678377480080548,
+			"effectTypes": [],
+			"isInitiallyVisible": true,
+			"isInitiallyInteractive": true,
+			"color": [
+				1,
+				1,
+				1,
+				1
+			],
+			"backgroundColor": [
+				0.7607843137254902,
+				0.7607843137254902,
+				0.7607843137254902,
+				1
+			],
+			"isTransparent": false,
+			"parallaxX": 1,
+			"parallaxY": 1,
+			"scaleRate": 1,
+			"forceOwnTexture": false,
+			"renderingMode": "3d",
+			"drawOrder": "z-order",
+			"useRenderCells": false,
+			"blendMode": "normal",
+			"zElevation": 0,
+			"global": false
+		},
+		{
+			"name": "UnitPlatforms",
 			"overriden": 0,
 			"subLayers": [],
 			"instances": [],
@@ -22,7 +55,7 @@
 				0.7607843137254902,
 				1
 			],
-			"isTransparent": false,
+			"isTransparent": true,
 			"parallaxX": 1,
 			"parallaxY": 1,
 			"scaleRate": 1,

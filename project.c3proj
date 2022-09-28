@@ -1,6 +1,6 @@
 {
 	"projectFormatVersion": 1,
-	"savedWithRelease": 31100,
+	"savedWithRelease": 31200,
 	"name": "Command & Construct",
 	"runtime": "c3",
 	"useWorker": "worker",
@@ -11,14 +11,23 @@
 			"id": "Sprite",
 			"name": "Sprite",
 			"author": "Scirra",
-			"version": "r311",
+			"version": "r312",
+			"bundled": false
+		},
+		{
+			"type": "plugin",
+			"id": "NinePatch",
+			"name": "9-patch",
+			"author": "Scirra",
+			"version": "r312",
 			"bundled": false
 		}
 	],
 	"uniqueId": "nrrpzelemnm",
 	"objectTypes": {
 		"items": [
-			"TankPlatform"
+			"TankPlatform",
+			"UnitSelectionBox"
 		],
 		"subfolders": []
 	},
@@ -63,6 +72,14 @@
 							"script-info": {
 								"purpose": "none"
 							}
+						},
+						{
+							"name": "selectionManager.js",
+							"type": "application/javascript",
+							"sid": 989041766896446,
+							"script-info": {
+								"purpose": "none"
+							}
 						}
 					],
 					"subfolders": [],
@@ -89,6 +106,20 @@
 					],
 					"subfolders": [],
 					"name": "clientUnits"
+				},
+				{
+					"items": [
+						{
+							"name": "multiEventHandler.js",
+							"type": "application/javascript",
+							"sid": 465954533773660,
+							"script-info": {
+								"purpose": "none"
+							}
+						}
+					],
+					"subfolders": [],
+					"name": "utils"
 				}
 			]
 		},

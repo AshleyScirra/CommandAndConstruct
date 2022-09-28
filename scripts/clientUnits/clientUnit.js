@@ -10,16 +10,12 @@ export class ClientUnit {
 	#gameClient;				// reference to GameClient unit belongs to
 	#id = -1;					// unique ID of this unit
 	#platform;					// ClientPlatform for this unit's platform
+	#selectionBoxInst;			// Construct instance representing selection box
 	
 	constructor(gameClient, id)
 	{
 		this.#gameClient = gameClient;
 		this.#id = id;
-	}
-	
-	GetRuntime()
-	{
-		return this.#gameClient.GetRuntime();
 	}
 	
 	// Create a single client unit for the "create-initial-state" message
@@ -32,5 +28,53 @@ export class ClientUnit {
 		const unit = new ClientUnit(gameClient, id);
 		unit.#platform = new ClientPlatform(unit, x, y);
 		return unit;
+	}
+	
+	GetRuntime()
+	{
+		return this.#gameClient.GetRuntime();
+	}
+	
+	GetId()
+	{
+		return this.#id;
+	}
+	
+	// Use the unit platform for collision checks.
+	ContainsPoint(x, y)
+	{
+		return this.#platform.ContainsPoint(x, y);
+	}
+	
+	SetSelectedState(isSelected)
+	{
+		if (isSelected)		// marking selected
+		{
+			if (this.#selectionBoxInst)
+				return;		// already created selection box
+			
+			// Create a UnitSelectionBox instance, which is a 9-patch object,
+			// to represent the selected state of this unit. Make the selection
+			// box match the position and angle of the unit platform, and size
+			// it a little larger so the green border is visible around it.
+			const runtime = this.GetRuntime();
+			const [x, y] = this.#platform.GetPosition();
+			const [w, h] = this.#platform.GetSize();
+			const angle = this.#platform.GetAngle();
+
+			this.#selectionBoxInst = runtime.objects.UnitSelectionBox.createInstance("SelectionBoxes", x, y);
+			this.#selectionBoxInst.width = w + 8;
+			this.#selectionBoxInst.height = h + 8;
+			this.#selectionBoxInst.angle = angle;
+		}
+		else				// marking not selected
+		{
+			// Remove the selection box instance if any
+			if (!this.#selectionBoxInst)
+				return;		// already don't have selection box
+			
+			this.#selectionBoxInst.destroy();
+			this.#selectionBoxInst = null;
+		}
 	}
 }
