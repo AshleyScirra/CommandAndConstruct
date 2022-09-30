@@ -8,7 +8,7 @@
  
  	// Private fields
 	#sendMessageFunc;			// called by SendToRuntime()
-	#allUnits = new Set();		// set of all units in game
+	#allUnitsById = new Map();	// map of all units by id -> Unit
 	
  	constructor(sendMessageFunc)
 	{
@@ -34,16 +34,53 @@
 	{
 		// Hard-code six starting units.
 		// TODO: load level designs from somewhere
-		this.#allUnits.add(new Unit(this, 200, 200));
-		this.#allUnits.add(new Unit(this, 500, 200));
-		this.#allUnits.add(new Unit(this, 200, 400));
-		this.#allUnits.add(new Unit(this, 500, 400));
-		this.#allUnits.add(new Unit(this, 200, 600));
-		this.#allUnits.add(new Unit(this, 500, 600));
+		this._AddUnitAtPosition(200, 200);
+		this._AddUnitAtPosition(500, 200);
+		this._AddUnitAtPosition(200, 400);
+		this._AddUnitAtPosition(500, 400);
+		this._AddUnitAtPosition(200, 600);
+		this._AddUnitAtPosition(500, 600);
 		
 		this.SendToRuntime({
 			"type": "create-initial-state",
-			"units": [...this.#allUnits].map(u => u.GetInitData())
+			"units": [...this.allUnits()].map(u => u.GetInitData())
 		});
+	}
+	
+	_AddUnitAtPosition(x, y)
+	{
+		// Create a unit and add it to the units by ID map
+		const unit = new Unit(this, x, y);
+		this.#allUnitsById.set(unit.GetId(), unit);
+	}
+	
+	// Iterates all units in the game, using the values of the units map.
+	allUnits()
+	{
+		return this.#allUnitsById.values();
+	}
+	
+	GetUnitById(id)
+	{
+		return this.#allUnitsById.get(id);
+	}
+	
+	MoveUnits(unitIds, x, y)
+	{
+		// Look up all units from their ID. Discard any that cannot be found,
+		// just in case any synchronisation issue means a client tried to move
+		// a unit ID that no longer exists on the server.
+		const unitsArray = unitIds.map(id => this.GetUnitById(id))
+								  .filter(unit => unit);	// filter empty results
+		
+		// If none of the unit IDs are found, ignore the message.
+		if (unitsArray.length === 0)
+			return;
+		
+		// Instruct each unit to move to the given position.
+		for (const unit of unitsArray)
+		{
+			unit.GetPlatform().MoveToPosition(x, y);
+		}
 	}
  }

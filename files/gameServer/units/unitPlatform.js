@@ -5,10 +5,15 @@
 export class UnitPlatform {
 
 	// Private fields
-	#gameServer;			// reference to GameServer
+	#unit;			// reference to Unit
 	
-	constructor(gameServer)
+	constructor(unit)
 	{
-		this.#gameServer = gameServer;
+		this.#unit = unit;
+	}
+	
+	GetUnit()
+	{
+		return this.#unit;
 	}
 }

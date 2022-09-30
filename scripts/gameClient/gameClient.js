@@ -10,13 +10,15 @@ export class GameClient {
 
 	// Private fields
 	#runtime;						// Construct runtime
+	#sendMessageFunc;				// SendMessageToGameServer function
 	#allUnits = new Set();			// Set of all created units
 	
 	#selectionManager;				// SelectionManager class
 	
-	constructor(runtime)
+	constructor(runtime, sendMessageFunc)
 	{
 		this.#runtime = runtime;
+		this.#sendMessageFunc = sendMessageFunc;
 		
 		// Create SelectionManager which handles unit selections.
 		this.#selectionManager = new SelectionManager(this);
@@ -30,6 +32,12 @@ export class GameClient {
 	GetRuntime()
 	{
 		return this.#runtime;
+	}
+	
+	// Provide a GameClient method to send a message to GameServer.
+	SendToServer(msg)
+	{
+		this.#sendMessageFunc(msg);
 	}
 	
 	// Called when GameServer sends the initial state of the game.
@@ -59,5 +67,10 @@ export class GameClient {
 	MoveUnits(unitsArray, x, y)
 	{
 		// TODO: send a message to GameServer to handle the instruction.
+		this.SendToServer({
+			"type": "move-units",
+			"unitIds": unitsArray.map(u => u.GetId()),
+			"position": [x, y]
+		});
 	}
 }

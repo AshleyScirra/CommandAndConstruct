@@ -14,15 +14,20 @@ export class MovableUnitPlatform extends UnitPlatform {
 	// Private fields
 	#movable;			// MovableObject to represent platform position
 	
-	constructor(gameServer, x, y)
+	constructor(unit, x, y)
 	{
-		super(gameServer);
+		super(unit);
 		
-		this.#movable = new MovableObject(gameServer, x, y);
+		this.#movable = new MovableObject(unit.GetGameServer(), x, y);
 	}
 	
 	GetPosition()
 	{
 		return this.#movable.GetPosition();
+	}
+	
+	MoveToPosition(x, y)
+	{
+		console.log(`Moving unit ID ${this.GetUnit().GetId()} to ${x}, ${y}`);
 	}
 }

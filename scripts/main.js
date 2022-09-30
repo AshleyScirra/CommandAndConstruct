@@ -35,12 +35,13 @@ async function OnStartGameLayout(runtime)
 	messagePort.onmessage = HandleGameServerMessage;
 
 	// Post an init message to the worker to tell it to initialize.
-	messagePort.postMessage({
+	SendMessageToGameServer({
 		"type": "init"
 	});
 	
 	// Create the game client which manages the other end of the game state.
-	gameClient = new GameClient(runtime);
+	// Also pass it the SendMessageToGameServer function for messaging.
+	gameClient = new GameClient(runtime, SendMessageToGameServer);
 }
 
 // Release classes when ending the game layout.
@@ -49,9 +50,15 @@ function OnEndGameLayout()
 	gameClient.Release();
 	gameClient = null;
 	
-	messagePort.postMessage({
+	SendMessageToGameServer({
 		"type": "release"
 	});
+}
+
+// Helper function for posting a message.
+function SendMessageToGameServer(msg)
+{
+	messagePort.postMessage(msg);
 }
 
 // Map of message types that can be received from GameServer

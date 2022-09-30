@@ -16,7 +16,7 @@ export class Unit {
 		this.#gameServer = gameServer;
 		
 		// Create unit platform, hard-coded as a movable one for now (TODO: different types)
-		this.#platform = new MovableUnitPlatform(gameServer, x, y);
+		this.#platform = new MovableUnitPlatform(this, x, y);
 	}
 	
 	// Get data for the "create-initial-state" message
@@ -29,5 +29,20 @@ export class Unit {
 			"x": x,
 			"y": y
 		};
+	}
+	
+	GetGameServer()
+	{
+		return this.#gameServer;
+	}
+	
+	GetId()
+	{
+		return this.#id;
+	}
+	
+	GetPlatform()
+	{
+		return this.#platform;
 	}
 }

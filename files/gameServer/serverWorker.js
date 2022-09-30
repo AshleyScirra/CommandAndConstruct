@@ -20,7 +20,8 @@ self.addEventListener("message", e =>
 // and the function to call to handle them.
 const MESSAGE_MAP = new Map([
 	["init", OnInit],
-	["release", OnRelease]
+	["release", OnRelease],
+	["move-units", OnMoveUnits]
 ]);
 
 // Called when a message is received from the runtime.
@@ -61,4 +62,12 @@ function OnRelease()
 function SendMessageToRuntime(msg)
 {
 	messagePort.postMessage(msg);
+}
+
+function OnMoveUnits(data)
+{
+	const unitIds = data["unitIds"];
+	const position = data["position"];
+	
+	gameServer.MoveUnits(unitIds, position[0], position[1]);
 }
