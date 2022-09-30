@@ -6,6 +6,10 @@
  const SERVER_TICK_RATE = 30;
  const SERVER_TICK_MS_INTERVAL = (1000 / SERVER_TICK_RATE);
  
+ // "Magic number" that binary messages start with to verify it's an expected message.
+ // This avoids things like fragmented packets trying to be read as a whole packet.
+ const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
+ 
  // The GameServer class represents the state of the game and runs the main game logic.
  // It runs in a Web Worker and communicates with clients by messaging - either local messages
  // for the local player or remote players over the network.
@@ -19,6 +23,10 @@
 	#lastTickTimeMs = 0;			// clock time at last tick in ms
 	#nextTickScheduledTimeMs = 0;	// time next tick ought to run at in ms
 	
+	// A 256kb binary data buffer to use for sending binary updates to clients
+	#dataArrayBuffer = new ArrayBuffer(262144);
+	#dataView = new DataView(this.#dataArrayBuffer);
+	
  	constructor(sendMessageFunc)
 	{
 		// The function to send a message to the runtime is passed to the constructor.
@@ -29,9 +37,9 @@
 	}
 	
 	// Provide a GameServer method to send a message to the runtime for convenience.
-	SendToRuntime(msg)
+	SendToRuntime(msg, transferList)
 	{
-		this.#sendMessageFunc(msg);
+		this.#sendMessageFunc(msg, transferList);
 	}
 	
 	Release()
@@ -125,6 +133,9 @@
 			unit.Tick(dt);
 		}
 		
+		// Send data about the game state to the clients.
+		this.#SendGameStateUpdate();
+		
 		// Schedule a timer to run the next tick.
 		this.#ScheduleNextTick();
 	}
@@ -164,5 +175,54 @@
 		}
 		
 		this.#tickTimerId = setTimeout(() => this.#Tick(), msToNextTick);
+	}
+	
+	// Send binary data with the game state for clients to update to.
+	// Currently this just sends a full update of every unit in the game.
+	// TODO: come up with a smarter strategy that reduces bandwidth.
+	#SendGameStateUpdate()
+	{
+		const dataView = this.#dataView;
+		let pos = 0;		// write position in bytes
+		
+		// Write the magic number to identify this kind of message.
+		dataView.setUint32(pos, MAGIC_NUMBER);
+		pos += 4;
+		
+		// Write the total number of units.
+		dataView.setUint32(pos, this.#allUnitsById.size);
+		pos += 4;
+		
+		// For each unit, write data about the unit.
+		// TODO: try to shrink some of these values to 16 bits to save bandwidth
+		for (const unit of this.allUnits())
+		{
+			// Write the unit ID
+			dataView.setUint32(pos, unit.GetId());
+			pos += 4;
+			
+			// Write the X and Y position as floats
+			const platform = unit.GetPlatform();
+			const [x, y] = platform.GetPosition();
+			dataView.setFloat32(pos, x);
+			pos += 4;
+			dataView.setFloat32(pos, y);
+			pos += 4;
+			
+			// Write the angle as a float
+			dataView.setFloat32(pos, platform.GetAngle());
+			pos += 4;
+		}
+		
+		// Finished writing the game state data.
+		// Copy out a new ArrayBuffer with just the data written.
+		const arrayBuffer = this.#dataArrayBuffer.slice(0, pos);
+		
+		// Send the binary data with the game state update to the runtime.
+		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
+		this.SendToRuntime({
+			"type": "state-update",
+			"arrayBuffer": arrayBuffer
+		}, [arrayBuffer])
 	}
  }

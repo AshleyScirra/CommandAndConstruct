@@ -22,6 +22,12 @@ export class ClientPlatform {
 		return [this.#inst.x, this.#inst.y];
 	}
 	
+	SetPosition(x, y)
+	{
+		this.#inst.x = x;
+		this.#inst.y = y;
+	}
+	
 	GetSize()
 	{
 		return [this.#inst.width, this.#inst.height];
@@ -30,6 +36,11 @@ export class ClientPlatform {
 	GetAngle()
 	{
 		return this.#inst.angle;
+	}
+	
+	SetAngle(a)
+	{
+		this.#inst.angle = a;
 	}
 	
 	ContainsPoint(x, y)

@@ -64,7 +64,8 @@ function SendMessageToGameServer(msg)
 // Map of message types that can be received from GameServer
 // and the function to call to handle each of them.
 const MESSAGE_MAP = new Map([
-	["create-initial-state", OnCreateInitialState]
+	["create-initial-state", OnCreateInitialState],
+	["state-update", OnStateUpdate]
 ]);
 
 // Called when a message is received from the game server.
@@ -90,4 +91,9 @@ function HandleGameServerMessage(e)
 function OnCreateInitialState(data)
 {
 	gameClient.CreateInitialState(data);
+}
+
+function OnStateUpdate(data)
+{
+	gameClient.OnStateUpdate(data["arrayBuffer"]);
 }

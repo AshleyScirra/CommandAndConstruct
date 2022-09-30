@@ -40,6 +40,22 @@ export class ClientUnit {
 		return this.#id;
 	}
 	
+	// Called to update the client unit state with data received from GameServer.
+	UpdateState(x, y, angle)
+	{
+		// Update the unit position and angle.
+		this.#platform.SetPosition(x, y);
+		this.#platform.SetAngle(angle);
+		
+		// If this unit has a selection box, update that too.
+		if (this.#selectionBoxInst)
+		{
+			this.#selectionBoxInst.x = x;
+			this.#selectionBoxInst.y = y;
+			this.#selectionBoxInst.angle = angle;
+		}
+	}
+	
 	// Use the unit platform for collision checks.
 	ContainsPoint(x, y)
 	{

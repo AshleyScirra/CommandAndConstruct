@@ -31,6 +31,11 @@ export class MovableUnitPlatform extends UnitPlatform {
 		return this.#movable.GetPosition();
 	}
 	
+	GetAngle()
+	{
+		return this.#movable.GetAngle();
+	}
+	
 	MoveToPosition(x, y)
 	{
 		// Set the moving state to the target position

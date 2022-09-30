@@ -59,9 +59,9 @@ function OnRelease()
 }
 
 // Helper function for posting a message.
-function SendMessageToRuntime(msg)
+function SendMessageToRuntime(msg, transferList)
 {
-	messagePort.postMessage(msg);
+	messagePort.postMessage(msg, transferList);
 }
 
 function OnMoveUnits(data)
