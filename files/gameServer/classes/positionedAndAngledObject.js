@@ -14,4 +14,17 @@ export class PositionedAndAngledObject extends PositionedObject {
 		
 		this.#angle = 0;
 	}
+	
+	SetAngle(a)
+	{
+		// Ensure the angle is always in the range [-pi, pi].
+		// This avoids precision issues if the angle ends up very large from
+		// constantly incrementing it as it rotates.
+		this.#angle = a % Math.PI;
+	}
+	
+	GetAngle()
+	{
+		return this.#angle;
+	}
 }

@@ -16,4 +16,9 @@ export class UnitPlatform {
 	{
 		return this.#unit;
 	}
+	
+	Tick(dt)
+	{
+		// override
+	}
 }

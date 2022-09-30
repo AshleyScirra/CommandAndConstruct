@@ -20,6 +20,12 @@ export class PositionedObject {
 		return this.#gameServer;
 	}
 	
+	SetPosition(x, y)
+	{
+		this.#x = x;
+		this.#y = y;
+	}
+	
 	GetPosition()
 	{
 		return [this.#x, this.#y];

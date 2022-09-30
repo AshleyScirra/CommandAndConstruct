@@ -12,4 +12,14 @@ export class MovableObject extends PositionedAndAngledObject {
 	{
 		super(gameServer, x, y);
 	}
+	
+	SetSpeed(s)
+	{
+		this.#speed = s;
+	}
+	
+	GetSpeed()
+	{
+		return this.#speed;
+	}
 }

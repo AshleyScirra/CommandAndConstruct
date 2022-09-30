@@ -282,6 +282,20 @@
 							],
 							"subfolders": [],
 							"name": "classes"
+						},
+						{
+							"items": [
+								{
+									"name": "mathUtils.js",
+									"type": "application/javascript",
+									"sid": 263124639652415,
+									"file-info": {
+										"purpose": "none"
+									}
+								}
+							],
+							"subfolders": [],
+							"name": "utils"
 						}
 					],
 					"name": "gameServer"

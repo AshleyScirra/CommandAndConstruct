@@ -45,4 +45,9 @@ export class Unit {
 	{
 		return this.#platform;
 	}
+	
+	Tick(dt)
+	{
+		this.#platform.Tick(dt);
+	}
 }
