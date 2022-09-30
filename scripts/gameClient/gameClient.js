@@ -54,4 +54,10 @@ export class GameClient {
 	{
 		return this.#allUnits.values();
 	}
+	
+	// Called when the player commands some selected units to move to a position.
+	MoveUnits(unitsArray, x, y)
+	{
+		// TODO: send a message to GameServer to handle the instruction.
+	}
 }

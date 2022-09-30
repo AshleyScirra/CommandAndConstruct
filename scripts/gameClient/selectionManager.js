@@ -37,6 +37,11 @@ export class SelectionManager {
 		return this.#selectedUnits.has(unit);
 	}
 	
+	IsAnyUnitSelected()
+	{
+		return this.#selectedUnits.size > 0;
+	}
+	
 	// Set a given unit selected or unselected.
 	SetSelected(unit, isSelected)
 	{
@@ -99,21 +104,44 @@ export class SelectionManager {
 		const unitPlatformsLayer = runtime.layout.getLayer("UnitPlatforms");
 		const [ layerX, layerY ] = unitPlatformsLayer.cssPxToLayer(e.clientX, e.clientY);
 		
+		// Clicking a unit directly should select it, but clicking elsewhere
+		// on the ground should command any selected units to move there.
+		// Track whether the pointer down hit any unit at all.
+		let didHitUnit = false;
+		
 		// Check every unit to see which is at this position (if any).
 		for (const unit of this.#gameClient.allUnits())
 		{
-			// Skip already-selected units.
-			if (this.IsSelected(unit))
-				continue;
-			
-			// If we found a unit at this point, make it selected.
-			// Note that we also break out of the for loop so only one unit
-			// can be selected per pointerdown event.
+			// Found a unit that the pointer down hit.
 			if (unit.ContainsPoint(layerX, layerY))
 			{
-				this.SetSelected(unit, true);
-				break;
+				// Flag that a unit was hit.
+				didHitUnit = true;
+				
+				// If the hit unit is already selected, skip it.
+				// This allows checking if another unselected unit
+				// is at this position.
+				if (this.IsSelected(unit))
+				{
+					continue;
+				}
+				else
+				{
+					// Hit an unselected unit: make it selected.
+					// Note that we also break out of the for loop so only one unit
+					// can be selected per pointerdown event.
+					this.SetSelected(unit, true);
+					break;
+				}
 			}
+		}
+		
+		// If the player has at least one unit selected and they click somewhere
+		// on open ground (not over another unit), command the selected units
+		// to move there. This instruction is handled by GameClient.
+		if (this.IsAnyUnitSelected() && !didHitUnit)
+		{
+			this.#gameClient.MoveUnits([...this.#selectedUnits], layerX, layerY);
 		}
 	}
 	
