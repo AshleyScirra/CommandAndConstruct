@@ -37,6 +37,7 @@ export class SelectionManager {
 		return this.#selectedUnits.has(unit);
 	}
 	
+	// Set a given unit selected or unselected.
 	SetSelected(unit, isSelected)
 	{
 		if (isSelected)		// setting selected
@@ -61,7 +62,37 @@ export class SelectionManager {
 		}
 	}
 	
+	// Unselect all units at once. This is the same as calling
+	// SetSelected(unit, false) on every selected unit.
+	UnselectAll()
+	{
+		// Unset the selected state of all selected units.
+		for (const unit of this.#selectedUnits)
+		{
+			unit.SetSelectedState(false);
+		}
+		
+		// Clear the entire selected units set.
+		this.#selectedUnits.clear();
+	}
+	
 	#OnPointerDown(e)
+	{
+		// A button value of 0 means the left mouse button, or a non-mouse input
+		// like a touch or a pen input.
+		if (e.button === 0)
+		{
+			this.#OnPointerDown_MainButton(e);
+		}
+		// A button value of 2 means the right mouse button. This can't be used
+		// via touch input though.
+		else if (e.button === 2)
+		{
+			this.#OnPointerDown_RightButton(e);
+		}
+	}
+	
+	#OnPointerDown_MainButton(e)
 	{
 		// Determine the position of the pointer on the UnitPlatforms layer.
 		const runtime = this.GetRuntime();
@@ -84,5 +115,11 @@ export class SelectionManager {
 				break;
 			}
 		}
+	}
+	
+	#OnPointerDown_RightButton(e)
+	{
+		// Unselect all units when pressing the right mouse button.
+		this.UnselectAll();
 	}
 }
