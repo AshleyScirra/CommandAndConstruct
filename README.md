@@ -10,6 +10,7 @@ Here's a list of blog posts so far about this project.
 
 - [I'm going to make a game!](https://www.construct.net/en/blogs/ashleys-blog-2/im-going-game-1596)
 - [RTS update #1: Architecture](https://www.construct.net/en/blogs/ashleys-blog-2/rts-update-architecture-1597)
+- [RTS update #2: Classes](https://www.construct.net/en/blogs/ashleys-blog-2/rts-update-classes-1598)
 
 ## Try the project
 
