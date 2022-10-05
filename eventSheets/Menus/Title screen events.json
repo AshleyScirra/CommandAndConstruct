@@ -5,6 +5,27 @@
 			"eventType": "block",
 			"conditions": [
 				{
+					"id": "on-start-of-layout",
+					"objectClass": "System",
+					"sid": 676819862963951
+				}
+			],
+			"actions": [
+				{
+					"id": "set-text",
+					"objectClass": "TitleVersion",
+					"sid": 405910065750894,
+					"parameters": {
+						"text": "\"v\" & projectversion"
+					}
+				}
+			],
+			"sid": 551028647015909
+		},
+		{
+			"eventType": "block",
+			"conditions": [
+				{
 					"id": "on-clicked",
 					"objectClass": "TitleSinglePlayerButton",
 					"sid": 461523454907489

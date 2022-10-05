@@ -66,7 +66,8 @@
 					"TitleMultiplayerHostButton",
 					"BackToMenuButton",
 					"TitleMultiplayerJoinButton",
-					"TitleWIPHTML"
+					"TitleWIPHTML",
+					"TitleVersion"
 				],
 				"subfolders": [],
 				"name": "Menus"
@@ -389,7 +390,7 @@
 	},
 	"properties": {
 		"description": "",
-		"version": "1.0.0.0",
+		"version": "0.0.1.0",
 		"author": "Ashley Gullen",
 		"authorEmail": "",
 		"authorWebsite": "",
