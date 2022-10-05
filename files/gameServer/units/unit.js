@@ -9,11 +9,15 @@ export class Unit {
 	// Private fields
 	#gameServer;		// reference to GameServer
 	#id = nextId++;		// assign incrementing ID to every unit created
+	
+	#player = 0;		// Which player this unit belongs to
+	
 	#platform;			// unit platform
 	
-	constructor(gameServer, x, y)
+	constructor(gameServer, player, x, y)
 	{
 		this.#gameServer = gameServer;
+		this.#player = player;
 		
 		// Create unit platform, hard-coded as a movable one for now (TODO: different types)
 		this.#platform = new MovableUnitPlatform(this, x, y);
@@ -26,6 +30,7 @@ export class Unit {
 		
 		return {
 			"id": this.#id,
+			"player": this.#player,
 			"x": x,
 			"y": y
 		};
@@ -39,6 +44,11 @@ export class Unit {
 	GetId()
 	{
 		return this.#id;
+	}
+	
+	GetPlayer()
+	{
+		return this.#player;
 	}
 	
 	GetPlatform()

@@ -9,23 +9,26 @@ export class ClientUnit {
 	// Private fields
 	#gameClient;				// reference to GameClient unit belongs to
 	#id = -1;					// unique ID of this unit
+	#player = 0;				// player this unit belongs to
 	#platform;					// ClientPlatform for this unit's platform
 	#selectionBoxInst;			// Construct instance representing selection box
 	
-	constructor(gameClient, id)
+	constructor(gameClient, id, player)
 	{
 		this.#gameClient = gameClient;
 		this.#id = id;
+		this.#player = player;
 	}
 	
 	// Create a single client unit for the "create-initial-state" message
 	static CreateFromInitialData(gameClient, unitData)
 	{
 		const id = unitData["id"];
+		const player = unitData["player"];
 		const x = unitData["x"];
 		const y = unitData["y"];
 		
-		const unit = new ClientUnit(gameClient, id);
+		const unit = new ClientUnit(gameClient, id, player);
 		unit.#platform = new ClientPlatform(unit, x, y);
 		return unit;
 	}
@@ -38,6 +41,11 @@ export class ClientUnit {
 	GetId()
 	{
 		return this.#id;
+	}
+	
+	GetPlayer()
+	{
+		return this.#player;
 	}
 	
 	// Called to update the client unit state with data received from GameServer.

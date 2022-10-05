@@ -55,14 +55,14 @@
 	
 	Init()
 	{
-		// Hard-code six starting units.
-		// TODO: load level designs from somewhere
-		this._AddUnitAtPosition(200, 200);
-		this._AddUnitAtPosition(500, 200);
-		this._AddUnitAtPosition(200, 400);
-		this._AddUnitAtPosition(500, 400);
-		this._AddUnitAtPosition(200, 600);
-		this._AddUnitAtPosition(500, 600);
+		// Hard-code six starting units: three for player 0 and three for player 1.
+		this._AddUnitAtPosition(0, 200, 200);
+		this._AddUnitAtPosition(0, 200, 400);
+		this._AddUnitAtPosition(0, 200, 600);
+		
+		this._AddUnitAtPosition(1, 1700, 200);
+		this._AddUnitAtPosition(1, 1700, 400);
+		this._AddUnitAtPosition(1, 1700, 600);
 		
 		this.SendToRuntime({
 			"type": "create-initial-state",
@@ -75,10 +75,10 @@
 		this.#Tick();
 	}
 	
-	_AddUnitAtPosition(x, y)
+	_AddUnitAtPosition(player, x, y)
 	{
 		// Create a unit and add it to the units by ID map
-		const unit = new Unit(this, x, y);
+		const unit = new Unit(this, player, x, y);
 		this.#allUnitsById.set(unit.GetId(), unit);
 	}
 	
@@ -95,13 +95,20 @@
 	
 	MoveUnits(unitIds, x, y)
 	{
-		// Look up all units from their ID. Discard any that cannot be found,
-		// just in case any synchronisation issue means a client tried to move
-		// a unit ID that no longer exists on the server.
-		const unitsArray = unitIds.map(id => this.GetUnitById(id))
-								  .filter(unit => unit);	// filter empty results
+		// TODO: establish which player this message came from.
+		// For now assume it corresponds to player 0.
+		const player = 0;
 		
-		// If none of the unit IDs are found, ignore the message.
+		// Look up all units from their ID.
+		let unitsArray = unitIds.map(id => this.GetUnitById(id));
+		
+		// Discard any units that cannot be found, just in case any synchronisation issue
+		// means a client tried to move a unit ID that no longer exists on the server.
+		// Also discard any units that aren't from the player who sent the message,
+		// so even a hacked client can't command anyone else's units.
+		unitsArray = unitsArray.filter(unit => unit && unit.GetPlayer() === player);
+		
+		// If none of the unit IDs are valid, ignore the message.
 		if (unitsArray.length === 0)
 			return;
 		

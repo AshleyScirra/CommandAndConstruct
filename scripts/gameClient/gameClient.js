@@ -17,6 +17,8 @@ export class GameClient {
 	
 	#selectionManager;				// SelectionManager class
 	
+	#player = 0;					// Player number this client controls
+	
 	constructor(runtime, sendMessageFunc)
 	{
 		this.#runtime = runtime;
@@ -34,6 +36,11 @@ export class GameClient {
 	GetRuntime()
 	{
 		return this.#runtime;
+	}
+	
+	GetPlayer()
+	{
+		return this.#player;
 	}
 	
 	// Provide a GameClient method to send a message to GameServer.
@@ -63,6 +70,16 @@ export class GameClient {
 	allUnits()
 	{
 		return this.#allUnitsById.values();
+	}
+	
+	// Iterates all units that belong to the local player.
+	*allLocalPlayerUnits()
+	{
+		for (const unit of this.allUnits())
+		{
+			if (unit.GetPlayer() === this.GetPlayer())
+				yield unit;
+		}
 	}
 	
 	GetUnitById(id)

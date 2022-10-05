@@ -109,8 +109,11 @@ export class SelectionManager {
 		// Track whether the pointer down hit any unit at all.
 		let didHitUnit = false;
 		
-		// Check every unit to see which is at this position (if any).
-		for (const unit of this.#gameClient.allUnits())
+		// Check every one of the local player's units to see which is at this position (if any).
+		// This stops the player being able to select other player's units. Note the server
+		// verifies commands so even a hacked client that selects other player's units will
+		// not be able to affect them.
+		for (const unit of this.#gameClient.allLocalPlayerUnits())
 		{
 			// Found a unit that the pointer down hit.
 			if (unit.ContainsPoint(layerX, layerY))

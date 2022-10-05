@@ -1,6 +1,6 @@
 {
 	"projectFormatVersion": 1,
-	"savedWithRelease": 31200,
+	"savedWithRelease": 31300,
 	"name": "Command & Construct",
 	"runtime": "c3",
 	"useWorker": "worker",
@@ -11,7 +11,7 @@
 			"id": "Sprite",
 			"name": "Sprite",
 			"author": "Scirra",
-			"version": "r312",
+			"version": "r313",
 			"bundled": false
 		},
 		{
@@ -19,7 +19,7 @@
 			"id": "NinePatch",
 			"name": "9-patch",
 			"author": "Scirra",
-			"version": "r312",
+			"version": "r313",
 			"bundled": false
 		}
 	],
