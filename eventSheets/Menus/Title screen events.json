@@ -1,0 +1,27 @@
+{
+	"name": "Title screen events",
+	"events": [
+		{
+			"eventType": "block",
+			"conditions": [
+				{
+					"id": "on-clicked",
+					"objectClass": "TitleStartButton",
+					"sid": 461523454907489
+				}
+			],
+			"actions": [
+				{
+					"id": "go-to-layout",
+					"objectClass": "System",
+					"sid": 177846663280451,
+					"parameters": {
+						"layout": "Game"
+					}
+				}
+			],
+			"sid": 366909020626275
+		}
+	],
+	"sid": 202028505943856
+}

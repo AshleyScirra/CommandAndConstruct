@@ -21,15 +21,45 @@
 			"author": "Scirra",
 			"version": "r313",
 			"bundled": false
+		},
+		{
+			"type": "plugin",
+			"id": "Text",
+			"name": "Text",
+			"author": "Scirra",
+			"version": "r313",
+			"bundled": false
+		},
+		{
+			"type": "plugin",
+			"id": "Button",
+			"name": "Button",
+			"author": "Scirra",
+			"version": "r313",
+			"bundled": false
 		}
 	],
 	"uniqueId": "nrrpzelemnm",
 	"objectTypes": {
-		"items": [
-			"TankPlatform",
-			"UnitSelectionBox"
-		],
-		"subfolders": []
+		"items": [],
+		"subfolders": [
+			{
+				"items": [
+					"TankPlatform",
+					"UnitSelectionBox"
+				],
+				"subfolders": [],
+				"name": "Main game"
+			},
+			{
+				"items": [
+					"TitleText",
+					"TitleStartButton"
+				],
+				"subfolders": [],
+				"name": "Menus"
+			}
+		]
 	},
 	"autosaveData": null,
 	"containers": [],
@@ -39,16 +69,36 @@
 	},
 	"layouts": {
 		"items": [
-			"Game",
 			"ObjectBank"
 		],
-		"subfolders": []
+		"subfolders": [
+			{
+				"items": [
+					"Title screen"
+				],
+				"subfolders": [],
+				"name": "Menus"
+			},
+			{
+				"items": [
+					"Game"
+				],
+				"subfolders": [],
+				"name": "Main game"
+			}
+		]
 	},
 	"eventSheets": {
-		"items": [
-			"GameEvents"
-		],
-		"subfolders": []
+		"items": [],
+		"subfolders": [
+			{
+				"items": [
+					"Title screen events"
+				],
+				"subfolders": [],
+				"name": "Menus"
+			}
+		]
 	},
 	"rootFileFolders": {
 		"script": {
@@ -201,7 +251,16 @@
 			"subfolders": []
 		},
 		"general": {
-			"items": [],
+			"items": [
+				{
+					"name": "gamestyles.css",
+					"type": "text/css",
+					"sid": 304629985931916,
+					"file-info": {
+						"purpose": "stylesheet"
+					}
+				}
+			],
 			"subfolders": [
 				{
 					"items": [
@@ -365,5 +424,5 @@
 	},
 	"viewportWidth": 1920,
 	"viewportHeight": 1080,
-	"firstLayout": null
+	"firstLayout": "Title screen"
 }
