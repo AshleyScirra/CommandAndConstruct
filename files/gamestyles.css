@@ -1,5 +1,31 @@
 
+/* General styles */
+a {
+	color: rgb(128, 200, 255);
+}
+
+a:visited {
+	color: rgb(200, 128, 255);
+}
+
+a:active {
+	color: rgb(255, 128, 128);
+}
+
+/* The work-in-progress title */
+.workinprogresstitle {
+	font-family: Arial;
+	color: rgb(255, 255, 128);
+	font-size: 2em;
+	font-style: italic;
+	text-align: center;
+}
+
 /* For buttons on the main title screen */
 .titlebutton {
-	font-size: 4em;
+	font-size: 2em;
+}
+
+.backbutton {
+	font-size: 1.5em;
 }

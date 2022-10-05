@@ -37,6 +37,14 @@
 			"author": "Scirra",
 			"version": "r313",
 			"bundled": false
+		},
+		{
+			"type": "plugin",
+			"id": "HTMLElement",
+			"name": "HTML Element",
+			"author": "Scirra",
+			"version": "r313",
+			"bundled": false
 		}
 	],
 	"uniqueId": "nrrpzelemnm",
@@ -54,7 +62,11 @@
 			{
 				"items": [
 					"TitleText",
-					"TitleStartButton"
+					"TitleSinglePlayerButton",
+					"TitleMultiplayerHostButton",
+					"BackToMenuButton",
+					"TitleMultiplayerJoinButton",
+					"TitleWIPHTML"
 				],
 				"subfolders": [],
 				"name": "Menus"
@@ -74,7 +86,9 @@
 		"subfolders": [
 			{
 				"items": [
-					"Title screen"
+					"Title screen",
+					"Multiplayer host",
+					"Multiplayer join"
 				],
 				"subfolders": [],
 				"name": "Menus"
@@ -93,7 +107,9 @@
 		"subfolders": [
 			{
 				"items": [
-					"Title screen events"
+					"Title screen events",
+					"Multiplayer host events",
+					"Multiplayer join events"
 				],
 				"subfolders": [],
 				"name": "Menus"

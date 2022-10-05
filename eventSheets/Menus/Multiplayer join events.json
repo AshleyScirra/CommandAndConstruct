@@ -1,0 +1,27 @@
+{
+	"name": "Multiplayer join events",
+	"events": [
+		{
+			"eventType": "block",
+			"conditions": [
+				{
+					"id": "on-clicked",
+					"objectClass": "BackToMenuButton",
+					"sid": 972938871823586
+				}
+			],
+			"actions": [
+				{
+					"id": "go-to-layout",
+					"objectClass": "System",
+					"sid": 336568023449293,
+					"parameters": {
+						"layout": "Title screen"
+					}
+				}
+			],
+			"sid": 922044815394703
+		}
+	],
+	"sid": 289355480165679
+}

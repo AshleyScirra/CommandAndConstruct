@@ -1,7 +1,7 @@
 {
-	"name": "TitleStartButton",
+	"name": "TitleMultiplayerJoinButton",
 	"plugin-id": "Button",
-	"sid": 120218917553730,
+	"sid": 593743105755428,
 	"isGlobal": false,
 	"instanceVariables": [],
 	"behaviorTypes": []

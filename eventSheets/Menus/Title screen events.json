@@ -6,7 +6,7 @@
 			"conditions": [
 				{
 					"id": "on-clicked",
-					"objectClass": "TitleStartButton",
+					"objectClass": "TitleSinglePlayerButton",
 					"sid": 461523454907489
 				}
 			],
@@ -21,6 +21,48 @@
 				}
 			],
 			"sid": 366909020626275
+		},
+		{
+			"eventType": "block",
+			"conditions": [
+				{
+					"id": "on-clicked",
+					"objectClass": "TitleMultiplayerHostButton",
+					"sid": 681893288516255
+				}
+			],
+			"actions": [
+				{
+					"id": "go-to-layout",
+					"objectClass": "System",
+					"sid": 580333531795580,
+					"parameters": {
+						"layout": "Multiplayer host"
+					}
+				}
+			],
+			"sid": 579247601557793
+		},
+		{
+			"eventType": "block",
+			"conditions": [
+				{
+					"id": "on-clicked",
+					"objectClass": "TitleMultiplayerJoinButton",
+					"sid": 190498661763353
+				}
+			],
+			"actions": [
+				{
+					"id": "go-to-layout",
+					"objectClass": "System",
+					"sid": 379245070003671,
+					"parameters": {
+						"layout": "Multiplayer join"
+					}
+				}
+			],
+			"sid": 985098261425246
 		}
 	],
 	"sid": 202028505943856

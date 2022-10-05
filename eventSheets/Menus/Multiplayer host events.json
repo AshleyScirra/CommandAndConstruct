@@ -1,0 +1,27 @@
+{
+	"name": "Multiplayer host events",
+	"events": [
+		{
+			"eventType": "block",
+			"conditions": [
+				{
+					"id": "on-clicked",
+					"objectClass": "BackToMenuButton",
+					"sid": 460192561862079
+				}
+			],
+			"actions": [
+				{
+					"id": "go-to-layout",
+					"objectClass": "System",
+					"sid": 293845242183069,
+					"parameters": {
+						"layout": "Title screen"
+					}
+				}
+			],
+			"sid": 339442576077425
+		}
+	],
+	"sid": 804133161294916
+}

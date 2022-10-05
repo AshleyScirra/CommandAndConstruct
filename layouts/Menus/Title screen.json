@@ -65,7 +65,7 @@
 					"instanceVariables": {},
 					"behaviors": {},
 					"world": {
-						"x": 265,
+						"x": 227.5,
 						"y": 36,
 						"width": 1465.35,
 						"height": 158.95833333333337,
@@ -107,7 +107,7 @@
 					"instanceVariables": {},
 					"behaviors": {},
 					"world": {
-						"x": 269,
+						"x": 227.5,
 						"y": 174,
 						"width": 1465.35,
 						"height": 68.95833333333337,
@@ -124,35 +124,66 @@
 					}
 				},
 				{
+					"type": "TitleSinglePlayerButton",
+					"properties": {
+						"type": "button",
+						"text": "Start single-player",
+						"tooltip": "",
+						"initially-visible": true,
+						"enabled": true,
+						"auto-font-size": false,
+						"checked": false,
+						"id": "",
+						"class": "titlebutton"
+					},
+					"uid": 7,
+					"instanceVariables": {},
+					"behaviors": {},
+					"world": {
+						"x": 684.4691502973739,
+						"y": 326,
+						"width": 551.5308497026261,
+						"height": 147.47374457196878,
+						"originX": 0,
+						"originY": 0,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						]
+					}
+				},
+				{
 					"type": "TitleText",
 					"properties": {
-						"text": "Work in progress! This is very much still in development!",
+						"text": "[b]Instructions:[/b]\nLeft click on a unit to select it.\nLeft click in a space to move selected units there.\nRight click to unselect all units.\n[i]Much more to come![/i]",
 						"enable-bbcode": true,
 						"font": "Arial",
 						"size": 24,
 						"line-height": 0,
-						"bold": true,
-						"italic": true,
+						"bold": false,
+						"italic": false,
 						"color": [
-							0.9254901960784314,
-							0.9176470588235294,
-							0.7137254901960784,
+							0.7294117647058823,
+							0.7294117647058823,
+							0.7294117647058823,
 							1
 						],
 						"horizontal-alignment": "center",
-						"vertical-alignment": "top",
+						"vertical-alignment": "bottom",
 						"wrapping": "word",
 						"initially-visible": true,
 						"origin": "top-left"
 					},
-					"uid": 6,
+					"uid": 8,
 					"instanceVariables": {},
 					"behaviors": {},
 					"world": {
-						"x": 269,
-						"y": 230,
+						"x": 227.5,
+						"y": 863,
 						"width": 1465.35,
-						"height": 68.95833333333337,
+						"height": 205.95833333333337,
 						"originX": 0,
 						"originY": 0,
 						"color": [
@@ -166,10 +197,10 @@
 					}
 				},
 				{
-					"type": "TitleStartButton",
+					"type": "TitleMultiplayerHostButton",
 					"properties": {
 						"type": "button",
-						"text": "Start",
+						"text": "Host multiplayer",
 						"tooltip": "",
 						"initially-visible": true,
 						"enabled": true,
@@ -178,14 +209,93 @@
 						"id": "",
 						"class": "titlebutton"
 					},
-					"uid": 7,
+					"uid": 9,
 					"instanceVariables": {},
 					"behaviors": {},
 					"world": {
-						"x": 731,
-						"y": 443,
-						"width": 562,
-						"height": 170,
+						"x": 684,
+						"y": 517,
+						"width": 551.5308497026261,
+						"height": 147.47374457196878,
+						"originX": 0,
+						"originY": 0,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						]
+					}
+				},
+				{
+					"type": "TitleMultiplayerJoinButton",
+					"properties": {
+						"type": "button",
+						"text": "Join multiplayer",
+						"tooltip": "",
+						"initially-visible": true,
+						"enabled": true,
+						"auto-font-size": false,
+						"checked": false,
+						"id": "",
+						"class": "titlebutton"
+					},
+					"uid": 10,
+					"instanceVariables": {},
+					"behaviors": {},
+					"world": {
+						"x": 684,
+						"y": 708,
+						"width": 551.5308497026261,
+						"height": 147.47374457196878,
+						"originX": 0,
+						"originY": 0,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						]
+					}
+				},
+				{
+					"type": "TitleWIPHTML",
+					"properties": {
+						"tag": "div",
+						"content": "<div class=\"workinprogresstitle\">Work in progress! This is still very much in development! <a href=\"https://github.com/AshleyScirra/CommandAndConstruct\" target=\"_blank\">See the code on GitHub</a> and <a href=\"https://www.construct.net/en/blogs/ashleys-blog-2\" target=\"_blank\">follow development on Ashley's blog</a>.</div>",
+						"content-type": "html",
+						"initially-visible": true,
+						"id": "",
+						"class": "",
+						"allow-context-menu": false,
+						"stop-input-events": "no",
+						"origin": "top-left",
+						"set-color": true,
+						"default-color": [
+							0,
+							0,
+							0,
+							0
+						],
+						"set-background-color": false,
+						"default-background-color": [
+							1,
+							1,
+							1,
+							0
+						],
+						"auto-font-size": true,
+						"allow-text-selection": false,
+						"style-attribute": ""
+					},
+					"uid": 6,
+					"instanceVariables": {},
+					"behaviors": {},
+					"world": {
+						"x": 369,
+						"y": 222,
+						"width": 1181,
+						"height": 79,
 						"originX": 0,
 						"originY": 0,
 						"color": [
@@ -229,8 +339,8 @@
 	"sid": 707112396813850,
 	"nonworld-instances": [],
 	"effectTypes": [],
-	"width": 3840,
-	"height": 2160,
+	"width": 1920,
+	"height": 1080,
 	"unboundedScrolling": false,
 	"vpX": 0.5,
 	"vpY": 0.5,
