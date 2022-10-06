@@ -49,48 +49,6 @@
 					}
 				},
 				{
-					"type": "TitleText",
-					"properties": {
-						"text": "TODO",
-						"enable-bbcode": true,
-						"font": "Arial",
-						"size": 72,
-						"line-height": 0,
-						"bold": false,
-						"italic": true,
-						"color": [
-							0.7294117647058823,
-							0.7294117647058823,
-							0.7294117647058823,
-							1
-						],
-						"horizontal-alignment": "center",
-						"vertical-alignment": "top",
-						"wrapping": "word",
-						"initially-visible": true,
-						"origin": "top-left"
-					},
-					"uid": 12,
-					"instanceVariables": {},
-					"behaviors": {},
-					"world": {
-						"x": 224,
-						"y": 381,
-						"width": 1465.35,
-						"height": 158.95833333333337,
-						"originX": 0,
-						"originY": 0,
-						"color": [
-							1,
-							1,
-							1,
-							1
-						],
-						"angle": 0,
-						"zElevation": 0
-					}
-				},
-				{
 					"type": "BackToMenuButton",
 					"properties": {
 						"type": "button",
@@ -119,6 +77,90 @@
 							1,
 							1
 						]
+					}
+				},
+				{
+					"type": "MultiplayerStatusText",
+					"properties": {
+						"text": "Status...",
+						"enable-bbcode": true,
+						"font": "Arial",
+						"size": 72,
+						"line-height": 0,
+						"bold": false,
+						"italic": false,
+						"color": [
+							0.7294117647058823,
+							0.7294117647058823,
+							0.7294117647058823,
+							1
+						],
+						"horizontal-alignment": "center",
+						"vertical-alignment": "top",
+						"wrapping": "word",
+						"initially-visible": true,
+						"origin": "top-left"
+					},
+					"uid": 18,
+					"instanceVariables": {},
+					"behaviors": {},
+					"world": {
+						"x": 227.5,
+						"y": 241,
+						"width": 1465.35,
+						"height": 158.95833333333337,
+						"originX": 0,
+						"originY": 0,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						],
+						"angle": 0,
+						"zElevation": 0
+					}
+				},
+				{
+					"type": "MultiplayerHostInstructions",
+					"properties": {
+						"text": "Get another player to load up this game, choose [i]Join multiplayer[/i] on the title screen, and enter the code above.",
+						"enable-bbcode": true,
+						"font": "Arial",
+						"size": 48,
+						"line-height": 0,
+						"bold": false,
+						"italic": false,
+						"color": [
+							0.7294117647058823,
+							0.7294117647058823,
+							0.7294117647058823,
+							1
+						],
+						"horizontal-alignment": "center",
+						"vertical-alignment": "top",
+						"wrapping": "word",
+						"initially-visible": true,
+						"origin": "top-left"
+					},
+					"uid": 19,
+					"instanceVariables": {},
+					"behaviors": {},
+					"world": {
+						"x": 227.5,
+						"y": 413,
+						"width": 1465.35,
+						"height": 426.95833333333337,
+						"originX": 0,
+						"originY": 0,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						],
+						"angle": 0,
+						"zElevation": 0
 					}
 				}
 			],

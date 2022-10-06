@@ -2,25 +2,347 @@
 	"name": "Multiplayer host events",
 	"events": [
 		{
-			"eventType": "block",
-			"conditions": [
+			"eventType": "group",
+			"disabled": false,
+			"title": "Multiplayer hosting",
+			"description": "",
+			"isActiveOnStart": true,
+			"children": [
 				{
-					"id": "on-clicked",
-					"objectClass": "BackToMenuButton",
-					"sid": 460192561862079
+					"eventType": "variable",
+					"name": "roomName",
+					"type": "string",
+					"initialValue": "",
+					"comment": "A randomly generated room name to join",
+					"isStatic": true,
+					"isConstant": false,
+					"sid": 363836731871376
+				},
+				{
+					"eventType": "variable",
+					"name": "ROOM_NAME_CHARCOUNT",
+					"type": "number",
+					"initialValue": "5",
+					"comment": "Number of characters in the randomly generated room name",
+					"isStatic": true,
+					"isConstant": true,
+					"sid": 134023152220824
+				},
+				{
+					"eventType": "variable",
+					"name": "ROOM_NAME_CHARS",
+					"type": "string",
+					"initialValue": "abcdefghkmnpqrstuvwxyz23456789",
+					"comment": "List of characters allowed in the random room name.",
+					"isStatic": true,
+					"isConstant": true,
+					"sid": 342939004907933
+				},
+				{
+					"eventType": "comment",
+					"text": "On starting this layout, connect to the signalling server straight away and try to host a room."
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-start-of-layout",
+							"objectClass": "System",
+							"sid": 660880492218823
+						}
+					],
+					"actions": [
+						{
+							"id": "set-visible",
+							"objectClass": "MultiplayerHostInstructions",
+							"sid": 225518766026084,
+							"parameters": {
+								"visibility": "invisible"
+							}
+						},
+						{
+							"id": "set-text",
+							"objectClass": "MultiplayerStatusText",
+							"sid": 221299183370530,
+							"parameters": {
+								"text": "\"Connecting...\""
+							}
+						},
+						{
+							"id": "connect",
+							"objectClass": "Multiplayer",
+							"sid": 274145809365396,
+							"parameters": {
+								"server": "\"wss://multiplayer.scirra.com\""
+							}
+						}
+					],
+					"sid": 225968884927125
+				},
+				{
+					"eventType": "comment",
+					"text": "Once connected, log in with alias \"anon\". Customisable aliases are TODO! The signalling server will add a number to make the name unique, e.g. \"anon4\", \"anon5\"..."
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-connected",
+							"objectClass": "Multiplayer",
+							"sid": 500422090403973
+						}
+					],
+					"actions": [
+						{
+							"id": "set-text",
+							"objectClass": "MultiplayerStatusText",
+							"sid": 375402255709023,
+							"parameters": {
+								"text": "\"Logging in...\""
+							}
+						},
+						{
+							"id": "log-in",
+							"objectClass": "Multiplayer",
+							"sid": 185246672021717,
+							"parameters": {
+								"alias": "\"anon\""
+							}
+						}
+					],
+					"sid": 430333918827243
+				},
+				{
+					"eventType": "comment",
+					"text": "Once logged in, generate a random room name, and join it."
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-logged-in",
+							"objectClass": "Multiplayer",
+							"sid": 754157827675382
+						}
+					],
+					"actions": [
+						{
+							"id": "set-text",
+							"objectClass": "MultiplayerStatusText",
+							"sid": 585012704474502,
+							"parameters": {
+								"text": "\"Joining room...\""
+							}
+						},
+						{
+							"callFunction": "GenerateRoomName",
+							"sid": 587161183328445
+						},
+						{
+							"id": "join-room",
+							"objectClass": "Multiplayer",
+							"sid": 349486231166378,
+							"parameters": {
+								"game": "\"CommandAndConstruct\"",
+								"instance": "\"v\" & projectversion",
+								"room": "roomName",
+								"max-peers": "0"
+							}
+						}
+					],
+					"sid": 260903931978743
+				},
+				{
+					"eventType": "comment",
+					"text": "Add a sequence of random characters to the room name."
+				},
+				{
+					"functionName": "GenerateRoomName",
+					"functionDescription": "Generates a random room name to host a new game in.",
+					"functionCategory": "",
+					"functionReturnType": "none",
+					"functionCopyPicked": false,
+					"functionIsAsync": false,
+					"functionParameters": [],
+					"eventType": "function-block",
+					"conditions": [],
+					"actions": [
+						{
+							"id": "set-eventvar-value",
+							"objectClass": "System",
+							"sid": 252292801395487,
+							"parameters": {
+								"variable": "roomName",
+								"value": "\"\""
+							}
+						}
+					],
+					"sid": 538376953173966,
+					"children": [
+						{
+							"eventType": "block",
+							"conditions": [
+								{
+									"id": "repeat",
+									"objectClass": "System",
+									"sid": 389343172341081,
+									"parameters": {
+										"count": "ROOM_NAME_CHARCOUNT"
+									}
+								}
+							],
+							"actions": [
+								{
+									"id": "add-to-eventvar",
+									"objectClass": "System",
+									"sid": 922451106582145,
+									"parameters": {
+										"variable": "roomName",
+										"value": "mid(ROOM_NAME_CHARS, floor(random(len(ROOM_NAME_CHARS))), 1)"
+									}
+								}
+							],
+							"sid": 789478238827662
+						}
+					]
+				},
+				{
+					"eventType": "comment",
+					"text": "Once joined the room, we should be host, as a random room name was generated."
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-joined-room",
+							"objectClass": "Multiplayer",
+							"sid": 585178936575771
+						}
+					],
+					"actions": [],
+					"sid": 446612449850286,
+					"children": [
+						{
+							"eventType": "block",
+							"conditions": [
+								{
+									"id": "is-host",
+									"objectClass": "Multiplayer",
+									"sid": 271999056266859
+								}
+							],
+							"actions": [
+								{
+									"id": "set-text",
+									"objectClass": "MultiplayerStatusText",
+									"sid": 576926133924946,
+									"parameters": {
+										"text": "\"Hosting: [b][color=white]\" & roomName & \"[/color][/b]\""
+									}
+								},
+								{
+									"id": "set-visible",
+									"objectClass": "MultiplayerHostInstructions",
+									"sid": 832972290358494,
+									"parameters": {
+										"visibility": "visible"
+									}
+								}
+							],
+							"sid": 239574267492820
+						},
+						{
+							"eventType": "comment",
+							"text": "If the user is not the host of the room, we must have joined an existing room by accident. If that happens just restart the layout and try again!"
+						},
+						{
+							"eventType": "block",
+							"conditions": [
+								{
+									"id": "else",
+									"objectClass": "System",
+									"sid": 528072307971684
+								}
+							],
+							"actions": [
+								{
+									"id": "disconnect-signalling",
+									"objectClass": "Multiplayer",
+									"sid": 924534249535546
+								},
+								{
+									"id": "restart-layout",
+									"objectClass": "System",
+									"sid": 321500817319296
+								}
+							],
+							"sid": 418689144264523
+						}
+					]
+				},
+				{
+					"eventType": "comment",
+					"text": "If something goes wrong, just set the status text to \"Error\"."
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-error",
+							"objectClass": "Multiplayer",
+							"sid": 115992510913083
+						}
+					],
+					"actions": [
+						{
+							"id": "set-text",
+							"objectClass": "MultiplayerStatusText",
+							"sid": 831278680893125,
+							"parameters": {
+								"text": "\"Error\""
+							}
+						}
+					],
+					"sid": 905438353468051
 				}
 			],
-			"actions": [
+			"sid": 667300112395842
+		},
+		{
+			"eventType": "group",
+			"disabled": false,
+			"title": "Other",
+			"description": "",
+			"isActiveOnStart": true,
+			"children": [
 				{
-					"id": "go-to-layout",
-					"objectClass": "System",
-					"sid": 293845242183069,
-					"parameters": {
-						"layout": "Title screen"
-					}
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-clicked",
+							"objectClass": "BackToMenuButton",
+							"sid": 488498516079090
+						}
+					],
+					"actions": [
+						{
+							"id": "disconnect-signalling",
+							"objectClass": "Multiplayer",
+							"sid": 577372119437639
+						},
+						{
+							"id": "go-to-layout",
+							"objectClass": "System",
+							"sid": 906625344511336,
+							"parameters": {
+								"layout": "Title screen"
+							}
+						}
+					],
+					"sid": 298666513731590
 				}
 			],
-			"sid": 339442576077425
+			"sid": 992347831605519
 		}
 	],
 	"sid": 804133161294916

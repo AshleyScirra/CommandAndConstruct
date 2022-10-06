@@ -45,11 +45,21 @@
 			"author": "Scirra",
 			"version": "r313",
 			"bundled": false
+		},
+		{
+			"type": "plugin",
+			"id": "Multiplayer",
+			"name": "Multiplayer",
+			"author": "Scirra",
+			"version": "r313",
+			"bundled": false
 		}
 	],
 	"uniqueId": "nrrpzelemnm",
 	"objectTypes": {
-		"items": [],
+		"items": [
+			"MultiplayerHostInstructions"
+		],
 		"subfolders": [
 			{
 				"items": [
@@ -67,10 +77,18 @@
 					"BackToMenuButton",
 					"TitleMultiplayerJoinButton",
 					"TitleWIPHTML",
-					"TitleVersion"
+					"TitleVersion",
+					"MultiplayerStatusText"
 				],
 				"subfolders": [],
 				"name": "Menus"
+			},
+			{
+				"items": [
+					"Multiplayer"
+				],
+				"subfolders": [],
+				"name": "Global"
 			}
 		]
 	},
