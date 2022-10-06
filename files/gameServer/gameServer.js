@@ -212,9 +212,6 @@
 		
 		// Send the binary data with the game state update to the runtime.
 		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
-		this.SendToRuntime({
-			"type": "state-update",
-			"arrayBuffer": arrayBuffer
-		}, [arrayBuffer])
+		this.SendToRuntime(arrayBuffer, [arrayBuffer])
 	}
  }

@@ -204,6 +204,14 @@
 							"script-info": {
 								"purpose": "none"
 							}
+						},
+						{
+							"name": "messageHandler.js",
+							"type": "application/javascript",
+							"sid": 875270580096877,
+							"script-info": {
+								"purpose": "none"
+							}
 						}
 					],
 					"subfolders": [],

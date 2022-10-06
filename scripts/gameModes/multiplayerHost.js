@@ -10,7 +10,6 @@ export class GameModeMultiplayerHost {
 	#runtime;					// Construct runtime
 	#gameClient;				// The local player's GameClient
 	#gameServerMessagePort;		// The MessagePort for communicating with the local GameServer
-	#messageMap;				// Map of message type -> handler function
 	#eventHandlers;				// MultiEventHandler
 	
 	#peerReadyResolve;			// for a promise that resolves when peer sends "ready" message
@@ -18,13 +17,6 @@ export class GameModeMultiplayerHost {
 	constructor(runtime)
 	{
 		this.#runtime = runtime;
-		
-		// Create map of message types that can be received from GameServer
-		// and the function to call to handle each of them.
-		this.#messageMap = new Map([
-			["create-initial-state", e => this.#OnCreateInitialState(e)],
-			["state-update", e => this.#OnStateUpdate(e)]
-		]);
 		
 		this.#eventHandlers = new MultiEventHandler([
 			// Listen for incoming messages from peers over the network.
@@ -72,33 +64,38 @@ export class GameModeMultiplayerHost {
 	}
 	
 	// Called when receiving a message over the network from a peer.
-	// The message is usually forwarded on to GameServer.
 	#HandlePeerMessage(e)
 	{
 		const msg = e.message;
 		
-		// Handle the "ready" message specially, once only. When it's received, resolve the ready promise.
-		// This makes sure both the host and peer are loaded and ready to proceed.
+		// Handle the "ready" message specially.
 		if (msg["type"] === "ready")
 		{
-			if (this.#peerReadyResolve)
-			{
-				this.#peerReadyResolve();
-				this.#peerReadyResolve = null;		// don't do this again
-				
-				// To acknowledge the peer is ready, send back a "start" message to the peer.
-				this.#runtime.objects.Multiplayer.sendPeerMessage(e.fromId, {
-					"type": "start"
-				});
-			}
+			this.#OnPeerReady(e.fromId);
 		}
 		else	// all other messages
 		{
-			// Tag the message as having come from player 1, i.e. the only other peer.
-			// (TODO: support for more players)
+			// Tag the message as having come from player 1, i.e. the only other peer,
+			// and forward on to GameServer in the worker. (TODO: support for more players)
 			msg["player"] = 1;
 
 			this.#SendMessageToGameServer(msg);
+		}
+	}
+	
+	// When the peer's "ready" message is received, resolve the ready promise.
+	// This makes sure both the host and peer are loaded and ready to proceed.
+	#OnPeerReady(fromId)
+	{
+		if (this.#peerReadyResolve)				// handle this once only
+		{
+			this.#peerReadyResolve();
+			this.#peerReadyResolve = null;
+
+			// To acknowledge the peer is ready, send back a "start" message to the peer.
+			this.#runtime.objects.Multiplayer.sendPeerMessage(fromId, {
+				"type": "start"
+			});
 		}
 	}
 	
@@ -119,38 +116,13 @@ export class GameModeMultiplayerHost {
 	// Called when receiving a message from the GameServer worker.
 	#HandleGameServerMessage(e)
 	{
-		// Look up the function to call for this message type in the message map.
 		const data = e.data;
-		const messageType = data["type"];
-		const handlerFunc = this.#messageMap.get(messageType);
-
-		if (handlerFunc)
-		{
-			// Call the message handler function with the provided data.
-			handlerFunc(data);
-		}
-		else
-		{
-			// Messages should always have a handler, so log an error if it's not found.
-			console.error(`No message handler for message from GameServer type '${messageType}'`);
-		}
-	}
-	
-	#OnCreateInitialState(data)
-	{
-		this.#gameClient.CreateInitialState(data);
 		
-		// Relay this message over the network to connected peers with reliable ordered transmission.
-		this.#runtime.objects.Multiplayer.hostBroadcastMessage(null, data, "o");
-	}
-	
-	#OnStateUpdate(data)
-	{
-		this.#gameClient.OnStateUpdate(data["arrayBuffer"]);
+		// Handle this message with the local game client.
+		this.#gameClient.HandleGameServerMessage(data);
 		
-		// Relay this message over the network to connected peers as a binary message
-		// with unreliable transmission, as it's a streaming update.
-		this.#runtime.objects.Multiplayer.hostBroadcastMessage(null, data["arrayBuffer"], "u");
+		// Relay this message over the network to connected peers.
+		// TODO: use different transmission modes depending on the message.
+		this.#runtime.objects.Multiplayer.hostBroadcastMessage(null, data);
 	}
-	
 }

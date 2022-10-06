@@ -9,18 +9,10 @@ export class GameModeSinglePlayer {
 	#runtime;					// Construct runtime
 	#gameClient;				// The local player's GameClient
 	#gameServerMessagePort;		// The MessagePort for communicating with the local GameServer
-	#messageMap;				// Map of message type -> handler function
 	
 	constructor(runtime)
 	{
 		this.#runtime = runtime;
-		
-		// Create map of message types that can be received from GameServer
-		// and the function to call to handle each of them.
-		this.#messageMap = new Map([
-			["create-initial-state", e => this.#OnCreateInitialState(e)],
-			["state-update", e => this.#OnStateUpdate(e)]
-		]);
 	}
 	
 	async Init()
@@ -31,64 +23,42 @@ export class GameModeSinglePlayer {
 			type: "module"
 		});
 
-		// Listen for messages received from the worker.
+		// Listen for messages received from the GameServer worker and pass them to GameClient.
 		this.#gameServerMessagePort.onmessage = (e => this.#HandleGameServerMessage(e));
+		
+		// Create the game client which manages the local game state.
+		// Also pass it the SendMessageToGameServer function for messaging.
+		// Note in single player mode, the player is always player 0.
+		this.#gameClient = new GameClient(this.#runtime, (m => this.#SendMessageToGameServer(m)), 0);
 
 		// Post an init message to the worker to tell it to initialize.
 		this.#SendMessageToGameServer({
 			"type": "init"
 		});
-
-		// Create the game client which manages the local game state.
-		// Also pass it the SendMessageToGameServer function for messaging.
-		// Note in single player mode, the player is always player 0.
-		this.#gameClient = new GameClient(this.#runtime, (m => this.#SendMessageToGameServer(m)), 0);
 	}
 	
 	Release()
 	{
-		this.#gameClient.Release();
-		this.#gameClient = null;
-
 		// Terminate the GameServer web worker.
 		this.#SendMessageToGameServer({
 			"type": "release"
 		});
+		
+		this.#gameClient.Release();
+		this.#gameClient = null;
 	}
 	
+	// Messages received from GameServer are directly handled by GameClient.
+	#HandleGameServerMessage(e)
+	{
+		this.#gameClient.HandleGameServerMessage(e.data);
+	}
+	
+	// Messages sent to GameServer are directly posted to it in the worker.
 	#SendMessageToGameServer(msg)
 	{
 		msg["player"] = this.#gameClient.GetPlayer();
 		
 		this.#gameServerMessagePort.postMessage(msg);
-	}
-	
-	#HandleGameServerMessage(e)
-	{
-		// Look up the function to call for this message type in the message map.
-		const data = e.data;
-		const messageType = data["type"];
-		const handlerFunc = this.#messageMap.get(messageType);
-
-		if (handlerFunc)
-		{
-			// Call the message handler function with the provided data.
-			handlerFunc(data);
-		}
-		else
-		{
-			// Messages should always have a handler, so log an error if it's not found.
-			console.error(`No message handler for message from GameServer type '${messageType}'`);
-		}
-	}
-	
-	#OnCreateInitialState(data)
-	{
-		this.#gameClient.CreateInitialState(data);
-	}
-	
-	#OnStateUpdate(data)
-	{
-		this.#gameClient.OnStateUpdate(data["arrayBuffer"]);
 	}
 }

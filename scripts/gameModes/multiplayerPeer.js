@@ -9,7 +9,6 @@ export class GameModeMultiplayerPeer {
 	// Private fields
 	#runtime;					// Construct runtime
 	#gameClient;				// The local player's GameClient
-	#messageMap;				// Map of message type -> handler function
 	#eventHandlers;				// MultiEventHandler
 	
 	#startResolve;				// for a promise that resolves when host sends "start" message
@@ -18,14 +17,6 @@ export class GameModeMultiplayerPeer {
 	constructor(runtime)
 	{
 		this.#runtime = runtime;
-		
-		// Create map of message types that can be received from GameServer
-		// and the function to call to handle each of them.
-		this.#messageMap = new Map([
-			["start", () => this.#OnHostStart()],
-			["create-initial-state", e => this.#OnCreateInitialState(e)],
-			["state-update", e => this.#OnStateUpdate(e)]
-		]);
 		
 		this.#eventHandlers = new MultiEventHandler([
 			// Listen for incoming messages from the host over the network.
@@ -68,32 +59,21 @@ export class GameModeMultiplayerPeer {
 		Multiplayer.sendPeerMessage(Multiplayer.hostId, msg);
 	}
 	
+	// Called when a message is received from the host over the network.
 	#HandleHostMessage(e)
 	{
-		const data = e.message;
+		const msg = e.message;
 		
-		// The host sends game state updates as binary ArrayBuffers.
-		// If the message is an ArrayBuffer, treat it as a state update.
-		if (data instanceof ArrayBuffer)
+		// Handle the "start" message specially, once only. When it's received, resolve the start promise.
+		// This makes sure both the host and peer are loaded and ready to proceed.
+		if (msg["type"] === "start")
 		{
-			this.#OnStateUpdate(data);
+			this.#OnHostStart();
 		}
-		else		// otherwise treat as JSON message
+		else
 		{
-			// Look up the function to call for this message type in the message map.
-			const messageType = data["type"];
-			const handlerFunc = this.#messageMap.get(messageType);
-
-			if (handlerFunc)
-			{
-				// Call the message handler function with the provided data.
-				handlerFunc(data);
-			}
-			else
-			{
-				// Messages should always have a handler, so log an error if it's not found.
-				console.error(`No message handler for message from GameServer type '${messageType}'`);
-			}
+			// All other messages are directed to GameClient.
+			this.#gameClient.HandleGameServerMessage(msg);
 		}
 	}
 	
@@ -108,15 +88,4 @@ export class GameModeMultiplayerPeer {
 			this.#startResolve = null;
 		}
 	}
-	
-	#OnCreateInitialState(data)
-	{
-		this.#gameClient.CreateInitialState(data);
-	}
-	
-	#OnStateUpdate(arrayBuffer)
-	{
-		this.#gameClient.OnStateUpdate(arrayBuffer);
-	}
-	
 }

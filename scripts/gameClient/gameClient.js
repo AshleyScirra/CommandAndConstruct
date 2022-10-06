@@ -1,5 +1,6 @@
 
 import { ClientUnit } from "../clientUnits/clientUnit.js";
+import { GameClientMessageHandler } from "./messageHandler.js";
 import { SelectionManager } from "./selectionManager.js";
 
 const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
@@ -15,6 +16,7 @@ export class GameClient {
 	#sendMessageFunc;				// SendMessageToGameServer function
 	#allUnitsById = new Map();		// map of all units by id -> Unit
 	
+	#messageHandler;				// MessageHandler class
 	#selectionManager;				// SelectionManager class
 	
 	#player = 0;					// Player number this client controls
@@ -24,6 +26,10 @@ export class GameClient {
 		this.#runtime = runtime;
 		this.#sendMessageFunc = sendMessageFunc;
 		this.#player = player;
+		
+		// Create GameClientMessageHandler which handles messages from GameServer
+		// and calls the appropriate methods on this class.
+		this.#messageHandler = new GameClientMessageHandler(this);
 		
 		// Create SelectionManager which handles unit selections.
 		this.#selectionManager = new SelectionManager(this);
@@ -48,6 +54,11 @@ export class GameClient {
 	SendToServer(msg)
 	{
 		this.#sendMessageFunc(msg);
+	}
+	
+	HandleGameServerMessage(msg)
+	{
+		this.#messageHandler.HandleGameServerMessage(msg);
 	}
 	
 	// Called when GameServer sends the initial state of the game.
