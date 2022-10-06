@@ -23,9 +23,9 @@ a:active {
 
 /* For buttons on the main title screen */
 .titlebutton {
-	font-size: 2em;
+	font-size: calc(var(--construct-scale) * 3em);
 }
 
 .backbutton {
-	font-size: 1.5em;
+	font-size: calc(var(--construct-scale) * 2em);
 }
