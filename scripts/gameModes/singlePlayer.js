@@ -6,7 +6,7 @@ import { GameClient } from "../gameClient/gameClient.js";
 export class GameModeSinglePlayer {
 
 	// Private fields
-	#runtime;
+	#runtime;					// Construct runtime
 	#gameClient;				// The local player's GameClient
 	#gameServerMessagePort;		// The MessagePort for communicating with the local GameServer
 	#messageMap;				// Map of message type -> handler function
@@ -39,7 +39,7 @@ export class GameModeSinglePlayer {
 			"type": "init"
 		});
 
-		// Create the game client which manages the other end of the game state.
+		// Create the game client which manages the local game state.
 		// Also pass it the SendMessageToGameServer function for messaging.
 		// Note in single player mode, the player is always player 0.
 		this.#gameClient = new GameClient(this.#runtime, (m => this.#SendMessageToGameServer(m)), 0);
@@ -58,6 +58,8 @@ export class GameModeSinglePlayer {
 	
 	#SendMessageToGameServer(msg)
 	{
+		msg["player"] = this.#gameClient.GetPlayer();
+		
 		this.#gameServerMessagePort.postMessage(msg);
 	}
 	

@@ -82,12 +82,8 @@
 		return this.#allUnitsById.get(id);
 	}
 	
-	MoveUnits(unitIds, x, y)
+	MoveUnits(player, unitIds, x, y)
 	{
-		// TODO: establish which player this message came from.
-		// For now assume it corresponds to player 0.
-		const player = 0;
-		
 		// Look up all units from their ID.
 		let unitsArray = unitIds.map(id => this.GetUnitById(id));
 		

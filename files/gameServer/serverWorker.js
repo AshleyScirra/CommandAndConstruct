@@ -52,8 +52,12 @@ function OnInit()
 }
 
 // Called when the runtime is ending the game.
-function OnRelease()
+function OnRelease(e)
 {
+	// Only player 0 - the single player or multiplayer host - can terminate GameServer.
+	if (e["player"] !== 0)
+		return;
+	
 	// Just terminate this entire worker. We could write code that releases everything in
 	// GameServer, but there isn't really any point if the whole worker is terminated anyway.
 	self.close();
@@ -67,8 +71,9 @@ function SendMessageToRuntime(msg, transferList)
 
 function OnMoveUnits(data)
 {
+	const player = data["player"];
 	const unitIds = data["unitIds"];
 	const position = data["position"];
 	
-	gameServer.MoveUnits(unitIds, position[0], position[1]);
+	gameServer.MoveUnits(player, unitIds, position[0], position[1]);
 }
