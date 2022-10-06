@@ -54,8 +54,9 @@ function OnInit()
 // Called when the runtime is ending the game.
 function OnRelease()
 {
-	gameServer.Release();
-	gameServer = null;
+	// Just terminate this entire worker. We could write code that releases everything in
+	// GameServer, but there isn't really any point if the whole worker is terminated anyway.
+	self.close();
 }
 
 // Helper function for posting a message.

@@ -244,6 +244,36 @@
 					],
 					"subfolders": [],
 					"name": "utils"
+				},
+				{
+					"items": [
+						{
+							"name": "singlePlayer.js",
+							"type": "application/javascript",
+							"sid": 512117930063057,
+							"script-info": {
+								"purpose": "none"
+							}
+						},
+						{
+							"name": "multiplayerHost.js",
+							"type": "application/javascript",
+							"sid": 677323216216942,
+							"script-info": {
+								"purpose": "none"
+							}
+						},
+						{
+							"name": "multiplayerPeer.js",
+							"type": "application/javascript",
+							"sid": 329844038391418,
+							"script-info": {
+								"purpose": "none"
+							}
+						}
+					],
+					"subfolders": [],
+					"name": "gameModes"
 				}
 			]
 		},

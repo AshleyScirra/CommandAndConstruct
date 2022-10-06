@@ -19,10 +19,11 @@ export class GameClient {
 	
 	#player = 0;					// Player number this client controls
 	
-	constructor(runtime, sendMessageFunc)
+	constructor(runtime, sendMessageFunc, player)
 	{
 		this.#runtime = runtime;
 		this.#sendMessageFunc = sendMessageFunc;
+		this.#player = player;
 		
 		// Create SelectionManager which handles unit selections.
 		this.#selectionManager = new SelectionManager(this);

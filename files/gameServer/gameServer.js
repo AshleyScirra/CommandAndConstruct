@@ -42,17 +42,6 @@
 		this.#sendMessageFunc(msg, transferList);
 	}
 	
-	Release()
-	{
-		for (const unit of this.allUnits())
-			unit.Release();
-		
-		this.#allUnitsById.clear();
-		
-		if (this.#tickTimerId !== -1)
-			clearTimeout(this.#tickTimerId);
-	}
-	
 	Init()
 	{
 		// Hard-code six starting units: three for player 0 and three for player 1.

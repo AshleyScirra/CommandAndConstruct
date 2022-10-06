@@ -1,12 +1,12 @@
 
 import Globals from "./globals.js";
-import { GameClient } from "./gameClient/gameClient.js";
 
-// The created GameClient class to represent the game client state.
-let gameClient = null;
+import { GameModeSinglePlayer } from "./gameModes/singlePlayer.js";
+import { GameModeMultiplayerHost } from "./gameModes/multiplayerHost.js";
+import { GameModeMultiplayerPeer } from "./gameModes/multiplayerPeer.js";
 
-// The message port for communicating with the game server.
-let messagePort = null;
+// One of the three game mode classes to manage the game.
+let gameMode = null;
 
 // Called on startup as game starts to load
 runOnStartup(async runtime =>
@@ -23,78 +23,24 @@ async function OnBeforeProjectStart(runtime)
 	gameLayout.addEventListener("beforelayoutend", () => OnEndGameLayout());
 }
 
-// Create classes when starting the game layout.
+// Create a game mode class when the game layout starts.
 async function OnStartGameLayout(runtime)
 {
-	// Start up the game server web worker.
-	messagePort = await runtime.createWorker("gameServer/serverWorker.js", {
-		name: "GameServer",
-		type: "module"
-	});
-
-	// Listen for messages received from the worker.
-	messagePort.onmessage = HandleGameServerMessage;
-
-	// Post an init message to the worker to tell it to initialize.
-	SendMessageToGameServer({
-		"type": "init"
-	});
+	if (Globals.gameMode === "single-player")
+		gameMode = new GameModeSinglePlayer(runtime);
+	else if (Globals.gameMode === "multiplayer-host")
+		gameMode = new GameModeMultiplayerHost(runtime);
+	else if (Globals.gameMode === "multiplayer-peer")
+		gameMode = new GameModeMultiplayerPeer(runtime);
+	else
+		throw new Error(`invalid game mode '${Globals.gameMode}'`);
 	
-	// Create the game client which manages the other end of the game state.
-	// Also pass it the SendMessageToGameServer function for messaging.
-	gameClient = new GameClient(runtime, SendMessageToGameServer);
+	await gameMode.Init();
 }
 
-// Release classes when ending the game layout.
+// Release the game mode class when ending the game layout.
 function OnEndGameLayout()
 {
-	gameClient.Release();
-	gameClient = null;
-	
-	SendMessageToGameServer({
-		"type": "release"
-	});
-}
-
-// Helper function for posting a message.
-function SendMessageToGameServer(msg)
-{
-	messagePort.postMessage(msg);
-}
-
-// Map of message types that can be received from GameServer
-// and the function to call to handle each of them.
-const MESSAGE_MAP = new Map([
-	["create-initial-state", OnCreateInitialState],
-	["state-update", OnStateUpdate]
-]);
-
-// Called when a message is received from the game server.
-function HandleGameServerMessage(e)
-{
-	// Look up the function to call for this message type in the message map.
-	const data = e.data;
-	const messageType = data["type"];
-	const handlerFunc = MESSAGE_MAP.get(messageType);
-	
-	if (handlerFunc)
-	{
-		// Call the message handler function with the provided data.
-		handlerFunc(data);
-	}
-	else
-	{
-		// Messages should always have a handler, so log an error if it's not found.
-		console.error(`[GameServer] No message handler for type '${messageType}'`);
-	}
-}
-
-function OnCreateInitialState(data)
-{
-	gameClient.CreateInitialState(data);
-}
-
-function OnStateUpdate(data)
-{
-	gameClient.OnStateUpdate(data["arrayBuffer"]);
+	gameMode.Release();
+	gameMode = null;
 }

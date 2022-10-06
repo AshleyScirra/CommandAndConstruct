@@ -3,6 +3,7 @@
 export default {
 
 	// The game mode is one of "single-player", "multiplayer-host" or "multiplayer-peer".
+	// It defaults to single-player since it's the quickest way to test when previewing in Construct.
 	gameMode: "single-player"
 	
 };
