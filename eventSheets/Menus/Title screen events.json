@@ -23,6 +23,10 @@
 			"sid": 551028647015909
 		},
 		{
+			"eventType": "comment",
+			"text": "Clicked 'Single player' button: set the game mode and go directly to the game layout."
+		},
+		{
 			"eventType": "block",
 			"conditions": [
 				{
@@ -33,6 +37,10 @@
 			],
 			"actions": [
 				{
+					"type": "script",
+					"script": "Globals.gameMode = \"single-player\";"
+				},
+				{
 					"id": "go-to-layout",
 					"objectClass": "System",
 					"sid": 177846663280451,
@@ -42,6 +50,10 @@
 				}
 			],
 			"sid": 366909020626275
+		},
+		{
+			"eventType": "comment",
+			"text": "Multiplayer host/join: go to a dedicated layout to set that up."
 		},
 		{
 			"eventType": "block",

@@ -63,6 +63,14 @@
 							"parameters": {
 								"server": "\"wss://multiplayer.scirra.com\""
 							}
+						},
+						{
+							"type": "comment",
+							"text": "Set the gameMode global for the JavaScript code to identify the game mode."
+						},
+						{
+							"type": "script",
+							"script": "Globals.gameMode = \"multiplayer-peer\";"
 						}
 					],
 					"sid": 707603691361588
@@ -194,15 +202,40 @@
 								{
 									"id": "set-text",
 									"objectClass": "MultiplayerJoinStatus",
-									"sid": 865318273981878,
+									"sid": 186619956072078,
 									"parameters": {
-										"text": "\"Joined game!\""
+										"text": "\"Joined game, starting...\""
 									}
 								}
 							],
 							"sid": 540242011425963
 						}
 					]
+				},
+				{
+					"eventType": "comment",
+					"text": "Once a peer connects - which will be the host - go to the Game layout to start!"
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-peer-connected",
+							"objectClass": "Multiplayer",
+							"sid": 314471989309375
+						}
+					],
+					"actions": [
+						{
+							"id": "go-to-layout",
+							"objectClass": "System",
+							"sid": 957563746113804,
+							"parameters": {
+								"layout": "Game"
+							}
+						}
+					],
+					"sid": 217432421492410
 				},
 				{
 					"eventType": "comment",

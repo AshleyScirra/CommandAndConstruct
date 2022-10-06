@@ -1,4 +1,5 @@
 
+import Globals from "./globals.js";
 import { GameClient } from "./gameClient/gameClient.js";
 
 // The created GameClient class to represent the game client state.

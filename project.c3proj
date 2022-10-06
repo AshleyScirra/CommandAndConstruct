@@ -168,6 +168,22 @@
 					"script-info": {
 						"purpose": "main"
 					}
+				},
+				{
+					"name": "globals.js",
+					"type": "application/javascript",
+					"sid": 619860845207922,
+					"script-info": {
+						"purpose": "none"
+					}
+				},
+				{
+					"name": "importsForEvents.js",
+					"type": "application/javascript",
+					"sid": 520329324967828,
+					"script-info": {
+						"purpose": "imports-for-events"
+					}
 				}
 			],
 			"subfolders": [
