@@ -29,3 +29,8 @@ a:active {
 .backbutton {
 	font-size: calc(var(--construct-scale) * 2em);
 }
+
+.joinbutton,
+.joincodeinput {
+	font-size: calc(var(--construct-scale) * 4em);
+}

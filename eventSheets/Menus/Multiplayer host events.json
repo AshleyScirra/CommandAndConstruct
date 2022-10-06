@@ -304,6 +304,27 @@
 						}
 					],
 					"sid": 905438353468051
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-peer-connected",
+							"objectClass": "Multiplayer",
+							"sid": 953479568455633
+						}
+					],
+					"actions": [
+						{
+							"id": "set-text",
+							"objectClass": "MultiplayerStatusText",
+							"sid": 204073743431117,
+							"parameters": {
+								"text": "\"Peer connected!\""
+							}
+						}
+					],
+					"sid": 815223335922813
 				}
 			],
 			"sid": 667300112395842

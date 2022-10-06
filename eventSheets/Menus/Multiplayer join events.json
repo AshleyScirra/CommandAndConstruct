@@ -2,25 +2,314 @@
 	"name": "Multiplayer join events",
 	"events": [
 		{
-			"eventType": "block",
-			"conditions": [
+			"eventType": "group",
+			"disabled": false,
+			"title": "Multiplayer joining",
+			"description": "",
+			"isActiveOnStart": true,
+			"children": [
 				{
-					"id": "on-clicked",
-					"objectClass": "BackToMenuButton",
-					"sid": 972938871823586
+					"eventType": "comment",
+					"text": "Once clicking the 'Join' button, connect to the signalling server."
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-clicked",
+							"objectClass": "JoinButton",
+							"sid": 652053729534307
+						},
+						{
+							"id": "compare-text",
+							"objectClass": "JoinCode",
+							"sid": 159245816204369,
+							"parameters": {
+								"text": "\"\"",
+								"case": "case-insensitive"
+							},
+							"isInverted": true
+						}
+					],
+					"actions": [
+						{
+							"id": "set-enabled",
+							"objectClass": "JoinCode",
+							"sid": 773864339640678,
+							"parameters": {
+								"mode": "disabled"
+							}
+						},
+						{
+							"id": "set-enabled",
+							"objectClass": "JoinButton",
+							"sid": 262480993161313,
+							"parameters": {
+								"mode": "disabled"
+							}
+						},
+						{
+							"id": "set-text",
+							"objectClass": "MultiplayerJoinStatus",
+							"sid": 524650691091288,
+							"parameters": {
+								"text": "\"Connecting...\""
+							}
+						},
+						{
+							"id": "connect",
+							"objectClass": "Multiplayer",
+							"sid": 364407338960635,
+							"parameters": {
+								"server": "\"wss://multiplayer.scirra.com\""
+							}
+						}
+					],
+					"sid": 707603691361588
+				},
+				{
+					"eventType": "comment",
+					"text": "Once connected, log in to the server. (TODO: custom alias!)"
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-connected",
+							"objectClass": "Multiplayer",
+							"sid": 285355088956901
+						}
+					],
+					"actions": [
+						{
+							"id": "set-text",
+							"objectClass": "MultiplayerJoinStatus",
+							"sid": 350566977164115,
+							"parameters": {
+								"text": "\"Logging in...\""
+							}
+						},
+						{
+							"id": "log-in",
+							"objectClass": "Multiplayer",
+							"sid": 385054404800566,
+							"parameters": {
+								"alias": "\"anon\""
+							}
+						}
+					],
+					"sid": 518894204596227
+				},
+				{
+					"eventType": "comment",
+					"text": "Once logged in, try to join the room based on the code provided."
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-logged-in",
+							"objectClass": "Multiplayer",
+							"sid": 719129575591513
+						}
+					],
+					"actions": [
+						{
+							"id": "set-text",
+							"objectClass": "MultiplayerJoinStatus",
+							"sid": 432484200620380,
+							"parameters": {
+								"text": "\"Joining...\""
+							}
+						},
+						{
+							"id": "join-room",
+							"objectClass": "Multiplayer",
+							"sid": 142704474586745,
+							"parameters": {
+								"game": "\"CommandAndConstruct\"",
+								"instance": "\"v\" & projectversion",
+								"room": "lowercase(trim(JoinCode.Text))",
+								"max-peers": "0"
+							}
+						}
+					],
+					"sid": 106414136304713
+				},
+				{
+					"eventType": "comment",
+					"text": "Once joined the room, check whether we're the host. If we ended up host, that means we're actually the first in the room, and so nobody was actually hosting that code. In that case show an error and start over."
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-joined-room",
+							"objectClass": "Multiplayer",
+							"sid": 888589438148508
+						}
+					],
+					"actions": [],
+					"sid": 206494033395807,
+					"children": [
+						{
+							"eventType": "block",
+							"conditions": [
+								{
+									"id": "is-host",
+									"objectClass": "Multiplayer",
+									"sid": 778842268174375
+								}
+							],
+							"actions": [
+								{
+									"id": "set-text",
+									"objectClass": "MultiplayerJoinStatus",
+									"sid": 493943167009637,
+									"parameters": {
+										"text": "\"Error: nobody is hosting this code. Check the code is correct!\""
+									}
+								},
+								{
+									"callFunction": "OnJoinError",
+									"sid": 948520383347955
+								}
+							],
+							"sid": 936135360220815
+						},
+						{
+							"eventType": "comment",
+							"text": "Otherwise we joined an existing room. The game is ready to start! (TODO)"
+						},
+						{
+							"eventType": "block",
+							"conditions": [
+								{
+									"id": "else",
+									"objectClass": "System",
+									"sid": 445218612102708
+								}
+							],
+							"actions": [
+								{
+									"id": "set-text",
+									"objectClass": "MultiplayerJoinStatus",
+									"sid": 865318273981878,
+									"parameters": {
+										"text": "\"Joined game!\""
+									}
+								}
+							],
+							"sid": 540242011425963
+						}
+					]
+				},
+				{
+					"eventType": "comment",
+					"text": "If an error happens just display the text \"Error\""
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-error",
+							"objectClass": "Multiplayer",
+							"sid": 547398792260144
+						}
+					],
+					"actions": [
+						{
+							"id": "set-text",
+							"objectClass": "MultiplayerJoinStatus",
+							"sid": 559263214827201,
+							"parameters": {
+								"text": "\"Error\""
+							}
+						},
+						{
+							"callFunction": "OnJoinError",
+							"sid": 874619263937943
+						}
+					],
+					"sid": 391489576300626
+				},
+				{
+					"eventType": "comment",
+					"text": "When an error happens disconnect from the signalling server and re-enable the code inputs."
+				},
+				{
+					"functionName": "OnJoinError",
+					"functionDescription": "Called when something goes wrong joining a game.",
+					"functionCategory": "",
+					"functionReturnType": "none",
+					"functionCopyPicked": false,
+					"functionIsAsync": false,
+					"functionParameters": [],
+					"eventType": "function-block",
+					"conditions": [],
+					"actions": [
+						{
+							"id": "disconnect-signalling",
+							"objectClass": "Multiplayer",
+							"sid": 521188960832304
+						},
+						{
+							"id": "set-enabled",
+							"objectClass": "JoinCode",
+							"sid": 613415496387633,
+							"parameters": {
+								"mode": "enabled"
+							}
+						},
+						{
+							"id": "set-enabled",
+							"objectClass": "JoinButton",
+							"sid": 848581034590867,
+							"parameters": {
+								"mode": "enabled"
+							}
+						}
+					],
+					"sid": 719138830716891
 				}
 			],
-			"actions": [
+			"sid": 935232233539365
+		},
+		{
+			"eventType": "group",
+			"disabled": false,
+			"title": "Other 2",
+			"description": "",
+			"isActiveOnStart": true,
+			"children": [
 				{
-					"id": "go-to-layout",
-					"objectClass": "System",
-					"sid": 336568023449293,
-					"parameters": {
-						"layout": "Title screen"
-					}
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-clicked",
+							"objectClass": "BackToMenuButton",
+							"sid": 674506177475371
+						}
+					],
+					"actions": [
+						{
+							"id": "disconnect-signalling",
+							"objectClass": "Multiplayer",
+							"sid": 191655957905450
+						},
+						{
+							"id": "go-to-layout",
+							"objectClass": "System",
+							"sid": 458191010269436,
+							"parameters": {
+								"layout": "Title screen"
+							}
+						}
+					],
+					"sid": 575390977208594
 				}
 			],
-			"sid": 922044815394703
+			"sid": 214033103507814
 		}
 	],
 	"sid": 289355480165679

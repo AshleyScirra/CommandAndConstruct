@@ -24,14 +24,6 @@
 		},
 		{
 			"type": "plugin",
-			"id": "Text",
-			"name": "Text",
-			"author": "Scirra",
-			"version": "r313",
-			"bundled": false
-		},
-		{
-			"type": "plugin",
 			"id": "Button",
 			"name": "Button",
 			"author": "Scirra",
@@ -40,8 +32,24 @@
 		},
 		{
 			"type": "plugin",
+			"id": "Text",
+			"name": "Text",
+			"author": "Scirra",
+			"version": "r313",
+			"bundled": false
+		},
+		{
+			"type": "plugin",
 			"id": "HTMLElement",
 			"name": "HTML Element",
+			"author": "Scirra",
+			"version": "r313",
+			"bundled": false
+		},
+		{
+			"type": "plugin",
+			"id": "TextBox",
+			"name": "Text input",
 			"author": "Scirra",
 			"version": "r313",
 			"bundled": false
@@ -57,9 +65,7 @@
 	],
 	"uniqueId": "nrrpzelemnm",
 	"objectTypes": {
-		"items": [
-			"MultiplayerHostInstructions"
-		],
+		"items": [],
 		"subfolders": [
 			{
 				"items": [
@@ -71,16 +77,33 @@
 			},
 			{
 				"items": [
-					"TitleText",
-					"TitleSinglePlayerButton",
-					"TitleMultiplayerHostButton",
 					"BackToMenuButton",
-					"TitleMultiplayerJoinButton",
-					"TitleWIPHTML",
-					"TitleVersion",
-					"MultiplayerStatusText"
+					"TitleText"
 				],
-				"subfolders": [],
+				"subfolders": [
+					{
+						"items": [
+							"TitleMultiplayerHostButton",
+							"TitleMultiplayerJoinButton",
+							"TitleSinglePlayerButton",
+							"TitleVersion",
+							"TitleWIPHTML"
+						],
+						"subfolders": [],
+						"name": "Title"
+					},
+					{
+						"items": [
+							"JoinButton",
+							"JoinCode",
+							"MultiplayerHostInstructions",
+							"MultiplayerJoinStatus",
+							"MultiplayerStatusText"
+						],
+						"subfolders": [],
+						"name": "Host & Join"
+					}
+				],
 				"name": "Menus"
 			},
 			{
