@@ -2,6 +2,16 @@
 	"name": "Title screen events",
 	"events": [
 		{
+			"eventType": "variable",
+			"name": "AutoJoinCode",
+			"type": "string",
+			"initialValue": "",
+			"comment": "Tries to join this code on startup if set.",
+			"isStatic": false,
+			"isConstant": false,
+			"sid": 244990833562022
+		},
+		{
 			"eventType": "block",
 			"conditions": [
 				{
@@ -20,7 +30,56 @@
 					}
 				}
 			],
-			"sid": 551028647015909
+			"sid": 551028647015909,
+			"children": [
+				{
+					"eventType": "comment",
+					"text": "On startup if there is a hash specified in the URL, e.g. #abcde, try to automatically join that multiplayer game code. Note the Browser.Hash expression includes the # character so for a five character code the hash string length will be 6. Also clear the hash so this is only attempted once."
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "compare-two-values",
+							"objectClass": "System",
+							"sid": 460438534851800,
+							"parameters": {
+								"first-value": "len(Browser.Hash)",
+								"comparison": 0,
+								"second-value": "6"
+							}
+						}
+					],
+					"actions": [
+						{
+							"id": "set-eventvar-value",
+							"objectClass": "System",
+							"sid": 966580108190078,
+							"parameters": {
+								"variable": "AutoJoinCode",
+								"value": "mid(Browser.Hash, 1, 5)"
+							}
+						},
+						{
+							"id": "set-hash",
+							"objectClass": "Browser",
+							"sid": 631487320690261,
+							"parameters": {
+								"hash": "\"\""
+							}
+						},
+						{
+							"id": "go-to-layout",
+							"objectClass": "System",
+							"sid": 599426283875549,
+							"parameters": {
+								"layout": "Multiplayer join"
+							}
+						}
+					],
+					"sid": 791264362745291
+				}
+			]
 		},
 		{
 			"eventType": "comment",

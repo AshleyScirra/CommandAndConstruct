@@ -61,11 +61,30 @@
 			"author": "Scirra",
 			"version": "r313",
 			"bundled": false
+		},
+		{
+			"type": "plugin",
+			"id": "Keyboard",
+			"name": "Keyboard",
+			"author": "Scirra",
+			"version": "r313",
+			"bundled": false
+		},
+		{
+			"type": "plugin",
+			"id": "Browser",
+			"name": "Browser",
+			"author": "Scirra",
+			"version": "r313",
+			"bundled": false
 		}
 	],
 	"uniqueId": "nrrpzelemnm",
 	"objectTypes": {
-		"items": [],
+		"items": [
+			"Keyboard",
+			"Browser"
+		],
 		"subfolders": [
 			{
 				"items": [

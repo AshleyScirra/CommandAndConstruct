@@ -10,7 +10,55 @@
 			"children": [
 				{
 					"eventType": "comment",
-					"text": "Once clicking the 'Join' button, connect to the signalling server."
+					"text": "If the title screen set a code to automatically join from the URL hash, try to join it immediately."
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-start-of-layout",
+							"objectClass": "System",
+							"sid": 940468310624029
+						},
+						{
+							"id": "compare-eventvar",
+							"objectClass": "System",
+							"sid": 229050377989999,
+							"parameters": {
+								"variable": "AutoJoinCode",
+								"comparison": 1,
+								"value": "\"\""
+							}
+						}
+					],
+					"actions": [
+						{
+							"id": "set-text",
+							"objectClass": "JoinCode",
+							"sid": 168380018754732,
+							"parameters": {
+								"text": "AutoJoinCode"
+							}
+						},
+						{
+							"id": "set-eventvar-value",
+							"objectClass": "System",
+							"sid": 279930999333368,
+							"parameters": {
+								"variable": "AutoJoinCode",
+								"value": "\"\""
+							}
+						},
+						{
+							"callFunction": "StartJoinAttempt",
+							"sid": 597958186773960
+						}
+					],
+					"sid": 997093748821247
+				},
+				{
+					"eventType": "comment",
+					"text": "Once clicking the 'Join' button or pressing enter, connect to the signalling server."
 				},
 				{
 					"eventType": "block",
@@ -21,21 +69,57 @@
 							"sid": 652053729534307
 						},
 						{
-							"id": "compare-text",
-							"objectClass": "JoinCode",
-							"sid": 159245816204369,
+							"id": "on-key-pressed",
+							"objectClass": "Keyboard",
+							"sid": 839780224947335,
 							"parameters": {
-								"text": "\"\"",
-								"case": "case-insensitive"
-							},
-							"isInverted": true
+								"key": 13
+							}
 						}
 					],
+					"actions": [],
+					"sid": 707603691361588,
+					"children": [
+						{
+							"eventType": "block",
+							"conditions": [
+								{
+									"id": "compare-text",
+									"objectClass": "JoinCode",
+									"sid": 862253324650457,
+									"parameters": {
+										"text": "\"\"",
+										"case": "case-insensitive"
+									},
+									"isInverted": true
+								}
+							],
+							"actions": [
+								{
+									"callFunction": "StartJoinAttempt",
+									"sid": 263171793598476
+								}
+							],
+							"sid": 297895750120360
+						}
+					],
+					"isOrBlock": true
+				},
+				{
+					"functionName": "StartJoinAttempt",
+					"functionDescription": "",
+					"functionCategory": "",
+					"functionReturnType": "none",
+					"functionCopyPicked": false,
+					"functionIsAsync": false,
+					"functionParameters": [],
+					"eventType": "function-block",
+					"conditions": [],
 					"actions": [
 						{
 							"id": "set-enabled",
 							"objectClass": "JoinCode",
-							"sid": 773864339640678,
+							"sid": 329857988200661,
 							"parameters": {
 								"mode": "disabled"
 							}
@@ -43,7 +127,7 @@
 						{
 							"id": "set-enabled",
 							"objectClass": "JoinButton",
-							"sid": 262480993161313,
+							"sid": 682395872297445,
 							"parameters": {
 								"mode": "disabled"
 							}
@@ -51,7 +135,7 @@
 						{
 							"id": "set-text",
 							"objectClass": "MultiplayerJoinStatus",
-							"sid": 524650691091288,
+							"sid": 188114947411112,
 							"parameters": {
 								"text": "\"Connecting...\""
 							}
@@ -59,7 +143,7 @@
 						{
 							"id": "connect",
 							"objectClass": "Multiplayer",
-							"sid": 364407338960635,
+							"sid": 841246925805929,
 							"parameters": {
 								"server": "\"wss://multiplayer.scirra.com\""
 							}
@@ -73,7 +157,7 @@
 							"script": "Globals.gameMode = \"multiplayer-peer\";"
 						}
 					],
-					"sid": 707603691361588
+					"sid": 411700287025084
 				},
 				{
 					"eventType": "comment",
