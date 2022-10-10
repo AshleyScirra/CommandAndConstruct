@@ -1,6 +1,6 @@
 # Command & Construct
 
-This is an open-development real-time strategy (RTS) game project coded in JavaScript using [Construct](https://www.construct.net/).
+This is an open-development multiplayer real-time strategy (RTS) game project coded in JavaScript using [Construct](https://www.construct.net/).
 
 Try it in your browser right now at [CommandAndConstruct.com](https://www.commandandconstruct.com)!
 
