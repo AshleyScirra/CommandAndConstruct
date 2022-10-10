@@ -169,7 +169,7 @@
 						"text": "",
 						"placeholder": "",
 						"tooltip": "",
-						"initially-visible": true,
+						"initially-visible": false,
 						"enabled": true,
 						"read-only": false,
 						"spell-check": false,

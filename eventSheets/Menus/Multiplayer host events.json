@@ -257,6 +257,14 @@
 									}
 								},
 								{
+									"id": "set-visible",
+									"objectClass": "HostJoinLink",
+									"sid": 469950649442188,
+									"parameters": {
+										"visibility": "visible"
+									}
+								},
+								{
 									"type": "comment",
 									"text": "Set the gameMode global for the JavaScript code to identify the game mode."
 								},
