@@ -311,6 +311,11 @@
 					],
 					"actions": [
 						{
+							"id": "disconnect-signalling",
+							"objectClass": "Multiplayer",
+							"sid": 393479209443304
+						},
+						{
 							"id": "go-to-layout",
 							"objectClass": "System",
 							"sid": 957563746113804,
