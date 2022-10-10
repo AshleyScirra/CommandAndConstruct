@@ -64,16 +64,16 @@
 		},
 		{
 			"type": "plugin",
-			"id": "Keyboard",
-			"name": "Keyboard",
+			"id": "Browser",
+			"name": "Browser",
 			"author": "Scirra",
 			"version": "r313",
 			"bundled": false
 		},
 		{
 			"type": "plugin",
-			"id": "Browser",
-			"name": "Browser",
+			"id": "Keyboard",
+			"name": "Keyboard",
 			"author": "Scirra",
 			"version": "r313",
 			"bundled": false
@@ -81,10 +81,7 @@
 	],
 	"uniqueId": "nrrpzelemnm",
 	"objectTypes": {
-		"items": [
-			"Keyboard",
-			"Browser"
-		],
+		"items": [],
 		"subfolders": [
 			{
 				"items": [
@@ -117,7 +114,8 @@
 							"JoinCode",
 							"MultiplayerHostInstructions",
 							"MultiplayerJoinStatus",
-							"MultiplayerStatusText"
+							"MultiplayerStatusText",
+							"HostJoinLink"
 						],
 						"subfolders": [],
 						"name": "Host & Join"
@@ -127,7 +125,9 @@
 			},
 			{
 				"items": [
-					"Multiplayer"
+					"Multiplayer",
+					"Browser",
+					"Keyboard"
 				],
 				"subfolders": [],
 				"name": "Global"
@@ -504,7 +504,7 @@
 	},
 	"properties": {
 		"description": "",
-		"version": "0.0.1.0",
+		"version": "0.0.1.1",
 		"author": "Ashley Gullen",
 		"authorEmail": "",
 		"authorWebsite": "",

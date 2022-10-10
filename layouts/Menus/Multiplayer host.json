@@ -124,7 +124,7 @@
 				{
 					"type": "MultiplayerHostInstructions",
 					"properties": {
-						"text": "Get another player to load up this game, choose [i]Join multiplayer[/i] on the title screen, and enter the code above.",
+						"text": "Send the link below to someone else, or get another player to load up this game, choose [i]Join multiplayer[/i] on the title screen, and enter the code above.",
 						"enable-bbcode": true,
 						"font": "Arial",
 						"size": 48,
@@ -147,10 +147,10 @@
 					"instanceVariables": {},
 					"behaviors": {},
 					"world": {
-						"x": 227.5,
+						"x": 209.5,
 						"y": 413,
-						"width": 1465.35,
-						"height": 426.95833333333337,
+						"width": 1501.35,
+						"height": 316.95833333333337,
 						"originX": 0,
 						"originY": 0,
 						"color": [
@@ -161,6 +161,39 @@
 						],
 						"angle": 0,
 						"zElevation": 0
+					}
+				},
+				{
+					"type": "HostJoinLink",
+					"properties": {
+						"text": "",
+						"placeholder": "",
+						"tooltip": "",
+						"initially-visible": true,
+						"enabled": true,
+						"read-only": false,
+						"spell-check": false,
+						"type": "text",
+						"auto-font-size": false,
+						"id": "",
+						"class": "hostsharelink"
+					},
+					"uid": 24,
+					"instanceVariables": {},
+					"behaviors": {},
+					"world": {
+						"x": 202,
+						"y": 693,
+						"width": 1516,
+						"height": 116,
+						"originX": 0,
+						"originY": 0,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						]
 					}
 				}
 			],

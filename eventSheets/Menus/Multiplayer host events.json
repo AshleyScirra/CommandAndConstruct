@@ -249,6 +249,14 @@
 									}
 								},
 								{
+									"id": "set-text",
+									"objectClass": "HostJoinLink",
+									"sid": 112408181554234,
+									"parameters": {
+										"text": "\"https://www.commandandconstruct.com/#\" & roomName"
+									}
+								},
+								{
 									"type": "comment",
 									"text": "Set the gameMode global for the JavaScript code to identify the game mode."
 								},

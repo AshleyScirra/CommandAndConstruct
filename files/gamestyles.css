@@ -31,6 +31,7 @@ a:active {
 }
 
 .joinbutton,
-.joincodeinput {
+.joincodeinput,
+.hostsharelink {
 	font-size: calc(var(--construct-scale) * 4em);
 }

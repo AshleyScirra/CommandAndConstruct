@@ -155,6 +155,49 @@
 				}
 			],
 			"sid": 985098261425246
+		},
+		{
+			"eventType": "comment",
+			"text": "Automatically reload if an update becomes ready on the title screen, to make sure the user is always on the latest version if possible."
+		},
+		{
+			"eventType": "block",
+			"conditions": [
+				{
+					"id": "on-update-found-sw",
+					"objectClass": "Browser",
+					"sid": 874284035725678
+				}
+			],
+			"actions": [
+				{
+					"id": "set-text",
+					"objectClass": "TitleVersion",
+					"sid": 458635553825037,
+					"parameters": {
+						"text": "\"Updating...\""
+					}
+				}
+			],
+			"sid": 502007737793879
+		},
+		{
+			"eventType": "block",
+			"conditions": [
+				{
+					"id": "on-update-ready-sw",
+					"objectClass": "Browser",
+					"sid": 698908846600218
+				}
+			],
+			"actions": [
+				{
+					"id": "reload",
+					"objectClass": "Browser",
+					"sid": 704999612198445
+				}
+			],
+			"sid": 554682497990135
 		}
 	],
 	"sid": 202028505943856
