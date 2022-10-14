@@ -30,6 +30,11 @@ export class MovableUnitPlatform extends UnitPlatform {
 		super(unit);
 		
 		this.#movable = new MovableObject(unit.GetGameServer(), x, y);
+		
+		// Temporary hack: initialise player 1's units facing left,
+		// otherwise they face away from player 0's units.
+		if (this.GetUnit().GetPlayer() === 1)
+			this.#movable.SetAngle(Math.PI);
 	}
 	
 	GetPosition()

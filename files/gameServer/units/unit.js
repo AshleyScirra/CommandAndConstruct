@@ -69,5 +69,6 @@ export class Unit {
 	Tick(dt)
 	{
 		this.#platform.Tick(dt);
+		this.#turret.Tick(dt);
 	}
 }
