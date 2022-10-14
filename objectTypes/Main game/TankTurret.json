@@ -1,7 +1,7 @@
 {
-	"name": "TankPlatform",
+	"name": "TankTurret",
 	"plugin-id": "Sprite",
-	"sid": 481054482726365,
+	"sid": 594957662906268,
 	"isGlobal": false,
 	"instanceVariables": [],
 	"behaviorTypes": [],
@@ -11,14 +11,14 @@
 			{
 				"frames": [
 					{
-						"width": 241,
-						"height": 129,
-						"originX": 0.4979253112033195,
-						"originY": 0.49612403100775193,
+						"width": 190,
+						"height": 95,
+						"originX": 0.2631578947368421,
+						"originY": 0.5157894736842106,
 						"originalSource": "",
 						"exportFormat": "lossless",
 						"exportQuality": 0.8,
-						"imageSpriteId": 3247861,
+						"imageSpriteId": 6749816,
 						"collisionPoly": {
 							"points": [
 								0,
@@ -34,15 +34,15 @@
 						"useCollisionPoly": true,
 						"imagePoints": [
 							{
-								"name": "Turret",
-								"x": 0.4315352697095436,
-								"y": 0.49612403100775193
+								"name": "Shoot",
+								"x": 0.9736842105263158,
+								"y": 0.5157894736842106
 							}
 						],
 						"duration": 1
 					}
 				],
-				"sid": 914009311454783,
+				"sid": 454660776469241,
 				"name": "Animation 1",
 				"isLooping": false,
 				"isPingPong": false,

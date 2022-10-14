@@ -1,5 +1,6 @@
 
 import { MovableUnitPlatform } from "./movableUnitPlatform.js";
+import { UnitTurret } from "./unitTurret.js";
 
 let nextId = 0;		// the ID to assign the next created unit
 
@@ -13,6 +14,7 @@ export class Unit {
 	#player = 0;		// Which player this unit belongs to
 	
 	#platform;			// unit platform
+	#turret;			// unit turret
 	
 	constructor(gameServer, player, x, y)
 	{
@@ -21,6 +23,9 @@ export class Unit {
 		
 		// Create unit platform, hard-coded as a movable one for now (TODO: different types)
 		this.#platform = new MovableUnitPlatform(this, x, y);
+		
+		// Create unit turret
+		this.#turret = new UnitTurret(this);
 	}
 	
 	// Get data for the "create-initial-state" message
@@ -54,6 +59,11 @@ export class Unit {
 	GetPlatform()
 	{
 		return this.#platform;
+	}
+	
+	GetTurret()
+	{
+		return this.#turret;
 	}
 	
 	Tick(dt)

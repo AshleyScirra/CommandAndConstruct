@@ -215,8 +215,12 @@
 			dataView.setFloat32(pos, y);
 			pos += 4;
 			
-			// Write the angle as a float
+			// Write the platform angle as a float
 			dataView.setFloat32(pos, platform.GetAngle());
+			pos += 4;
+			
+			// Write the turret offset angle as a float.
+			dataView.setFloat32(pos, unit.GetTurret().GetAngle());
 			pos += 4;
 		}
 		

@@ -1,5 +1,6 @@
 
 import { ClientPlatform } from "./clientPlatform.js";
+import { ClientTurret } from "./clientTurret.js";
 
 // The ClientUnit class represents a unit in GameClient.
 // Its main job is to synchronise state to match what is happening on GameServer,
@@ -11,6 +12,7 @@ export class ClientUnit {
 	#id = -1;					// unique ID of this unit
 	#player = 0;				// player this unit belongs to
 	#platform;					// ClientPlatform for this unit's platform
+	#turret;					// ClientTurret for this unit's turret
 	#selectionBoxInst;			// Construct instance representing selection box
 	
 	constructor(gameClient, id, player)
@@ -30,6 +32,7 @@ export class ClientUnit {
 		
 		const unit = new ClientUnit(gameClient, id, player);
 		unit.#platform = new ClientPlatform(unit, x, y);
+		unit.#turret = new ClientTurret(unit);
 		return unit;
 	}
 	
@@ -48,19 +51,28 @@ export class ClientUnit {
 		return this.#player;
 	}
 	
-	// Called to update the client unit state with data received from GameServer.
-	UpdateState(x, y, angle)
+	GetPlatform()
 	{
-		// Update the unit position and angle.
+		return this.#platform;
+	}
+	
+	// Called to update the client unit state with data received from GameServer.
+	UpdateState(x, y, platformAngle, turretOffsetAngle)
+	{
+		// Update the platform position and angle.
 		this.#platform.SetPosition(x, y);
-		this.#platform.SetAngle(angle);
+		this.#platform.SetAngle(platformAngle);
+		
+		// Update the turret to follow the platform.
+		this.#turret.SetOffsetAngle(turretOffsetAngle);
+		this.#turret.Update();
 		
 		// If this unit has a selection box, update that too.
 		if (this.#selectionBoxInst)
 		{
 			this.#selectionBoxInst.x = x;
 			this.#selectionBoxInst.y = y;
-			this.#selectionBoxInst.angle = angle;
+			this.#selectionBoxInst.angle = platformAngle;
 		}
 	}
 	

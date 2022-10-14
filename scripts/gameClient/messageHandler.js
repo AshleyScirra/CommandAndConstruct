@@ -112,15 +112,21 @@ export class GameClientMessageHandler {
 				const y = dataView.getFloat32(pos);
 				pos += 4;
 				
-				// Read the angle
-				const angle = dataView.getFloat32(pos);
+				// Read the platform angle
+				const platformAngle = dataView.getFloat32(pos);
+				pos += 4;
+				
+				// Read the turret offset angle
+				const turretOffsetAngle = dataView.getFloat32(pos);
 				pos += 4;
 				
 				// Now all the data has been read, look up the unit by its ID,
 				// and if found update it with these details.
 				const unit = this.#gameClient.GetUnitById(unitId);
 				if (unit)
-					unit.UpdateState(x, y, angle);
+				{
+					unit.UpdateState(x, y, platformAngle, turretOffsetAngle);
+				}
 			}
 		}
 		catch (err)

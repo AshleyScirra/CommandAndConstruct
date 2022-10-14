@@ -86,7 +86,8 @@
 			{
 				"items": [
 					"TankPlatform",
-					"UnitSelectionBox"
+					"UnitSelectionBox",
+					"TankTurret"
 				],
 				"subfolders": [],
 				"name": "Main game"
@@ -250,6 +251,14 @@
 							"name": "clientPlatform.js",
 							"type": "application/javascript",
 							"sid": 164988207903823,
+							"script-info": {
+								"purpose": "none"
+							}
+						},
+						{
+							"name": "clientTurret.js",
+							"type": "application/javascript",
+							"sid": 997773362382703,
 							"script-info": {
 								"purpose": "none"
 							}
@@ -435,6 +444,14 @@
 									"name": "movableUnitPlatform.js",
 									"type": "application/javascript",
 									"sid": 281161574381978,
+									"file-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "unitTurret.js",
+									"type": "application/javascript",
+									"sid": 967605103573632,
 									"file-info": {
 										"purpose": "none"
 									}
