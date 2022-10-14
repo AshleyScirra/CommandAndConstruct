@@ -37,9 +37,14 @@
 	}
 	
 	// Provide a GameServer method to send a message to the runtime for convenience.
-	SendToRuntime(msg, transferList)
+	// This also attaches a transmission mode (reliable ordered, reliable unordered,
+	// or unreliable) for the host to retransmit as, defaulting to reliable ordered.
+	SendToRuntime(msg, transmissionMode, transferList)
 	{
-		this.#sendMessageFunc(msg, transferList);
+		this.#sendMessageFunc({
+			"message": msg,
+			"transmissionMode": transmissionMode || "o"
+		}, transferList);
 	}
 	
 	Init()
@@ -212,6 +217,7 @@
 		
 		// Send the binary data with the game state update to the runtime.
 		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
-		this.SendToRuntime(arrayBuffer, [arrayBuffer])
+		// This also uses unreliable transmission as this is essentially streaming data.
+		this.SendToRuntime(arrayBuffer, "u", [arrayBuffer])
 	}
  }

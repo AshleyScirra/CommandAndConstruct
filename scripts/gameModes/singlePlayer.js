@@ -51,7 +51,10 @@ export class GameModeSinglePlayer {
 	// Messages received from GameServer are directly handled by GameClient.
 	#HandleGameServerMessage(e)
 	{
-		this.#gameClient.HandleGameServerMessage(e.data);
+		const data = e.data;
+		const message = data["message"];
+		
+		this.#gameClient.HandleGameServerMessage(message);
 	}
 	
 	// Messages sent to GameServer are directly posted to it in the worker.

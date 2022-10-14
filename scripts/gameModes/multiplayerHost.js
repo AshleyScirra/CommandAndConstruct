@@ -117,12 +117,14 @@ export class GameModeMultiplayerHost {
 	#HandleGameServerMessage(e)
 	{
 		const data = e.data;
+		const message = data["message"];
+		const transmissionMode = data["transmissionMode"];
 		
 		// Handle this message with the local game client.
-		this.#gameClient.HandleGameServerMessage(data);
+		this.#gameClient.HandleGameServerMessage(message);
 		
 		// Relay this message over the network to connected peers.
-		// TODO: use different transmission modes depending on the message.
-		this.#runtime.objects.Multiplayer.hostBroadcastMessage(null, data);
+		// Use the transmission mode specified by GameServer.
+		this.#runtime.objects.Multiplayer.hostBroadcastMessage(null, message, transmissionMode);
 	}
 }
