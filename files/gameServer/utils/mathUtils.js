@@ -20,3 +20,52 @@ export function DistanceSquared(x1, y1, x2, y2)
 	const dy = y2 - y1;
 	return dx * dx + dy * dy;
 };
+
+// Convert degrees to radians.
+export function ToRadians(degrees)
+{
+	return degrees * Math.PI / 180;
+};
+
+// Calculate the difference between two angles in radians.
+export function AngleDifference(a1, a2)
+{
+	if (a1 === a2)
+		return 0;		// angles identical
+
+	const s1 = Math.sin(a1);
+	const c1 = Math.cos(a1);
+	const s2 = Math.sin(a2);
+	const c2 = Math.cos(a2);
+	const n = s1 * s2 + c1 * c2;
+	
+	if (n >= 1)			// prevent NaN results
+		return 0;
+	if (n <= -1)
+		return Math.PI;
+		
+	return Math.acos(n);
+}
+
+// Rotate angle 'start' towards angle 'end' by amount 'step'.
+export function AngleRotate(start, end, step)
+{
+	const ss = Math.sin(start);
+	const cs = Math.cos(start);
+	const se = Math.sin(end);
+	const ce = Math.cos(end);
+	
+	// Difference to end is greater than step
+	if (Math.acos(ss * se + cs * ce) > step)
+	{
+		if (cs * se - ss * ce > 0)
+			return start + step;		// step clockwise
+		else
+			return start - step;		// step anticlockwise
+	}
+	else
+	{
+		// Difference to end is less than step: return end angle
+		return end;
+	}
+};

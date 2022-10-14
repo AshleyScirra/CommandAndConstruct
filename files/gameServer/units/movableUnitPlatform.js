@@ -19,6 +19,12 @@ export class MovableUnitPlatform extends UnitPlatform {
 	#targetX = 0;		// When moving, the position to move to
 	#targetY = 0;
 	
+	// Movement speed in units per second
+	#moveSpeed = 200;
+	
+	// Rotation speed in radians per second
+	#rotateSpeed = MathUtils.ToRadians(90);
+	
 	constructor(unit, x, y)
 	{
 		super(unit);
@@ -42,13 +48,6 @@ export class MovableUnitPlatform extends UnitPlatform {
 		this.#isMoving = true;
 		this.#targetX = x;
 		this.#targetY = y;
-		
-		// Set the movable angle and speed to go directly to the target.
-		// TODO: pathfinding, better movement, per-unit speeds etc.
-		const [currentX, currentY] = this.GetPosition();
-		const angle = MathUtils.AngleTo(currentX, currentY, this.#targetX, this.#targetY);
-		this.#movable.SetAngle(angle)
-		this.#movable.SetSpeed(200);	// hard-coded speed for now
 	}
 	
 	Tick(dt)
@@ -61,27 +60,50 @@ export class MovableUnitPlatform extends UnitPlatform {
 	
 	#TickMovement(dt)
 	{
-		// Calculate the distance to move this tick.
-		const moveDist = this.#movable.GetSpeed() * dt;
+		// Movement currently happens in two phases:
+		// 1) rotate to point towards the target
+		// 2) start moving once pointing directly towards the target
+		// TODO: pathfinding, better movement, per-unit speeds etc.
+		const [currentX, currentY] = this.GetPosition();
+		const targetAngle = MathUtils.AngleTo(currentX, currentY, this.#targetX, this.#targetY);
+		const currentAngle = this.#movable.GetAngle();
 		
-		// Check if we've arrived, which is when the target position is nearer than the
-		// distance to move. Note this compares squared distances so there doesn't have
-		// to be an expensive square root calculation.
-		const [x, y] = this.GetPosition();
-		
-		if (moveDist * moveDist >= MathUtils.DistanceSquared(x, y, this.#targetX, this.#targetY))
+		// Current angle points at angle to target: start moving.
+		// Note this counts being within 0.01 degrees as pointing at the target. This helps avoid
+		// floating point rounding errors failing to match closely, especially as the unit moves.
+		if (MathUtils.AngleDifference(targetAngle, currentAngle) < MathUtils.ToRadians(0.01))
 		{
-			// Arrived at target position
-			this.#movable.SetPosition(this.#targetX, this.#targetY);
-			this.#isMoving = false;
+			// Set the movement speed. (TODO: acceleration)
+			this.#movable.SetSpeed(this.#moveSpeed);
+			
+			// Also update the angle directly to the target to correct any small rounding errors.
+			// This will only perform a small correction so is unlikely to be visible to players.
+			this.#movable.SetAngle(targetAngle);
+			
+			// Calculate the distance to move this tick.
+			const moveDist = this.#movable.GetSpeed() * dt;
+			
+			// Check if we've arrived, which is when the target position is nearer than the
+			// distance to move. Note this compares squared distances so there doesn't have
+			// to be an expensive square root calculation.
+			if (moveDist * moveDist >= MathUtils.DistanceSquared(currentX, currentY, this.#targetX, this.#targetY))
+			{
+				// Arrived at target position
+				this.#movable.SetPosition(this.#targetX, this.#targetY);
+				this.#isMoving = false;
+			}
+			else
+			{
+				// Not yet arrived: advance by the move distance on the current angle.
+				const dx = Math.cos(targetAngle) * moveDist;
+				const dy = Math.sin(targetAngle) * moveDist;
+				this.#movable.SetPosition(currentX + dx, currentY + dy);
+			}
 		}
 		else
 		{
-			// Not yet arrived: advance by the move distance on the current angle.
-			const angle = this.#movable.GetAngle();
-			const dx = Math.cos(angle) * moveDist;
-			const dy = Math.sin(angle) * moveDist;
-			this.#movable.SetPosition(x + dx, y + dy);
+			// Unit is not pointing directly at its target: rotate towards the target.
+			this.#movable.SetAngle(MathUtils.AngleRotate(currentAngle, targetAngle, this.#rotateSpeed * dt));
 		}
 	}
 }
