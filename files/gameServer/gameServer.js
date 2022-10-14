@@ -5,7 +5,7 @@
  // and the equivalent value in milliseconds between ticks.
  const SERVER_TICK_RATE = 30;
  const SERVER_TICK_MS_INTERVAL = (1000 / SERVER_TICK_RATE);
- 
+
  // "Magic number" that binary messages start with to verify it's an expected message.
  // This avoids things like fragmented packets trying to be read as a whole packet.
  const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
@@ -26,6 +26,8 @@
 	// A 256kb binary data buffer to use for sending binary updates to clients
 	#dataArrayBuffer = new ArrayBuffer(262144);
 	#dataView = new DataView(this.#dataArrayBuffer);
+	
+	#messageSequenceNumber = 0;		// an increasing number for every binary message
 	
  	constructor(sendMessageFunc)
 	{
@@ -184,6 +186,13 @@
 		
 		// Write the magic number to identify this kind of message.
 		dataView.setUint32(pos, MAGIC_NUMBER);
+		pos += 4;
+		
+		// Write an incrementing sequence number with every binary message.
+		// Since these updates use unreliable transmission, messages could arrive
+		// out-of-order. The client can use the sequence number to discard any
+		// delayed messages that arrive after a newer message.
+		dataView.setUint32(pos, this.#messageSequenceNumber++);
 		pos += 4;
 		
 		// Write the total number of units.
