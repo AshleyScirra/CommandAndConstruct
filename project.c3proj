@@ -87,7 +87,8 @@
 				"items": [
 					"TankPlatform",
 					"UnitSelectionBox",
-					"TankTurret"
+					"TankTurret",
+					"TankShell"
 				],
 				"subfolders": [],
 				"name": "Main game"
@@ -259,6 +260,14 @@
 							"name": "clientTurret.js",
 							"type": "application/javascript",
 							"sid": 997773362382703,
+							"script-info": {
+								"purpose": "none"
+							}
+						},
+						{
+							"name": "clientProjectile.js",
+							"type": "application/javascript",
+							"sid": 423287856916430,
 							"script-info": {
 								"purpose": "none"
 							}
@@ -463,6 +472,14 @@
 									"file-info": {
 										"purpose": "none"
 									}
+								},
+								{
+									"name": "projectile.js",
+									"type": "application/javascript",
+									"sid": 229562340032062,
+									"file-info": {
+										"purpose": "none"
+									}
 								}
 							],
 							"subfolders": [],
@@ -490,6 +507,14 @@
 									"name": "movableObject.js",
 									"type": "application/javascript",
 									"sid": 278147279429960,
+									"file-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "networkEvent.js",
+									"type": "application/javascript",
+									"sid": 801217679862323,
 									"file-info": {
 										"purpose": "none"
 									}
@@ -529,7 +554,7 @@
 	},
 	"properties": {
 		"description": "",
-		"version": "0.0.1.2",
+		"version": "0.0.2.0",
 		"author": "Ashley Gullen",
 		"authorEmail": "",
 		"authorWebsite": "",

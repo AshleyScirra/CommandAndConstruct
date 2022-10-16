@@ -192,6 +192,14 @@
 			],
 			"actions": [
 				{
+					"id": "wait",
+					"objectClass": "System",
+					"sid": 510129069948999,
+					"parameters": {
+						"seconds": "1.0"
+					}
+				},
+				{
 					"id": "reload",
 					"objectClass": "Browser",
 					"sid": 704999612198445

@@ -3,7 +3,11 @@ import Globals from "../globals.js";
 
 // "Magic number" that binary messages start with to verify it's an expected message.
 // This avoids things like fragmented packets trying to be read as a whole packet.
-const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
+const MAGIC_NUMBER = 0x63266321;	// "c&c!" in ASCII
+
+ // The binary message types
+ const MESSAGE_TYPE_UPDATE = 0;		// game state update
+ const MESSAGE_TYPE_EVENTS = 1;		// list of events that have happened
 
 // This class handles receiving messages from the GameServer (whether it's hosted locally or receiving
 // messages over the network). It calls the appropriate GameClient methods for each message.
@@ -11,8 +15,8 @@ const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
 export class GameClientMessageHandler {
 
 	// Private fields
-	#gameClient;				// reference to GameClient
-	#messageMap;				// Map of message type -> handler function
+	#gameClient;					// reference to GameClient
+	#messageMap;					// Map of message type -> handler function
 	
 	#lastMessageSequenceNumber = -1;
 	
@@ -29,11 +33,11 @@ export class GameClientMessageHandler {
 	
 	HandleGameServerMessage(msg)
 	{
-		// The host sends game state updates as binary ArrayBuffers.
-		// If the message is an ArrayBuffer, treat it as a state update.
+		// The host sends game state updates and events as binary ArrayBuffers.
+		// If the message is an ArrayBuffer, treat it as a binary update.
 		if (msg instanceof ArrayBuffer)
 		{
-			this.#OnStateUpdate(msg);
+			this.#OnBinaryMessage(msg);
 		}
 		else		// otherwise treat as JSON message
 		{
@@ -60,7 +64,7 @@ export class GameClientMessageHandler {
 	}
 	
 	// Called when received a new binary game state update from GameServer.
-	#OnStateUpdate(arrayBuffer)
+	#OnBinaryMessage(arrayBuffer)
 	{
 		// Catch and log any exceptions that happen while reading data from the server.
 		try {
@@ -76,63 +80,132 @@ export class GameClientMessageHandler {
 			// a fragmented or corrupt message.
 			if (magicNumber !== MAGIC_NUMBER)
 			{
-				console.error(`Ignored state update with incorrect magic number 0x${magicNumber.toString(16)}`);
+				console.error(`Ignored binary message with incorrect magic number 0x${magicNumber.toString(16)}`);
 				return;
 			}
 			
-			// Read the sequence number. This is incremented with every message sent out,
-			// but these binary updates are transmitted in unreliable mode, meaning some
-			// messages could arrive late and come after a newer message. Ignoring messages
-			// with a lower sequence number than the last one received avoids using an older
-			// state update than the last one received.
-			const sequenceNumber = dataView.getUint32(pos);
-			pos += 4;
+			// Read the message type as a byte.
+			const messageType = dataView.getUint8(pos);
+			pos += 1;
 			
-			if (sequenceNumber <= this.#lastMessageSequenceNumber)
-				return;		// ignore this message
+			// Read the message with a different method depending on the message type.
+			if (messageType === MESSAGE_TYPE_UPDATE)
+				this.#OnStateUpdate(dataView, pos);
+			else if (messageType === MESSAGE_TYPE_EVENTS)
+				this.#OnNetworkEvents(dataView, pos);
 			else
-				this.#lastMessageSequenceNumber = sequenceNumber;
-
-			// Read the total number of units in this update.
-			const unitCount = dataView.getUint32(pos);
-			pos += 4;
-
-			// For each unit in the data, read the unit's data.
-			for (let i = 0; i < unitCount; ++i)
-			{
-				// Read unit ID.
-				// NOTE: if the unit ID is not found, read the rest of the values
-				// anyway, since the read position still has to be advanced.
-				const unitId = dataView.getUint32(pos);
-				pos += 4;
-				
-				// Read the X and Y position as floats.
-				const x = dataView.getFloat32(pos);
-				pos += 4;
-				const y = dataView.getFloat32(pos);
-				pos += 4;
-				
-				// Read the platform angle
-				const platformAngle = dataView.getFloat32(pos);
-				pos += 4;
-				
-				// Read the turret offset angle
-				const turretOffsetAngle = dataView.getFloat32(pos);
-				pos += 4;
-				
-				// Now all the data has been read, look up the unit by its ID,
-				// and if found update it with these details.
-				const unit = this.#gameClient.GetUnitById(unitId);
-				if (unit)
-				{
-					unit.UpdateState(x, y, platformAngle, turretOffsetAngle);
-				}
-			}
+				throw new Error(`unexpected message type '${messageType}'`);
 		}
 		catch (err)
 		{
-			console.error("Error reading state update: ", err);
+			console.error("Error reading binary message: ", err);
 		}
+	}
+	
+	
+	#OnStateUpdate(dataView, pos)
+	{
+		// Read the game time. TODO: use this to help smooth game state.
+		const gameTime = dataView.getFloat32(pos);
+		pos += 4;
+		
+		// Read the sequence number. This is incremented with every message sent out,
+		// but these binary updates are transmitted in unreliable mode, meaning some
+		// messages could arrive late and come after a newer message. Ignoring messages
+		// with a lower sequence number than the last one received avoids using an older
+		// state update than the last one received.
+		const sequenceNumber = dataView.getUint32(pos);
+		pos += 4;
+
+		if (sequenceNumber <= this.#lastMessageSequenceNumber)
+			return;		// ignore this message
+		else
+			this.#lastMessageSequenceNumber = sequenceNumber;
+
+		// Read the total number of units in this update.
+		const unitCount = dataView.getUint32(pos);
+		pos += 4;
+
+		// For each unit in the data, read the unit's data.
+		for (let i = 0; i < unitCount; ++i)
+		{
+			// Read unit ID.
+			// NOTE: if the unit ID is not found, read the rest of the values
+			// anyway, since the read position still has to be advanced.
+			const unitId = dataView.getUint32(pos);
+			pos += 4;
+
+			// Read the X and Y position as floats.
+			const x = dataView.getFloat32(pos);
+			pos += 4;
+			const y = dataView.getFloat32(pos);
+			pos += 4;
+
+			// Read the platform angle
+			const platformAngle = dataView.getFloat32(pos);
+			pos += 4;
+
+			// Read the turret offset angle
+			const turretOffsetAngle = dataView.getFloat32(pos);
+			pos += 4;
+
+			// Now all the data has been read, look up the unit by its ID,
+			// and if found update it with these details.
+			const unit = this.#gameClient.GetUnitById(unitId);
+			if (unit)
+			{
+				unit.UpdateState(x, y, platformAngle, turretOffsetAngle);
+			}
+		}
+	}
+	
+	#OnNetworkEvents(dataView, pos)
+	{
+		// Read the game time. TODO: use this to help smooth game state.
+		const gameTime = dataView.getFloat32(pos);
+		pos += 4;
+		
+		// Read the number of events.
+		const eventCount = dataView.getUint16(pos);
+		pos += 2;
+		
+		// Read each individual event.
+		for (let i = 0; i < eventCount; ++i)
+		{
+			// Get event type
+			const eventType = dataView.getUint8(pos);
+			pos += 1;
+			
+			// Read each type of message with a separate method
+			if (eventType === 0)
+				pos = this.#ReadProjectileFiredEvent(dataView, pos);
+			else
+				throw new Error(`unknown event type '${eventType}'`);
+		}
+	}
+	
+	#ReadProjectileFiredEvent(dataView, pos)
+	{
+		// Projectile ID
+		const id = dataView.getUint32(pos);
+		pos += 4;
+		
+		// Read X, Y, angle, speed, range and distance travelled.
+		const x = dataView.getFloat32(pos);
+		pos += 4;
+		const y = dataView.getFloat32(pos);
+		pos += 4;
+		const angle = dataView.getFloat32(pos);
+		pos += 4;
+		const speed = dataView.getFloat32(pos);
+		pos += 4;
+		const range = dataView.getFloat32(pos);
+		pos += 4;
+		const distanceTravelled = dataView.getFloat32(pos);
+		pos += 4;
+		
+		this.#gameClient.OnProjectileFired(id, x, y, angle, speed, range, distanceTravelled);
+		return pos;
 	}
 	
 	// Get information about units, such as their size and image point locations,

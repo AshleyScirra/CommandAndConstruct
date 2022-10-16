@@ -1,5 +1,7 @@
 
+import { MultiEventHandler } from "../utils/multiEventHandler.js";
 import { ClientUnit } from "../clientUnits/clientUnit.js";
+import { ClientProjectile } from "../clientUnits/clientProjectile.js";
 import { GameClientMessageHandler } from "./messageHandler.js";
 import { SelectionManager } from "./selectionManager.js";
 
@@ -14,8 +16,10 @@ export class GameClient {
 	// Private fields
 	#runtime;						// Construct runtime
 	#sendMessageFunc;				// SendMessageToGameServer function
-	#allUnitsById = new Map();		// map of all units by id -> Unit
+	#allUnitsById = new Map();		// map of all units by id -> ClientUnit
+	#allProjectilesById = new Map();// map of all projectiles by id -> ClientProjectile
 	
+	#eventHandlers;					// MultiEventHandler for runtime events
 	#messageHandler;				// MessageHandler class
 	#selectionManager;				// SelectionManager class
 	
@@ -27,6 +31,10 @@ export class GameClient {
 		this.#sendMessageFunc = sendMessageFunc;
 		this.#player = player;
 		
+		this.#eventHandlers = new MultiEventHandler([
+			[runtime,		"tick",		() => this.#OnTick()]
+		]);
+		
 		// Create GameClientMessageHandler which handles messages from GameServer
 		// and calls the appropriate methods on this class.
 		this.#messageHandler = new GameClientMessageHandler(this);
@@ -37,6 +45,7 @@ export class GameClient {
 	
 	Release()
 	{
+		this.#eventHandlers.Release();
 		this.#selectionManager.Release();
 	}
 	
@@ -136,5 +145,33 @@ export class GameClient {
 			"unitIds": unitsArray.map(u => u.GetId()),
 			"position": [x, y]
 		});
+	}
+	
+	// When a network event is received indicating a projectile was fired,
+	// create a ClientProjectile to represent it.
+	OnProjectileFired(id, x, y, angle, speed, range, distanceTravelled)
+	{
+		const projectile = new ClientProjectile(this, id, x, y, angle, speed, range, distanceTravelled);
+		this.#allProjectilesById.set(id, projectile);
+	}
+	
+	// Tick the client to advance the game state by one step.
+	#OnTick()
+	{
+		const dt = this.#runtime.dt;
+		
+		// Advance all projectiles. These are moved by the client as their movement
+		// is entirely predictable: they just proceed at the same speed and angle
+		// from the point they were created.
+		for (const [id, projectile] of this.#allProjectilesById)
+		{
+			projectile.Tick(dt);
+			
+			if (projectile.ShouldDestroy())
+			{
+				projectile.Release();
+				this.#allProjectilesById.delete(id);
+			}
+		}
 	}
 }
