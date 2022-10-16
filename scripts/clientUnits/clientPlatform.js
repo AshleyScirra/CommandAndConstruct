@@ -35,6 +35,12 @@ export class ClientPlatform {
 		this.#inst.y = y;
 	}
 	
+	// The platform's image point locates where the turret is placed.
+	GetTurretPosition()
+	{
+		return this.#inst.getImagePoint(1);
+	}
+	
 	GetSize()
 	{
 		return [this.#inst.width, this.#inst.height];

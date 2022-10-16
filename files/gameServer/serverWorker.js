@@ -45,10 +45,11 @@ function OnMessageFromRuntime(e)
 }
 
 // Called when the runtime wants to initialise the GameServer.
-function OnInit()
+function OnInit(e)
 {
-	// Initialise GameServer, passing it the function that can send a message to the runtime.
-	gameServer = new GameServer(SendMessageToRuntime);
+	// Initialise GameServer, passing it the function that can send a message to the runtime
+	// and the Construct object data collected from the runtime.
+	gameServer = new GameServer(SendMessageToRuntime, e["constructObjectData"]);
 }
 
 // Called when the runtime is ending the game.

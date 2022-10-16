@@ -50,6 +50,34 @@ export class GameClient {
 		return this.#player;
 	}
 	
+	// Return an array of all Construct object types used for units.
+	GetAllUnitObjectTypes()
+	{
+		const runtime = this.#runtime;
+		
+		return [
+			runtime.objects.TankPlatform,
+			runtime.objects.TankTurret
+		];
+	}
+	
+	GetConstructObjectData()
+	{
+		return this.#messageHandler.GetConstructObjectData();
+	}
+	
+	Init()
+	{
+		// Destroy all existing Construct instances placed on the layout before starting the game.
+		for (const objectType of this.GetAllUnitObjectTypes())
+		{
+			for (const inst of objectType.instances())
+			{
+				inst.destroy();
+			}
+		}
+	}
+	
 	// Provide a GameClient method to send a message to GameServer.
 	SendToServer(msg)
 	{

@@ -31,10 +31,15 @@ export class GameModeSinglePlayer {
 		// Note in single player mode, the player is always player 0.
 		this.#gameClient = new GameClient(this.#runtime, (m => this.#SendMessageToGameServer(m)), 0);
 
-		// Post an init message to the worker to tell it to initialize.
+		// Post an init message to the worker to tell it to initialize, and provide data
+		// about the game units such as their size and collision polygons.
 		this.#SendMessageToGameServer({
-			"type": "init"
+			"type": "init",
+			"constructObjectData": this.#gameClient.GetConstructObjectData()
 		});
+		
+		// Initialise the GameClient now it's sent the game data.
+		this.#gameClient.Init();
 	}
 	
 	Release()

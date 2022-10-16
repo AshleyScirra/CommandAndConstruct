@@ -34,7 +34,7 @@ export class ClientTurret {
 	Update()
 	{
 		const platform = this.#unit.GetPlatform();
-		const [x, y] = platform.GetPosition();
+		const [x, y] = platform.GetTurretPosition();
 		this.#inst.x = x;
 		this.#inst.y = y;
 		this.#inst.angle = platform.GetAngle() + this.#offsetAngle;

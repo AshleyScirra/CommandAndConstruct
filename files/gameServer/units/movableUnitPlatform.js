@@ -42,6 +42,16 @@ export class MovableUnitPlatform extends UnitPlatform {
 		return this.#movable.GetPosition();
 	}
 	
+	// Return the position of the turret on this platform. This gets the turret's position
+	// (which is an offset from the platform) and rotates it by the platform angle.
+	GetTurretPosition()
+	{
+		const [platformX, platformY] = this.GetPosition();
+		let [offX, offY] = this.GetUnit().GetTurret().GetPosition();
+		[offX, offY] = MathUtils.RotatePoint(offX, offY, this.GetAngle(), 0, 0);
+		return [platformX + offX, platformY + offY];
+	}
+	
 	GetAngle()
 	{
 		return this.#movable.GetAngle();

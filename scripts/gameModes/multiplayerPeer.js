@@ -30,6 +30,7 @@ export class GameModeMultiplayerPeer {
 		// Also pass it the SendMessageToHost function for messaging.
 		// Note that the multiplayer peer is always player 1. (TODO: support for more players)
 		this.#gameClient = new GameClient(this.#runtime, (m => this.#SendMessageToHost(m)), 1);
+		this.#gameClient.Init();
 		
 		// The host could take a lot longer to load for some reason, and not yet be listening for
 		// messages. We don't know when the host will be ready, so send ready messages every 250ms

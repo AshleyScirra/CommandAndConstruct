@@ -14,11 +14,11 @@ export class UnitTurret extends PositionedAndAngledObject {
 	#targetUnitId = -1;		// ID of unit turret is targeting, or -1 if none
 	
 	#range = 1000;			// maximum range to identify a target
-	#rotateSpeed = MathUtils.ToRadians(90);
+	#rotateSpeed = MathUtils.ToRadians(70);
 	
-	constructor(unit)
+	constructor(unit, x, y)
 	{
-		super(unit.GetGameServer(), 0, 0);
+		super(unit.GetGameServer(), x, y);
 		
 		this.#unit = unit;
 	}
@@ -45,7 +45,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 	#FindTarget(dt)
 	{
 		const forPlayer = this.GetUnit().GetPlayer();
-		const [fromX, fromY] = this.GetPlatform().GetPosition();
+		const [fromX, fromY] = this.GetPlatform().GetTurretPosition();
 		
 		// This uses a brute-force approach iterating all units.
 		// TODO: make this more efficient so it can scale for 1000s of units.
@@ -87,7 +87,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 		}
 		
 		// Check the target is still in range.
-		const [myX, myY] = this.GetPlatform().GetPosition();
+		const [myX, myY] = this.GetPlatform().GetTurretPosition();
 		const [targetX, targetY] = unit.GetPlatform().GetPosition();
 		const dx = targetX - myX;
 		const dy = targetY - myY;

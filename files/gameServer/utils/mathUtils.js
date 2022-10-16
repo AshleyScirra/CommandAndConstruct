@@ -69,3 +69,22 @@ export function AngleRotate(start, end, step)
 		return end;
 	}
 };
+
+// Rotate point p around point o using an angle
+export function RotatePoint(px, py, angle, ox, oy)
+{
+	return RotatePoint2(px, py, Math.sin(angle), Math.cos(angle), ox, oy);
+}
+
+
+// As with RotatePoint but using precomputed sin(angle) and cos(angle)
+export function RotatePoint2(px, py, sin_a, cos_a, ox, oy)
+{
+	const dx = px - ox;
+	const dy = py - oy;
+	
+	const rx = (dx * cos_a) - (dy * sin_a);
+	const ry = (dy * cos_a) + (dx * sin_a);
+	
+	return [rx + ox, ry + oy];
+}

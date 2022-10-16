@@ -1,9 +1,9 @@
 
 import Globals from "../globals.js";
 
- // "Magic number" that binary messages start with to verify it's an expected message.
- // This avoids things like fragmented packets trying to be read as a whole packet.
- const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
+// "Magic number" that binary messages start with to verify it's an expected message.
+// This avoids things like fragmented packets trying to be read as a whole packet.
+const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
 
 // This class handles receiving messages from the GameServer (whether it's hosted locally or receiving
 // messages over the network). It calls the appropriate GameClient methods for each message.
@@ -133,5 +133,60 @@ export class GameClientMessageHandler {
 		{
 			console.error("Error reading state update: ", err);
 		}
+	}
+	
+	// Get information about units, such as their size and image point locations,
+	// to send to GameServer.
+	GetConstructObjectData()
+	{
+		// For each entry in the list of all unit object types, get the data
+		// for that object type and return all the data in an array.
+		return this.#gameClient.GetAllUnitObjectTypes().map(
+			objectType => this.#GetConstructObjectDataFor(objectType)
+		);
+	}
+	
+	// Get object data for a single Construct object type.
+	#GetConstructObjectDataFor(objectType)
+	{
+		const inst = objectType.getFirstInstance();
+		
+		// Make sure there is an instance in the layout to get data from.
+		if (!inst)
+			throw new Error(`need an instance of '${objectType.name}' in the layout`);
+		
+		// Get instance position in layout co-ordinates
+		const x = inst.x;
+		const y = inst.y;
+		
+		// Get the object origin from the first animation frame.
+		// Note this is normalized to a [0, 1] range; everything else is in pixels
+		// so also get the origin in pixels.
+		const firstFrame = inst.animation.getFrames()[0];
+		const originX = firstFrame.originX * inst.width;
+		const originY = firstFrame.originY * inst.height;
+		
+		// Get the first image point position, which returns a position in layout co-ordinates.
+		// The instance position is then subtracted to make this relative to the object origin.
+		const [imgPtX, imgPtY] = inst.getImagePoint(1);
+		
+		// Get the collision poly points, which also are returned in layout co-ordinates
+		// and so made relative to the object origin.
+		const collisionPoly = [];
+		for (let i = 0, len = inst.getPolyPointCount(); i < len; ++i)
+		{
+			const [px, py] = inst.getPolyPoint(i);
+			collisionPoly.push([px - x, py - y]);
+		}
+		
+		// Return all details as a JSON object.
+		return {
+			"name": objectType.name,
+			"width": inst.width,
+			"height": inst.height,
+			"origin": [originX, originY],
+			"imagePoint": [imgPtX - x, imgPtY - y],
+			"collisionPoly": collisionPoly
+		};
 	}
 }

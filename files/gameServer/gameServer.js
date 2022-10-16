@@ -1,4 +1,5 @@
  
+ import { ObjectData } from "./units/objectData.js";
  import { Unit } from "./units/unit.js";
  
  // Number of ticks per second to run the server at,
@@ -23,16 +24,24 @@
 	#lastTickTimeMs = 0;			// clock time at last tick in ms
 	#nextTickScheduledTimeMs = 0;	// time next tick ought to run at in ms
 	
+	#objectData = new Map();		// name -> ObjectData
+	
 	// A 256kb binary data buffer to use for sending binary updates to clients
 	#dataArrayBuffer = new ArrayBuffer(262144);
 	#dataView = new DataView(this.#dataArrayBuffer);
 	
 	#messageSequenceNumber = 0;		// an increasing number for every binary message
 	
- 	constructor(sendMessageFunc)
+ 	constructor(sendMessageFunc, constructObjectData)
 	{
 		// The function to send a message to the runtime is passed to the constructor.
 		this.#sendMessageFunc = sendMessageFunc;
+		
+		// Read the object data passed from the runtime in to ObjectData classes.
+		for (const entry of constructObjectData)
+		{
+			this.#objectData.set(entry["name"], new ObjectData(this, entry));
+		}
 		
 		// Initialize a game.
 		this.Init();
@@ -87,6 +96,11 @@
 	GetUnitById(id)
 	{
 		return this.#allUnitsById.get(id);
+	}
+	
+	GetObjectData(name)
+	{
+		return this.#objectData.get(name);
 	}
 	
 	MoveUnits(player, unitIds, x, y)

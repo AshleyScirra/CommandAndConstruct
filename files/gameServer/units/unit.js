@@ -24,8 +24,11 @@ export class Unit {
 		// Create unit platform, hard-coded as a movable one for now (TODO: different types)
 		this.#platform = new MovableUnitPlatform(this, x, y);
 		
-		// Create unit turret
-		this.#turret = new UnitTurret(this);
+		// Create unit turret. Note refer to the platform's image point for the location
+		// of the turret as an offset from the platform's origin.
+		const platformObjectData = this.#gameServer.GetObjectData("TankPlatform");
+		const [turretX, turretY] = platformObjectData.GetImagePoint();
+		this.#turret = new UnitTurret(this, turretX, turretY);
 	}
 	
 	// Get data for the "create-initial-state" message
