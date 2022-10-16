@@ -1,6 +1,7 @@
  
  import { ObjectData } from "./units/objectData.js";
  import { Unit } from "./units/unit.js";
+ import { NetworkEvent } from "./classes/networkEvent.js";
  
  // Number of ticks per second to run the server at,
  // and the equivalent value in milliseconds between ticks.
@@ -9,7 +10,11 @@
 
  // "Magic number" that binary messages start with to verify it's an expected message.
  // This avoids things like fragmented packets trying to be read as a whole packet.
- const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
+ const MAGIC_NUMBER = 0x63266321;	// "c&c!" in ASCII
+ 
+ // The binary message types
+ const MESSAGE_TYPE_UPDATE = 0;		// game state update
+ const MESSAGE_TYPE_EVENTS = 1;		// list of events that have happened
  
  // The GameServer class represents the state of the game and runs the main game logic.
  // It runs in a Web Worker and communicates with clients by messaging - either local messages
@@ -19,12 +24,16 @@
  	// Private fields
 	#sendMessageFunc;				// called by SendToRuntime()
 	#allUnitsById = new Map();		// map of all units by id -> Unit
+	#allProjectiles = new Set();	// set of all active projectiles
 	
 	#tickTimerId = -1;				// timer ID for ticking GameServer
 	#lastTickTimeMs = 0;			// clock time at last tick in ms
 	#nextTickScheduledTimeMs = 0;	// time next tick ought to run at in ms
+	#gameTime = 0;					// serves as the clock for the game in seconds
 	
 	#objectData = new Map();		// name -> ObjectData
+	
+	#networkEvents = [];			// array of NetworkEvents waiting to send over the network
 	
 	// A 256kb binary data buffer to use for sending binary updates to clients
 	#dataArrayBuffer = new ArrayBuffer(262144);
@@ -103,6 +112,11 @@
 		return this.#objectData.get(name);
 	}
 	
+	GetGameTime()
+	{
+		return this.#gameTime;
+	}
+	
 	MoveUnits(player, unitIds, x, y)
 	{
 		// Look up all units from their ID.
@@ -125,6 +139,16 @@
 		}
 	}
 	
+	// Called when a turret fires a projectile.
+	OnFireProjectile(projectile)
+	{
+		// Add to the list of all projectiles so it is ticked by GameServer.
+		this.#allProjectiles.add(projectile);
+		
+		// Queue a network event to tell clients that a projectile was fired.
+		this.#networkEvents.push(new NetworkEvent(projectile))
+	}
+	
 	// Tick the game to advance the game by one step.
 	#Tick()
 	{
@@ -138,6 +162,18 @@
 		const dt = (tickStartTimeMs - this.#lastTickTimeMs) / 1000;
 		this.#lastTickTimeMs = tickStartTimeMs;
 		
+		// Update all projectiles.
+		for (const projectile of this.#allProjectiles)
+		{
+			projectile.Tick(dt);
+			
+			if (projectile.ShouldDestroy())
+			{
+				projectile.Release();
+				this.#allProjectiles.delete(projectile);
+			}
+		}
+		
 		// Update all units.
 		// TODO: at the moment we naively tick every single unit in the game. This can
 		// probably be made much more efficient by only ticking units that need it.
@@ -148,6 +184,14 @@
 		
 		// Send data about the game state to the clients.
 		this.#SendGameStateUpdate();
+		
+		// Send any events that have happened over the network.
+		this.#SendNetworkEvents();
+		
+		// Advance the game time by this tick's delta-time value.
+		// TODO: this type of addition is very imprecise and the game time clock will
+		// drift from a real clock over time. Use kahan addition to improve accuracy.
+		this.#gameTime += dt;
 		
 		// Schedule a timer to run the next tick.
 		this.#ScheduleNextTick();
@@ -202,6 +246,14 @@
 		dataView.setUint32(pos, MAGIC_NUMBER);
 		pos += 4;
 		
+		// Write the message type as a byte.
+		dataView.setUint8(pos, MESSAGE_TYPE_UPDATE);
+		pos += 1;
+		
+		// Write the game time at the tick this message was sent.
+		dataView.setFloat32(pos, this.GetGameTime());
+		pos += 4;
+		
 		// Write an incrementing sequence number with every binary message.
 		// Since these updates use unreliable transmission, messages could arrive
 		// out-of-order. The client can use the sequence number to discard any
@@ -246,5 +298,51 @@
 		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
 		// This also uses unreliable transmission as this is essentially streaming data.
 		this.SendToRuntime(arrayBuffer, "u", [arrayBuffer])
+	}
+	
+	#SendNetworkEvents()
+	{
+		// Skip if there are no network events to send.
+		if (this.#networkEvents.length === 0)
+			return;
+		
+		const dataView = this.#dataView;
+		let pos = 0;		// write position in bytes
+		
+		// Write the magic number to identify this kind of message.
+		dataView.setUint32(pos, MAGIC_NUMBER);
+		pos += 4;
+		
+		// Write the message type as a byte.
+		dataView.setUint8(pos, MESSAGE_TYPE_EVENTS);
+		pos += 1;
+		
+		// Write the game time at the tick these events happened.
+		dataView.setFloat32(pos, this.GetGameTime());
+		pos += 4;
+		
+		// Write the number of events.
+		dataView.setUint16(pos, this.#networkEvents.length);
+		pos += 2;
+		
+		// Write each event individually.
+		for (const networkEvent of this.#networkEvents)
+		{
+			pos = networkEvent.Write(dataView, pos);
+		}
+		
+		// Clear all the network events now they have been sent.
+		this.#networkEvents.length = 0;
+		
+		// Finished writing network events.
+		// Copy out a new ArrayBuffer with just the data written.
+		const arrayBuffer = this.#dataArrayBuffer.slice(0, pos);
+		
+		// Send the binary data with the list of events to the runtime.
+		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
+		// This also uses reliable but unordered transmission. Events must arrive at clients,
+		// but they don't have to be received in the correct order. Clients can compensate
+		// for late events.
+		this.SendToRuntime(arrayBuffer, "r", [arrayBuffer])
 	}
  }

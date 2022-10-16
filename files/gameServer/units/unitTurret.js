@@ -1,5 +1,6 @@
 
 import { PositionedAndAngledObject } from "../classes/positionedAndAngledObject.js";
+import { Projectile } from "./projectile.js";
 import * as MathUtils from "../utils/mathUtils.js";
 
 // A UnitTurret is the firing part of a unit, that rotates independently of the platform
@@ -16,6 +17,10 @@ export class UnitTurret extends PositionedAndAngledObject {
 	#range = 1000;			// maximum range to identify a target
 	#rotateSpeed = MathUtils.ToRadians(70);
 	
+	#lastFireTime = 0;		// game time when last shot was fired
+	#rateOfFire = 2;		// number of seconds between shots
+	#projectileSpeed = 900;	// speed projectile travels at
+	
 	constructor(unit, x, y)
 	{
 		super(unit.GetGameServer(), x, y);
@@ -31,6 +36,23 @@ export class UnitTurret extends PositionedAndAngledObject {
 	GetPlatform()
 	{
 		return this.GetUnit().GetPlatform();
+	}
+	
+	// The turret's own angle is relative to the platform.
+	// The overall angle returns its actual angle taking in to account the platform angle.
+	GetOverallAngle()
+	{
+		return this.GetPlatform().GetAngle() + this.GetAngle();
+	}
+	
+	GetRange()
+	{
+		return this.#range;
+	}
+	
+	GetProjectileSpeed()
+	{
+		return this.#projectileSpeed;
 	}
 	
 	Tick(dt)
@@ -75,8 +97,10 @@ export class UnitTurret extends PositionedAndAngledObject {
 	
 	#TrackTarget(dt)
 	{
+		const gameServer = this.GetGameServer();
+		
 		// Find the unit this turret is tracking.
-		const unit = this.GetGameServer().GetUnitById(this.#targetUnitId);
+		const unit = gameServer.GetUnitById(this.#targetUnitId);
 		
 		// If the unit is not found, assume it was destroyed.
 		// Reset to having no target and bail out.
@@ -107,5 +131,52 @@ export class UnitTurret extends PositionedAndAngledObject {
 		const myAngle = platformAngle + this.GetAngle();
 		const rotatedAngle = MathUtils.AngleRotate(myAngle, targetAngle, this.#rotateSpeed * dt);
 		this.SetAngle(rotatedAngle - platformAngle);
+		
+		// If the turret is now facing at its target (within a tiny threshold to allow for
+		// precision errors), and it has reloaded, then fire a projectile.
+		if (MathUtils.AngleDifference(targetAngle, rotatedAngle) < MathUtils.ToRadians(0.01) &&
+			gameServer.GetGameTime() >= this.#lastFireTime + this.#rateOfFire)
+		{
+			this.#FireProjectile();
+		}
+	}
+	
+	// Called when the turret is to shoot its projectile.
+	#FireProjectile()
+	{
+		const gameServer = this.GetGameServer();
+		
+		// Get the turret image point, which is where the projectile is fired from.
+		// Rotate the image point by the angle the turret is currently pointing at,
+		// since the image point position is based on an angle of 0.
+		const turretObjectData = gameServer.GetObjectData("TankTurret");
+		const angle = this.GetOverallAngle();
+		let [imgPtX, imgPtY] = turretObjectData.GetImagePoint();
+		[imgPtX, imgPtY] = MathUtils.RotatePoint(imgPtX, imgPtY, angle, 0, 0);
+		
+		// The projectile position is then the turret position offset by its
+		// rotated image point.
+		const [turretX, turretY] = this.GetPlatform().GetTurretPosition();
+		const x = turretX + imgPtX;
+		const y = turretY + imgPtY;
+		
+		// Create the projectile and set its properties for the type of projectile
+		// fired by this turret.
+		const projectile = new Projectile(this, x, y);
+		projectile.SetAngle(angle);
+		projectile.SetSpeed(this.GetProjectileSpeed());
+		
+		// Initialise the distance travelled to the distance to the image point.
+		// This is because turrets measure range from their origin, but they fire
+		// projectiles from the image point. Including this distance makes sure
+		// the projectile range matches the turret range.
+		projectile.SetDistanceTravelled(Math.hypot(imgPtX, imgPtY));
+		
+		// Tell GameServer that this projectile was fired, as it needs to both
+		// tick it and send a network event for it.
+		gameServer.OnFireProjectile(projectile);
+		
+		// Update the last fired time so it essentially starts reloading again.
+		this.#lastFireTime = gameServer.GetGameTime();
 	}
 }
