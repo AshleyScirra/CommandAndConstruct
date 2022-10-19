@@ -123,8 +123,8 @@ export class GameClientMessageHandler {
 			this.#lastMessageSequenceNumber = sequenceNumber;
 
 		// Read the total number of units in this update.
-		const unitCount = dataView.getUint32(pos);
-		pos += 4;
+		const unitCount = dataView.getUint16(pos);
+		pos += 2;
 
 		// For each unit in the data, read the unit's data.
 		for (let i = 0; i < unitCount; ++i)
@@ -132,8 +132,8 @@ export class GameClientMessageHandler {
 			// Read unit ID.
 			// NOTE: if the unit ID is not found, read the rest of the values
 			// anyway, since the read position still has to be advanced.
-			const unitId = dataView.getUint32(pos);
-			pos += 4;
+			const unitId = dataView.getUint16(pos);
+			pos += 2;
 
 			// Read the X and Y position as floats.
 			const x = dataView.getFloat32(pos);
@@ -187,8 +187,8 @@ export class GameClientMessageHandler {
 	#ReadProjectileFiredEvent(dataView, pos)
 	{
 		// Projectile ID
-		const id = dataView.getUint32(pos);
-		pos += 4;
+		const id = dataView.getUint16(pos);
+		pos += 2;
 		
 		// Read X, Y, angle, speed, range and distance travelled.
 		const x = dataView.getFloat32(pos);

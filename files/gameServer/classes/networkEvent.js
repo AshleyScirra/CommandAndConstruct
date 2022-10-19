@@ -21,11 +21,11 @@ export class NetworkEvent {
 		pos += 1;
 		
 		// Projectile ID
-		// TODO: try to shrink some of these values to 16 bits to save bandwidth
-		dataView.setUint32(pos, projectile.GetId());
-		pos += 4;
+		dataView.setUint16(pos, projectile.GetId());
+		pos += 2;
 		
 		// Write, X, Y, angle, speed, range and distance travelled
+		// TODO: try to shrink some of these values to 16 bits to save bandwidth
 		const [x, y] = projectile.GetPosition();
 		dataView.setFloat32(pos, x);
 		pos += 4;

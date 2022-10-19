@@ -1,20 +1,42 @@
 
 import { MovableObject } from "../classes/movableObject.js";
 
+// Like unit IDs, projectile IDs are sent as a uint16 value to save on bandwidth,
+// allowing for around 65k active projectiles in the entire game at any one time,
+// which should (?!) be enough. The same allocation scheme is used as for units -
+// despite the fact it's unlikely any old projectiles will still be around after
+// the ID wraps around, it's easy enough to handle that case anyway.
 let nextId = 0;					// the ID to assign the next projectile
+
+function GetNewProjectileId(gameServer)
+{
+	// Keep incrementing the ID so long as the ID is still in use.
+	do {
+		nextId++;
+		
+		// Wrap around if reached the limit of uint16
+		if (nextId === 65536)
+			nextId = 0;
+	}
+	while (gameServer.HasProjectileId(nextId));
+	
+	return nextId;
+}
 
 // The Projectile class represents something fired from turrets towards enemy units.
 // It is a MovableObject as it has a position, angle and speed.
 export class Projectile extends MovableObject {
 
 	#turret;					// turret that fired this projectile
-	#id = nextId++;				// assign incrementing ID to every projectile created
+	#id = -1;					// unique ID for this unit (determined in constructor)
 	#distanceTravelled = 0;		// how far this projectile has travelled
 	
 	constructor(turret, x, y)
 	{
-		super(turret.GetGameServer(), x, y);
+		const gameServer = turret.GetGameServer();
+		super(gameServer, x, y);
 		
+		this.#id = GetNewProjectileId(gameServer);
 		this.#turret = turret;
 	}
 	

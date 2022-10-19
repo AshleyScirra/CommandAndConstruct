@@ -25,7 +25,7 @@
  	// Private fields
 	#sendMessageFunc;				// called by SendToRuntime()
 	#allUnitsById = new Map();		// map of all units by id -> Unit
-	#allProjectiles = new Set();	// set of all active projectiles
+	#allProjectilesById = new Map(); // map of all active projectiles by id -> Projectile
 	
 	#tickTimerId = -1;				// timer ID for ticking GameServer
 	#lastTickTimeMs = 0;			// clock time at last tick in ms
@@ -103,9 +103,19 @@
 		return this.#allUnitsById.values();
 	}
 	
+	HasUnitId(id)
+	{
+		return this.#allUnitsById.has(id);
+	}
+	
 	GetUnitById(id)
 	{
 		return this.#allUnitsById.get(id);
+	}
+	
+	HasProjectileId(id)
+	{
+		return this.#allProjectilesById.has(id);
 	}
 	
 	GetObjectData(name)
@@ -144,7 +154,7 @@
 	OnFireProjectile(projectile)
 	{
 		// Add to the list of all projectiles so it is ticked by GameServer.
-		this.#allProjectiles.add(projectile);
+		this.#allProjectilesById.set(projectile.GetId(), projectile);
 		
 		// Queue a network event to tell clients that a projectile was fired.
 		this.#networkEvents.push(new NetworkEvent(projectile))
@@ -164,14 +174,14 @@
 		this.#lastTickTimeMs = tickStartTimeMs;
 		
 		// Update all projectiles.
-		for (const projectile of this.#allProjectiles)
+		for (const [id, projectile] of this.#allProjectilesById)
 		{
 			projectile.Tick(dt);
 			
 			if (projectile.ShouldDestroy())
 			{
 				projectile.Release();
-				this.#allProjectiles.delete(projectile);
+				this.#allProjectilesById.delete(id);
 			}
 		}
 		
@@ -263,16 +273,16 @@
 		pos += 4;
 		
 		// Write the total number of units.
-		dataView.setUint32(pos, this.#allUnitsById.size);
-		pos += 4;
+		dataView.setUint16(pos, this.#allUnitsById.size);
+		pos += 2;
 		
 		// For each unit, write data about the unit.
 		// TODO: try to shrink some of these values to 16 bits to save bandwidth
 		for (const unit of this.allUnits())
 		{
 			// Write the unit ID
-			dataView.setUint32(pos, unit.GetId());
-			pos += 4;
+			dataView.setUint16(pos, unit.GetId());
+			pos += 2;
 			
 			// Write the X and Y position as floats
 			const platform = unit.GetPlatform();
