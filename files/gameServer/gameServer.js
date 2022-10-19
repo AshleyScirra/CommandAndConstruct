@@ -2,6 +2,7 @@
  import { ObjectData } from "./units/objectData.js";
  import { Unit } from "./units/unit.js";
  import { NetworkEvent } from "./classes/networkEvent.js";
+ import { KahanSum } from "./utils/kahanSum.js";
  
  // Number of ticks per second to run the server at,
  // and the equivalent value in milliseconds between ticks.
@@ -29,7 +30,7 @@
 	#tickTimerId = -1;				// timer ID for ticking GameServer
 	#lastTickTimeMs = 0;			// clock time at last tick in ms
 	#nextTickScheduledTimeMs = 0;	// time next tick ought to run at in ms
-	#gameTime = 0;					// serves as the clock for the game in seconds
+	#gameTime = new KahanSum();		// serves as the clock for the game in seconds
 	
 	#objectData = new Map();		// name -> ObjectData
 	
@@ -114,7 +115,7 @@
 	
 	GetGameTime()
 	{
-		return this.#gameTime;
+		return this.#gameTime.Get();
 	}
 	
 	MoveUnits(player, unitIds, x, y)
@@ -189,9 +190,9 @@
 		this.#SendNetworkEvents();
 		
 		// Advance the game time by this tick's delta-time value.
-		// TODO: this type of addition is very imprecise and the game time clock will
-		// drift from a real clock over time. Use kahan addition to improve accuracy.
-		this.#gameTime += dt;
+		// Note the game time uses kahan summation to improve precision. Normal floating
+		// point summation is not precise enough to keep an accurate clock time.
+		this.#gameTime.Add(dt);
 		
 		// Schedule a timer to run the next tick.
 		this.#ScheduleNextTick();
