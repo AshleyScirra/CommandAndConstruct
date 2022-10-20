@@ -152,7 +152,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 		const turretObjectData = gameServer.GetObjectData("TankTurret");
 		const angle = this.GetOverallAngle();
 		let [imgPtX, imgPtY] = turretObjectData.GetImagePoint();
-		[imgPtX, imgPtY] = MathUtils.RotatePoint(imgPtX, imgPtY, angle, 0, 0);
+		[imgPtX, imgPtY] = MathUtils.RotatePoint(imgPtX, imgPtY, angle);
 		
 		// The projectile position is then the turret position offset by its
 		// rotated image point.

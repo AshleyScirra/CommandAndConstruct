@@ -48,7 +48,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 	{
 		const [platformX, platformY] = this.GetPosition();
 		let [offX, offY] = this.GetUnit().GetTurret().GetPosition();
-		[offX, offY] = MathUtils.RotatePoint(offX, offY, this.GetAngle(), 0, 0);
+		[offX, offY] = MathUtils.RotatePoint(offX, offY, this.GetAngle());
 		return [platformX + offX, platformY + offY];
 	}
 	
