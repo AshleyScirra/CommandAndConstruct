@@ -176,9 +176,12 @@ export class GameClientMessageHandler {
 			const eventType = dataView.getUint8(pos);
 			pos += 1;
 			
-			// Read each type of message with a separate method
+			// Read each type of message with a separate method.
+			// Note the types correspond to those listed in NetworkEvent on the server.
 			if (eventType === 0)
 				pos = this.#ReadProjectileFiredEvent(dataView, pos);
+			else if (eventType === 1)
+				pos = this.#ReadProjectileHitEvent(dataView, pos);
 			else
 				throw new Error(`unknown event type '${eventType}'`);
 		}
@@ -205,6 +208,22 @@ export class GameClientMessageHandler {
 		pos += 4;
 		
 		this.#gameClient.OnProjectileFired(id, x, y, angle, speed, range, distanceTravelled);
+		return pos;
+	}
+	
+	#ReadProjectileHitEvent(dataView, pos)
+	{
+		// Projectile ID
+		const id = dataView.getUint16(pos);
+		pos += 2;
+		
+		// Read X, Y
+		const x = dataView.getFloat32(pos);
+		pos += 4;
+		const y = dataView.getFloat32(pos);
+		pos += 4;
+		
+		this.#gameClient.OnProjectileHit(id, x, y);
 		return pos;
 	}
 	

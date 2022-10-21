@@ -155,6 +155,25 @@ export class GameClient {
 		this.#allProjectilesById.set(id, projectile);
 	}
 	
+	// When a network event is received indicating a projectile hit a target,
+	// destroy the projectile (if it can be found), and create an explosion at the reported location.
+	OnProjectileHit(id, x, y)
+	{
+		// If the client is not properly synchronised, it might not be able to find a
+		// projectile with the reported ID. In that case, just skip destroying it.
+		const projectile = this.#allProjectilesById.get(id);
+		if (projectile)
+			projectile.Release();
+		
+		this.#allProjectilesById.delete(id);
+		
+		// Create an explosion at the server reported position as visual feedback for the player.
+		// The explosion is also rotated to a random angle to create visual variation, and it
+		// also has the Fade behavior to fade it out and automatically destroy it.
+		const explosionInst = this.#runtime.objects.Explosion.createInstance("Explosions", x, y);
+		explosionInst.angle = Math.random() * 2 * Math.PI;
+	}
+	
 	// Tick the client to advance the game state by one step.
 	#OnTick()
 	{

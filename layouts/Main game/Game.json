@@ -17,9 +17,9 @@
 				1
 			],
 			"backgroundColor": [
-				0.7607843137254902,
-				0.7607843137254902,
-				0.7607843137254902,
+				0.23921568627450981,
+				0.23921568627450981,
+				0.23921568627450981,
 				1
 			],
 			"isTransparent": false,
@@ -163,8 +163,83 @@
 			"name": "Projectiles",
 			"overriden": 0,
 			"subLayers": [],
-			"instances": [],
+			"instances": [
+				{
+					"type": "Explosion",
+					"properties": {
+						"initially-visible": true,
+						"initial-animation": "Default",
+						"initial-frame": 0,
+						"enable-collisions": true,
+						"live-preview": false
+					},
+					"uid": 26,
+					"instanceVariables": {},
+					"behaviors": {
+						"Fade": {
+							"properties": {
+								"fade-in-time": 0,
+								"wait-time": 0,
+								"fade-out-time": 0.5,
+								"destroy": true,
+								"enabled": true,
+								"live-preview": false
+							}
+						}
+					},
+					"world": {
+						"x": 430,
+						"y": -169,
+						"width": 185.1853232856104,
+						"height": 158.5060817953106,
+						"originX": 0.5,
+						"originY": 0.504951,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						],
+						"angle": 0,
+						"zElevation": 0,
+						"blendMode": "additive"
+					}
+				}
+			],
 			"sid": 448510668994478,
+			"effectTypes": [],
+			"isInitiallyVisible": true,
+			"isInitiallyInteractive": true,
+			"color": [
+				1,
+				1,
+				1,
+				1
+			],
+			"backgroundColor": [
+				1,
+				1,
+				1,
+				1
+			],
+			"isTransparent": true,
+			"parallaxX": 1,
+			"parallaxY": 1,
+			"scaleRate": 1,
+			"forceOwnTexture": false,
+			"renderingMode": "3d",
+			"drawOrder": "z-order",
+			"useRenderCells": false,
+			"blendMode": "normal",
+			"zElevation": 0,
+			"global": false
+		},
+		{
+			"name": "Explosions",
+			"overriden": 0,
+			"subLayers": [],
+			"instances": [],
+			"sid": 654108764822993,
 			"effectTypes": [],
 			"isInitiallyVisible": true,
 			"isInitiallyInteractive": true,

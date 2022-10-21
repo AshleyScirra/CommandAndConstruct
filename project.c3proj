@@ -77,6 +77,14 @@
 			"author": "Scirra",
 			"version": "r315",
 			"bundled": false
+		},
+		{
+			"type": "behavior",
+			"id": "Fade",
+			"name": "Fade",
+			"author": "Scirra",
+			"version": "r315",
+			"bundled": false
 		}
 	],
 	"uniqueId": "nrrpzelemnm",
@@ -88,7 +96,8 @@
 					"TankPlatform",
 					"UnitSelectionBox",
 					"TankTurret",
-					"TankShell"
+					"TankShell",
+					"Explosion"
 				],
 				"subfolders": [],
 				"name": "Main game"
@@ -512,9 +521,9 @@
 									}
 								},
 								{
-									"name": "networkEvent.js",
+									"name": "collisionShape.js",
 									"type": "application/javascript",
-									"sid": 801217679862323,
+									"sid": 797768093342991,
 									"file-info": {
 										"purpose": "none"
 									}
@@ -544,6 +553,44 @@
 							],
 							"subfolders": [],
 							"name": "utils"
+						},
+						{
+							"items": [
+								{
+									"name": "networkEvent.js",
+									"type": "application/javascript",
+									"sid": 801217679862323,
+									"file-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "fireProjectile.js",
+									"type": "application/javascript",
+									"sid": 357902505088976,
+									"file-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "projectileHit.js",
+									"type": "application/javascript",
+									"sid": 177271476484067,
+									"file-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "networkEvents.js",
+									"type": "application/javascript",
+									"sid": 760659018331906,
+									"file-info": {
+										"purpose": "none"
+									}
+								}
+							],
+							"subfolders": [],
+							"name": "networkEvents"
 						}
 					],
 					"name": "gameServer"
