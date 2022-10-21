@@ -84,3 +84,20 @@ export function RotatePoint2(x, y, sin_a, cos_a)
 	const ry = (y * cos_a) + (x * sin_a);
 	return [rx, ry];
 }
+
+// Test if two segments intersect, given by the first line (a1x, a1y) -> (a2x, a2y),
+// and the second line (b1x, b1y) -> (b2x, b2y).
+export function SegmentsIntersect(a1x, a1y, a2x, a2y, b1x, b1y, b2x, b2y)
+{
+	const det = (a2x - a1x) * (b2y - b1y) - (b2x - b1x) * (a2y - a1y);
+	if (det === 0)
+	{
+		return false;
+	}
+	else
+	{
+		const lambda = ((b2y - b1y) * (b2x - a1x) + (b1x - b2x) * (b2y - a1y)) / det;
+		const gamma = ((a1y - a2y) * (b2x - a1x) + (a2x - a1x) * (b2y - a1y)) / det;
+		return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+	}
+};

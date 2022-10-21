@@ -30,6 +30,7 @@ export class Projectile extends MovableObject {
 	#turret;					// turret that fired this projectile
 	#id = -1;					// unique ID for this unit (determined in constructor)
 	#distanceTravelled = 0;		// how far this projectile has travelled
+	#didHitTarget = false;		// set to true if hit a target
 	
 	constructor(turret, x, y)
 	{
@@ -64,6 +65,11 @@ export class Projectile extends MovableObject {
 		return this.#turret.GetRange();
 	}
 	
+	GetPlayer()
+	{
+		return this.#turret.GetUnit().GetPlayer();
+	}
+	
 	Tick(dt)
 	{
 		// Move the projectile at its angle and speed.
@@ -77,11 +83,18 @@ export class Projectile extends MovableObject {
 		// Increment the distance travelled measurement, so it knows
 		// when it's gone out of range.
 		this.#distanceTravelled += Math.hypot(dx, dy);
+		
+		// Check if this projectile hit an enemy unit. If it did,
+		// mark that this projectile should be destroyed.
+		if (this.GetGameServer().CheckProjectileCollision(this))
+		{
+			this.#didHitTarget = true;
+		}
 	}
 	
-	// Projectiles should be destroyed once they travel out of range.
+	// Projectiles should be destroyed once they travel out of range or hit a target.
 	ShouldDestroy()
 	{
-		return this.GetDistanceTravelled() > this.GetRange();
+		return this.GetDistanceTravelled() > this.GetRange() || this.#didHitTarget;
 	}
 }

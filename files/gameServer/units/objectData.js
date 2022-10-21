@@ -42,4 +42,9 @@ export class ObjectData {
 	{
 		return [this.#imagePointX, this.#imagePointY];
 	}
+	
+	GetCollisionPoly()
+	{
+		return this.#collisionPoly;
+	}
 }

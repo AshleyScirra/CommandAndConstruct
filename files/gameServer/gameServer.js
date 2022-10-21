@@ -1,7 +1,7 @@
  
  import { ObjectData } from "./units/objectData.js";
  import { Unit } from "./units/unit.js";
- import { NetworkEvent } from "./classes/networkEvent.js";
+ import { NetworkEvent } from "./networkEvents/networkEvents.js";
  import { KahanSum } from "./utils/kahanSum.js";
  
  // Number of ticks per second to run the server at,
@@ -157,7 +157,35 @@
 		this.#allProjectilesById.set(projectile.GetId(), projectile);
 		
 		// Queue a network event to tell clients that a projectile was fired.
-		this.#networkEvents.push(new NetworkEvent(projectile))
+		this.#networkEvents.push(new NetworkEvent.FireProjectile(projectile));
+	}
+	
+	// Called when a projectile moves to check if it hit anything.
+	CheckProjectileCollision(projectile)
+	{
+		const [x, y] = projectile.GetPosition();
+		const player = projectile.GetPlayer();
+		
+		// This uses a brute-force approach iterating all units.
+		// TODO: make this more efficient so it can scale for 1000s of units.
+		for (const unit of this.allUnits())
+		{
+			// Skip units from the same player that fired the projectile.
+			if (unit.GetPlayer() === player)
+				continue;
+			
+			// Check if the projectile hit this unit. This only uses the projectile
+			// position as a point and tests if it is inside the unit platform's collision shape.
+			if (unit.GetPlatform().ContainsPoint(x, y))
+			{
+				// Queue a network event to tell clients that a projectile hit something.
+				this.#networkEvents.push(new NetworkEvent.ProjectileHit(projectile));
+				
+				return true;	// hit something
+			}
+		}
+		
+		return false;			// did not hit anything
 	}
 	
 	// Tick the game to advance the game by one step.

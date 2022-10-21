@@ -25,9 +25,9 @@ export class MovableUnitPlatform extends UnitPlatform {
 	// Rotation speed in radians per second
 	#rotateSpeed = MathUtils.ToRadians(90);
 	
-	constructor(unit, x, y)
+	constructor(unit, objectData, x, y)
 	{
-		super(unit);
+		super(unit, objectData);
 		
 		this.#movable = new MovableObject(unit.GetGameServer(), x, y);
 		
@@ -63,6 +63,14 @@ export class MovableUnitPlatform extends UnitPlatform {
 		this.#isMoving = true;
 		this.#targetX = x;
 		this.#targetY = y;
+	}
+	
+	ContainsPoint(x, y)
+	{
+		// The base class ContainsPoint() method checks the point relative to the origin.
+		// So first translate the point to be relative to the unit position.
+		const [myX, myY] = this.GetPosition();
+		return super.ContainsPoint(x - myX, y - myY);
 	}
 	
 	Tick(dt)
