@@ -25,6 +25,11 @@ export class ClientTurret {
 			this.#inst.colorRgb = [1, 0.5, 0.5];
 	}
 	
+	Release()
+	{
+		this.#inst.destroy();
+	}
+	
 	SetOffsetAngle(a)
 	{
 		this.#offsetAngle = a;

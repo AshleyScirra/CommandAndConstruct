@@ -36,6 +36,8 @@ export class Unit {
 	#platform;			// unit platform
 	#turret;			// unit turret
 	
+	#health = 100;		// unit health - unit is destroyed if it reaches 0
+	
 	constructor(gameServer, player, x, y)
 	{
 		this.#gameServer = gameServer;
@@ -88,6 +90,15 @@ export class Unit {
 	GetTurret()
 	{
 		return this.#turret;
+	}
+	
+	ReduceHealth(amount)
+	{
+		this.#health -= amount;
+		
+		// When the health reaches 0, destroy the unit.
+		if (this.#health <= 0)
+			this.GetGameServer().DestroyUnit(this);
 	}
 	
 	Tick(dt)

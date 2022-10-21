@@ -8,6 +8,7 @@ export class NetworkEvent {
 	// This is a list of the values for every kind of network event.
 	static TYPE_FIRE_PROJECTILE = 0;
 	static TYPE_PROJECTILE_HIT = 1;
+	static TYPE_UNIT_DESTROYED = 2;
 	
 	constructor()
 	{

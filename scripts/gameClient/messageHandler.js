@@ -182,6 +182,8 @@ export class GameClientMessageHandler {
 				pos = this.#ReadProjectileFiredEvent(dataView, pos);
 			else if (eventType === 1)
 				pos = this.#ReadProjectileHitEvent(dataView, pos);
+			else if (eventType === 2)
+				pos = this.#ReadUnitDestroyedEvent(dataView, pos);
 			else
 				throw new Error(`unknown event type '${eventType}'`);
 		}
@@ -224,6 +226,16 @@ export class GameClientMessageHandler {
 		pos += 4;
 		
 		this.#gameClient.OnProjectileHit(id, x, y);
+		return pos;
+	}
+	
+	#ReadUnitDestroyedEvent(dataView, pos)
+	{
+		// Unit ID
+		const id = dataView.getUint16(pos);
+		pos += 2;
+		
+		this.#gameClient.OnUnitDestroyed(id);
 		return pos;
 	}
 	

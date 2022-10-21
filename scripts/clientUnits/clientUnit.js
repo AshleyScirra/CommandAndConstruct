@@ -36,6 +36,16 @@ export class ClientUnit {
 		return unit;
 	}
 	
+	Release()
+	{
+		// Set unselected so any selection box is also destroyed
+		this.SetSelectedState(false);
+		
+		// Destroy turret and platform
+		this.#turret.Release();
+		this.#platform.Release();
+	}
+	
 	GetRuntime()
 	{
 		return this.#gameClient.GetRuntime();

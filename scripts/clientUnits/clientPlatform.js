@@ -23,6 +23,11 @@ export class ClientPlatform {
 			this.#inst.colorRgb = [1, 0.5, 0.5];
 	}
 	
+	Release()
+	{
+		this.#inst.destroy();
+	}
+	
 	// Position, size, angle and collisions use the corresponding Construct instance.
 	GetPosition()
 	{

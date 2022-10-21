@@ -97,6 +97,15 @@
 		this.#allUnitsById.set(unit.GetId(), unit);
 	}
 	
+	DestroyUnit(unit)
+	{
+		// Queue a network event to tell clients that the unit was destroyed.
+		this.#networkEvents.push(new NetworkEvent.UnitDestroyed(unit.GetId()));
+		
+		// Remove the unit from the server.
+		this.#allUnitsById.delete(unit.GetId());
+	}
+	
 	// Iterates all units in the game, using the values of the units map.
 	allUnits()
 	{
@@ -180,6 +189,9 @@
 			{
 				// Queue a network event to tell clients that a projectile hit something.
 				this.#networkEvents.push(new NetworkEvent.ProjectileHit(projectile));
+				
+				// Apply the projectile damage to the unit health.
+				unit.ReduceHealth(projectile.GetDamage());
 				
 				return true;	// hit something
 			}

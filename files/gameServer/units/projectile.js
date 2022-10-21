@@ -31,6 +31,7 @@ export class Projectile extends MovableObject {
 	#id = -1;					// unique ID for this unit (determined in constructor)
 	#distanceTravelled = 0;		// how far this projectile has travelled
 	#didHitTarget = false;		// set to true if hit a target
+	#damage = 10;				// amount of damage this projectile does
 	
 	constructor(turret, x, y)
 	{
@@ -68,6 +69,11 @@ export class Projectile extends MovableObject {
 	GetPlayer()
 	{
 		return this.#turret.GetUnit().GetPlayer();
+	}
+	
+	GetDamage()
+	{
+		return this.#damage;
 	}
 	
 	Tick(dt)

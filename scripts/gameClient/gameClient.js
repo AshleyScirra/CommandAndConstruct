@@ -174,6 +174,30 @@ export class GameClient {
 		explosionInst.angle = Math.random() * 2 * Math.PI;
 	}
 	
+	// When a network event is received indicating a unit was destroyed, remove its corresponding
+	// unit and also create an explosion to represent its destruction.
+	OnUnitDestroyed(unitId)
+	{
+		const unit = this.#allUnitsById.get(unitId);
+		
+		// If the client is not properly synchronised and a unit with this ID can't be found,
+		// just ignore the message.
+		if (!unit)
+			return;
+		
+		// Create an explosion at the unit for visual feedback of its destruction, similar to
+		// in OnProjectileHit (but also make it a bit bigger to cover the unit).
+		const [x, y] = unit.GetPlatform().GetPosition();
+		const explosionInst = this.#runtime.objects.Explosion.createInstance("Explosions", x, y);
+		explosionInst.angle = Math.random() * 2 * Math.PI;
+		explosionInst.width *= 1.4;
+		explosionInst.height *= 1.4;
+		
+		// Remove unit from client and destroy it
+		this.#allUnitsById.delete(unitId);
+		unit.Release();
+	}
+	
 	// Tick the client to advance the game state by one step.
 	#OnTick()
 	{
