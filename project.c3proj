@@ -24,16 +24,16 @@
 		},
 		{
 			"type": "plugin",
-			"id": "Button",
-			"name": "Button",
+			"id": "Text",
+			"name": "Text",
 			"author": "Scirra",
 			"version": "r315",
 			"bundled": false
 		},
 		{
 			"type": "plugin",
-			"id": "Text",
-			"name": "Text",
+			"id": "Button",
+			"name": "Button",
 			"author": "Scirra",
 			"version": "r315",
 			"bundled": false
@@ -97,7 +97,8 @@
 					"UnitSelectionBox",
 					"TankTurret",
 					"TankShell",
-					"Explosion"
+					"Explosion",
+					"GameOverText"
 				],
 				"subfolders": [],
 				"name": "Main game"
@@ -617,7 +618,7 @@
 	},
 	"properties": {
 		"description": "",
-		"version": "0.0.2.0",
+		"version": "0.0.2.1",
 		"author": "Ashley Gullen",
 		"authorEmail": "",
 		"authorWebsite": "",

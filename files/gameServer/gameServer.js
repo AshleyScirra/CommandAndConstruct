@@ -42,6 +42,8 @@
 	
 	#messageSequenceNumber = 0;		// an increasing number for every binary message
 	
+	#isGameOver = false;			// set to true once victory/defeat condition met
+	
  	constructor(sendMessageFunc, constructObjectData)
 	{
 		// The function to send a message to the runtime is passed to the constructor.
@@ -71,13 +73,15 @@
 	Init()
 	{
 		// Hard-code six starting units: three for player 0 and three for player 1.
-		this._AddUnitAtPosition(0, 200, 200);
-		this._AddUnitAtPosition(0, 200, 400);
-		this._AddUnitAtPosition(0, 200, 600);
+		this._AddUnitAtPosition(0, 250, 200);
+		this._AddUnitAtPosition(0, 125, 400);
+		this._AddUnitAtPosition(0, 400, 400);
+		this._AddUnitAtPosition(0, 250, 600);
 		
-		this._AddUnitAtPosition(1, 1700, 200);
-		this._AddUnitAtPosition(1, 1700, 400);
-		this._AddUnitAtPosition(1, 1700, 600);
+		this._AddUnitAtPosition(1, 1920 - 250, 200);
+		this._AddUnitAtPosition(1, 1920 - 125, 400);
+		this._AddUnitAtPosition(1, 1920 - 400, 400);
+		this._AddUnitAtPosition(1, 1920 - 250, 600);
 		
 		this.SendToRuntime({
 			"type": "create-initial-state",
@@ -239,6 +243,9 @@
 		// Send any events that have happened over the network.
 		this.#SendNetworkEvents();
 		
+		// Check the game victory/defeat conditions e.g. if one team is defeated.
+		this.#CheckGameEndCondition();
+		
 		// Advance the game time by this tick's delta-time value.
 		// Note the game time uses kahan summation to improve precision. Normal floating
 		// point summation is not precise enough to keep an accurate clock time.
@@ -395,5 +402,48 @@
 		// but they don't have to be received in the correct order. Clients can compensate
 		// for late events.
 		this.SendToRuntime(arrayBuffer, "r", [arrayBuffer])
+	}
+	
+	#CheckGameEndCondition()
+	{
+		// If the game is already over skip making this check.
+		if (this.#isGameOver)
+			return;
+		
+		// Check how many units player 0 and player 1 have.
+		// TODO: support more players/other victory conditions
+		let player0count = 0;
+		let player1count = 0;
+		
+		for (const unit of this.allUnits())
+		{
+			if (unit.GetPlayer() === 0)
+				player0count++;
+			else if (unit.GetPlayer() === 1)
+				player1count++;
+		}
+		
+		// If either player has 0 units, they have been defeated.
+		if (player0count === 0 || player1count === 0)
+		{
+			// Set the game over flag so this check isn't made again.
+			this.#isGameOver = true;
+			
+			// Determine which player won. Note if both players end up with
+			// 0 units at exactly the same time, then no player won.
+			let winningPlayer;
+			if (player0count === 0 && player1count > 0)
+				winningPlayer = 1;
+			else if (player1count === 0 && player0count > 0)
+				winningPlayer = 0;
+			else
+				winningPlayer = -1;
+			
+			// Send to clients a message indicating that the game is over and which player won.
+			this.SendToRuntime({
+				"type": "game-over",
+				"winning-player": winningPlayer
+			});
+		}
 	}
  }

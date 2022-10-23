@@ -27,7 +27,8 @@ export class GameClientMessageHandler {
 		// Create map of message types that can be received from GameServer
 		// and the function to call to handle each of them.
 		this.#messageMap = new Map([
-			["create-initial-state", m => this.#OnCreateInitialState(m)]
+			["create-initial-state", m => this.#OnCreateInitialState(m)],
+			["game-over", m => this.#OnGameOver(m)]
 		]);
 	}
 	
@@ -292,5 +293,12 @@ export class GameClientMessageHandler {
 			"imagePoint": [imgPtX - x, imgPtY - y],
 			"collisionPoly": collisionPoly
 		};
+	}
+	
+	#OnGameOver(m)
+	{
+		const winningPlayer = m["winning-player"];
+		const didWin = (this.#gameClient.GetPlayer() === winningPlayer);
+		this.#gameClient.OnGameOver(didWin);
 	}
 }

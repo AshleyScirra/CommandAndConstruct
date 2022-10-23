@@ -217,4 +217,22 @@ export class GameClient {
 			}
 		}
 	}
+	
+	// Called when GameServer sends a "game-over" message
+	OnGameOver(didWin)
+	{
+		// Create an instance of GameOverText to display the result.
+		// Do this on the top UI layer and position it in the middle of the viewport.
+		const uiLayer = this.#runtime.layout.getLayer("UI");
+		const viewport = uiLayer.getViewport();
+		const midX = (viewport.left + viewport.right) / 2;
+		const midY = (viewport.top + viewport.bottom) / 2;
+		const textInst = this.#runtime.objects.GameOverText.createInstance("UI", midX, midY);
+		
+		// Set the text depending on if this player won.
+		textInst.text = (didWin ? "Victory!" : "Defeat...");
+		
+		// Wait 5 seconds then go back to the title screen.
+		self.setTimeout(() => this.#runtime.goToLayout("Title screen"), 5000);
+	}
 }
