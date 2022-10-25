@@ -145,6 +145,12 @@ export class SelectionManager {
 		if (this.IsAnyUnitSelected() && !didHitUnit)
 		{
 			this.#gameClient.MoveUnits([...this.#selectedUnits], layerX, layerY);
+			
+			// If the player is not using mouse input (e.g. touch input), they may be
+			// unable to use right-click to unselect units. So automatically unselect
+			// all units after issuing a move command so another unit can be selected.
+			if (e.pointerType !== "mouse")
+				this.UnselectAll();
 		}
 	}
 	
