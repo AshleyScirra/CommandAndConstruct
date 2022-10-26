@@ -158,7 +158,7 @@
 		},
 		{
 			"eventType": "comment",
-			"text": "Automatically reload if an update becomes ready on the title screen, to make sure the user is always on the latest version if possible."
+			"text": "Display on the title screen when an update is downloading or ready."
 		},
 		{
 			"eventType": "block",
