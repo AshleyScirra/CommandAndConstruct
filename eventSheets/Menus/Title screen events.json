@@ -172,10 +172,26 @@
 			"actions": [
 				{
 					"id": "set-text",
-					"objectClass": "TitleVersion",
-					"sid": 458635553825037,
+					"objectClass": "SubTitleText",
+					"sid": 903573026735962,
 					"parameters": {
-						"text": "\"Updating...\""
+						"text": "\"Downloading update...\""
+					}
+				},
+				{
+					"id": "set-font-color",
+					"objectClass": "SubTitleText",
+					"sid": 702343385270252,
+					"parameters": {
+						"color": "rgbEx(100, 100, 0)"
+					}
+				},
+				{
+					"id": "set-font-color",
+					"objectClass": "TitleVersion",
+					"sid": 637353095619216,
+					"parameters": {
+						"color": "rgbEx(100, 100, 0)"
 					}
 				}
 			],
@@ -192,17 +208,28 @@
 			],
 			"actions": [
 				{
-					"id": "wait",
-					"objectClass": "System",
-					"sid": 510129069948999,
+					"id": "set-text",
+					"objectClass": "SubTitleText",
+					"sid": 245657352025937,
 					"parameters": {
-						"seconds": "1.0"
+						"text": "\"Update available! Reload to update.\""
 					}
 				},
 				{
-					"id": "reload",
-					"objectClass": "Browser",
-					"sid": 704999612198445
+					"id": "set-font-color",
+					"objectClass": "SubTitleText",
+					"sid": 929715876301519,
+					"parameters": {
+						"color": "rgbEx(100, 100, 0)"
+					}
+				},
+				{
+					"id": "set-font-color",
+					"objectClass": "TitleVersion",
+					"sid": 503781103709405,
+					"parameters": {
+						"color": "rgbEx(100, 100, 0)"
+					}
 				}
 			],
 			"sid": 554682497990135

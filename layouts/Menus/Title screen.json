@@ -125,48 +125,6 @@
 					}
 				},
 				{
-					"type": "TitleText",
-					"properties": {
-						"text": "A multiplayer real-time strategy game made in Construct.",
-						"enable-bbcode": true,
-						"font": "Arial",
-						"size": 24,
-						"line-height": 0,
-						"bold": false,
-						"italic": false,
-						"color": [
-							0.7294117647058823,
-							0.7294117647058823,
-							0.7294117647058823,
-							1
-						],
-						"horizontal-alignment": "center",
-						"vertical-alignment": "top",
-						"wrapping": "word",
-						"initially-visible": true,
-						"origin": "top-left"
-					},
-					"uid": 5,
-					"instanceVariables": {},
-					"behaviors": {},
-					"world": {
-						"x": 227.5,
-						"y": 174,
-						"width": 1465.35,
-						"height": 68.95833333333337,
-						"originX": 0,
-						"originY": 0,
-						"color": [
-							1,
-							1,
-							1,
-							1
-						],
-						"angle": 0,
-						"zElevation": 0
-					}
-				},
-				{
 					"type": "TitleSinglePlayerButton",
 					"properties": {
 						"type": "button",
@@ -347,6 +305,48 @@
 							1,
 							1
 						]
+					}
+				},
+				{
+					"type": "SubTitleText",
+					"properties": {
+						"text": "A multiplayer real-time strategy game made in Construct.",
+						"enable-bbcode": true,
+						"font": "Arial",
+						"size": 24,
+						"line-height": 0,
+						"bold": false,
+						"italic": false,
+						"color": [
+							0.7294117647058823,
+							0.7294117647058823,
+							0.7294117647058823,
+							1
+						],
+						"horizontal-alignment": "center",
+						"vertical-alignment": "top",
+						"wrapping": "word",
+						"initially-visible": true,
+						"origin": "top-left"
+					},
+					"uid": 29,
+					"instanceVariables": {},
+					"behaviors": {},
+					"world": {
+						"x": 227.5,
+						"y": 158,
+						"width": 1465.35,
+						"height": 68.95833333333337,
+						"originX": 0,
+						"originY": 0,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						],
+						"angle": 0,
+						"zElevation": 0
 					}
 				}
 			],

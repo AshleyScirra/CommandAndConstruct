@@ -115,7 +115,8 @@
 							"TitleMultiplayerJoinButton",
 							"TitleSinglePlayerButton",
 							"TitleVersion",
-							"TitleWIPHTML"
+							"TitleWIPHTML",
+							"SubTitleText"
 						],
 						"subfolders": [],
 						"name": "Title"
