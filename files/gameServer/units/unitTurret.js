@@ -67,7 +67,12 @@ export class UnitTurret extends PositionedAndAngledObject {
 	#FindTarget(dt)
 	{
 		const forPlayer = this.GetUnit().GetPlayer();
-		const [fromX, fromY] = this.GetPlatform().GetTurretPosition();
+		
+		// Note the turret determines range from the platform position rather than its own position.
+		// Since it detects targets by the platform position, it must find range from its own platform
+		// position, otherwise an offset turret position can make it possible for a turret to fire
+		// at a target that can't fire back.
+		const [fromX, fromY] = this.GetPlatform().GetPosition();
 		
 		// This uses a brute-force approach iterating all units.
 		// TODO: make this more efficient so it can scale for 1000s of units.
@@ -111,10 +116,10 @@ export class UnitTurret extends PositionedAndAngledObject {
 		}
 		
 		// Check the target is still in range.
-		const [myX, myY] = this.GetPlatform().GetTurretPosition();
+		const [platformX, platformY] = this.GetPlatform().GetPosition();
 		const [targetX, targetY] = unit.GetPlatform().GetPosition();
-		const dx = targetX - myX;
-		const dy = targetY - myY;
+		const dx = targetX - platformX;
+		const dy = targetY - platformY;
 		if (dx * dx + dy * dy > this.#range * this.#range)
 		{
 			this.#targetUnitId = -1;
@@ -122,7 +127,8 @@ export class UnitTurret extends PositionedAndAngledObject {
 		}
 		
 		// Get the angle to the target
-		const targetAngle = MathUtils.AngleTo(myX, myY, targetX, targetY);
+		const [turretX, turretY] = this.GetPlatform().GetTurretPosition();
+		const targetAngle = MathUtils.AngleTo(turretX, turretY, targetX, targetY);
 		
 		// Rotate towards the target. Note that the angle rotation is done in terms
 		// of the overall angle, but the turret angle is set to an angle relative
@@ -166,11 +172,12 @@ export class UnitTurret extends PositionedAndAngledObject {
 		projectile.SetAngle(angle);
 		projectile.SetSpeed(this.GetProjectileSpeed());
 		
-		// Initialise the distance travelled to the distance to the image point.
-		// This is because turrets measure range from their origin, but they fire
-		// projectiles from the image point. Including this distance makes sure
-		// the projectile range matches the turret range.
-		projectile.SetDistanceTravelled(Math.hypot(imgPtX, imgPtY));
+		// Initialise the distance travelled to the distance from the platform to the projectile.
+		// This is because turrets measure range from the platform position, but they fire
+		// projectiles from the turret image point. Including this distance makes sure the
+		// projectile range matches the range measured from the platform.
+		const [platformX, platformY] = this.GetPlatform().GetPosition();
+		projectile.SetDistanceTravelled(MathUtils.DistanceTo(platformX, platformY, x, y));
 		
 		// Tell GameServer that this projectile was fired, as it needs to both
 		// tick it and send a network event for it.
