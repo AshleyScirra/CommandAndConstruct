@@ -137,13 +137,34 @@ export class GameClient {
 	}
 	
 	// Called when the player commands some selected units to move to a position.
-	MoveUnits(unitsArray, x, y)
+	MoveUnits(unitsArray, targetX, targetY)
 	{
-		// TODO: send a message to GameServer to handle the instruction.
+		// Preserve unit formations when moving units. This is done by finding the average position
+		// of all the units being moved, and each unit's offset from the average position is also
+		// applied to the target position.
+		let sumX = 0;
+		let sumY = 0;
+		for (const unit of unitsArray)
+		{
+			const [x, y] = unit.GetPlatform().GetPosition();
+			sumX += x;
+			sumY += y;
+		}
+		
+		const midX = sumX / unitsArray.length;
+		const midY = sumY / unitsArray.length;
+		
 		this.SendToServer({
 			"type": "move-units",
-			"unitIds": unitsArray.map(u => u.GetId()),
-			"position": [x, y]
+			"units": unitsArray.map(unit =>
+			{
+				const [x, y] = unit.GetPlatform().GetPosition();
+				return {
+					"id": unit.GetId(),
+					"x": targetX + (x - midX),
+					"y": targetY + (y - midY)
+				};
+			})
 		});
 	}
 	

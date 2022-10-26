@@ -73,8 +73,7 @@ function SendMessageToRuntime(msg, transferList)
 function OnMoveUnits(data)
 {
 	const player = data["player"];
-	const unitIds = data["unitIds"];
-	const position = data["position"];
+	const units = data["units"];
 	
-	gameServer.MoveUnits(player, unitIds, position[0], position[1]);
+	gameServer.MoveUnits(player, units);
 }

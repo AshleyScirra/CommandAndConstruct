@@ -141,24 +141,26 @@
 		return this.#gameTime.Get();
 	}
 	
-	MoveUnits(player, unitIds, x, y)
+	MoveUnits(player, units)
 	{
-		// Look up all units from their ID.
-		let unitsArray = unitIds.map(id => this.GetUnitById(id));
-		
-		// Discard any units that cannot be found, just in case any synchronisation issue
-		// means a client tried to move a unit ID that no longer exists on the server.
-		// Also discard any units that aren't from the player who sent the message,
-		// so even a hacked client can't command anyone else's units.
-		unitsArray = unitsArray.filter(unit => unit && unit.GetPlayer() === player);
-		
-		// If none of the unit IDs are valid, ignore the message.
-		if (unitsArray.length === 0)
-			return;
-		
-		// Instruct each unit to move to the given position.
-		for (const unit of unitsArray)
+		// For each unit being commanded to move
+		for (const u of units)
 		{
+			const id = u["id"];
+			const x = u["x"];
+			const y = u["y"];
+			
+			// Look up unit from its ID.
+			const unit = this.GetUnitById(id);
+			
+			// Discard any units that cannot be found, just in case any synchronisation issue
+			// means a client tried to move a unit ID that no longer exists on the server.
+			// Also discard any units that aren't from the player who sent the message,
+			// so even a hacked client can't command anyone else's units.
+			if (!unit || unit.GetPlayer() !== player)
+				continue;
+			
+			// Instruct the unit to move to the given position.
 			unit.GetPlatform().MoveToPosition(x, y);
 		}
 	}

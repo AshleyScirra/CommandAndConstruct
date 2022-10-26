@@ -38,8 +38,9 @@ export class ClientUnit {
 	
 	Release()
 	{
-		// Set unselected so any selection box is also destroyed
-		this.SetSelectedState(false);
+		// Set unselected so any selection box is also destroyed and it's removed
+		// from SelectionManager's list of selected units
+		this.#gameClient.GetSelectionManager().SetSelected(this, false);
 		
 		// Destroy turret and platform
 		this.#turret.Release();
