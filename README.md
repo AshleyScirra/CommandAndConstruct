@@ -14,6 +14,7 @@ Here's a list of blog posts so far about this project.
 - [RTS update #1: Architecture](https://www.construct.net/en/blogs/ashleys-blog-2/rts-update-architecture-1597)
 - [RTS update #2: Classes](https://www.construct.net/en/blogs/ashleys-blog-2/rts-update-classes-1598)
 - [RTS devlog #3: Minimal multiplayer milestone](https://www.construct.net/en/blogs/ashleys-blog-2/rts-devlog-minimal-1600)
+- [RTS devlog #4: Collision detection and combat](https://www.construct.net/en/blogs/ashleys-blog-2/rts-devlog-collision-1601)
 
 ## Try the project
 
