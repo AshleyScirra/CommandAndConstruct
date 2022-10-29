@@ -32,6 +32,7 @@ export class Projectile extends MovableObject {
 	#distanceTravelled = 0;		// how far this projectile has travelled
 	#didHitTarget = false;		// set to true if hit a target
 	#damage = 10;				// amount of damage this projectile does
+	#damageVariance = 0.05;		// random variation in damage done as a percentage
 	
 	constructor(turret, x, y)
 	{
@@ -73,7 +74,10 @@ export class Projectile extends MovableObject {
 	
 	GetDamage()
 	{
-		return this.#damage;
+		// To add an element of unpredictability, randomly vary the damage
+		// up to the damage variance percentage.
+		const maxVariance = this.#damage * this.#damageVariance;
+		return this.#damage - (maxVariance / 2) + (Math.random() * maxVariance);
 	}
 	
 	Tick(dt)

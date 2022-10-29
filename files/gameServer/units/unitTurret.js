@@ -17,6 +17,10 @@ export class UnitTurret extends PositionedAndAngledObject {
 	#range = 1000;			// maximum range to identify a target
 	#rotateSpeed = MathUtils.ToRadians(70);
 	
+	// The accuracy is a random adjustment to the projectile angle when firing.
+	// A value of 0 means perfect accuracy, and higher values mean less accurate firing.
+	#accuracy = MathUtils.ToRadians(8);
+	
 	#lastFireTime = 0;		// game time when last shot was fired
 	#rateOfFire = 2;		// number of seconds between shots
 	#projectileSpeed = 900;	// speed projectile travels at
@@ -167,9 +171,9 @@ export class UnitTurret extends PositionedAndAngledObject {
 		const y = turretY + imgPtY;
 		
 		// Create the projectile and set its properties for the type of projectile
-		// fired by this turret.
+		// fired by this turret, including applying the turret accuracy.
 		const projectile = new Projectile(this, x, y);
-		projectile.SetAngle(angle);
+		projectile.SetAngle(angle - (this.#accuracy / 2) + (Math.random() * this.#accuracy));
 		projectile.SetSpeed(this.GetProjectileSpeed());
 		
 		// Initialise the distance travelled to the distance from the platform to the projectile.
