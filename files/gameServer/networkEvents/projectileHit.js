@@ -34,10 +34,10 @@ NetworkEvent.ProjectileHit = class ProjectileHit extends NetworkEvent {
 		pos += 2;
 		
 		// X and Y positions
-		dataView.setFloat32(pos, this.#x);
-		pos += 4;
-		dataView.setFloat32(pos, this.#y);
-		pos += 4;
+		dataView.setUint16(pos, this.#x);
+		pos += 2;
+		dataView.setUint16(pos, this.#y);
+		pos += 2;
 		
 		return pos;
 	}

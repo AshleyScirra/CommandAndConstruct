@@ -5,9 +5,15 @@ import Globals from "../globals.js";
 // This avoids things like fragmented packets trying to be read as a whole packet.
 const MAGIC_NUMBER = 0x63266321;	// "c&c!" in ASCII
 
- // The binary message types
- const MESSAGE_TYPE_UPDATE = 0;		// game state update
- const MESSAGE_TYPE_EVENTS = 1;		// list of events that have happened
+// The binary message types
+const MESSAGE_TYPE_UPDATE = 0;		// game state update
+const MESSAGE_TYPE_EVENTS = 1;		// list of events that have happened
+ 
+// For converting a 16-bit angle back in to a float in the range [0, 2pi)
+function Uint16ToAngle(a)
+{
+	return (a * 2 * Math.PI) / 65535;
+};
 
 // This class handles receiving messages from the GameServer (whether it's hosted locally or receiving
 // messages over the network). It calls the appropriate GameClient methods for each message.
@@ -136,19 +142,19 @@ export class GameClientMessageHandler {
 			const unitId = dataView.getUint16(pos);
 			pos += 2;
 
-			// Read the X and Y position as floats.
-			const x = dataView.getFloat32(pos);
-			pos += 4;
-			const y = dataView.getFloat32(pos);
-			pos += 4;
+			// Read the X and Y position.
+			const x = dataView.getUint16(pos);
+			pos += 2;
+			const y = dataView.getUint16(pos);
+			pos += 2;
 
 			// Read the platform angle
-			const platformAngle = dataView.getFloat32(pos);
-			pos += 4;
+			const platformAngle = Uint16ToAngle(dataView.getUint16(pos));
+			pos += 2;
 
 			// Read the turret offset angle
-			const turretOffsetAngle = dataView.getFloat32(pos);
-			pos += 4;
+			const turretOffsetAngle = Uint16ToAngle(dataView.getUint16(pos));
+			pos += 2;
 
 			// Now all the data has been read, look up the unit by its ID,
 			// and if found update it with these details.
@@ -197,18 +203,18 @@ export class GameClientMessageHandler {
 		pos += 2;
 		
 		// Read X, Y, angle, speed, range and distance travelled.
-		const x = dataView.getFloat32(pos);
-		pos += 4;
-		const y = dataView.getFloat32(pos);
-		pos += 4;
-		const angle = dataView.getFloat32(pos);
-		pos += 4;
-		const speed = dataView.getFloat32(pos);
-		pos += 4;
-		const range = dataView.getFloat32(pos);
-		pos += 4;
-		const distanceTravelled = dataView.getFloat32(pos);
-		pos += 4;
+		const x = dataView.getUint16(pos);
+		pos += 2;
+		const y = dataView.getUint16(pos);
+		pos += 2;
+		const angle = Uint16ToAngle(dataView.getUint16(pos));
+		pos += 2;
+		const speed = dataView.getUint16(pos);
+		pos += 2;
+		const range = dataView.getUint16(pos);
+		pos += 2;
+		const distanceTravelled = dataView.getUint16(pos);
+		pos += 2;
 		
 		this.#gameClient.OnProjectileFired(id, x, y, angle, speed, range, distanceTravelled);
 		return pos;
@@ -221,10 +227,10 @@ export class GameClientMessageHandler {
 		pos += 2;
 		
 		// Read X, Y
-		const x = dataView.getFloat32(pos);
-		pos += 4;
-		const y = dataView.getFloat32(pos);
-		pos += 4;
+		const x = dataView.getUint16(pos);
+		pos += 2;
+		const y = dataView.getUint16(pos);
+		pos += 2;
 		
 		this.#gameClient.OnProjectileHit(id, x, y);
 		return pos;

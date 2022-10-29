@@ -1,4 +1,18 @@
 
+const _2pi = 2 * Math.PI;
+
+// Return a value x "clamped" between the minimum and maximum values,
+// i.e. not lower than the minimum value and not higher than the maximum value.
+export function Clamp(x, lower, upper)
+{
+	if (x < lower)
+		return lower;
+	else if (x > upper)
+		return upper;
+	else
+		return x;
+};
+
 // Return the angle in radians from the first position to the second.
 export function AngleTo(x1, y1, x2, y2)
 {
@@ -101,3 +115,24 @@ export function SegmentsIntersect(a1x, a1y, a2x, a2y, b1x, b1y, b2x, b2y)
 		return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
 	}
 };
+
+// Clamp a value to the range of a uint16 (0-65535).
+export function ClampUint16(x)
+{
+	return Clamp(x, 0, 65535);
+};
+
+// To save bandwidth, angles are transmitted as 16-bit values. These have a range of
+// 0-65536, so a value in radians is expanded to that range. This has a precision of
+// about 0.005 degrees per increment, which is pretty good - over a distance of
+// 10,000 pixels that will only be off by about 1 pixel, so this should be good enough.
+export function AngleToUint16(a)
+{
+	// Ensure in [0, 2pi) range
+	a %= _2pi;
+	if (a < 0)
+		a += _2pi;
+	
+	a = (a * 65535) / _2pi;
+	return Math.round(a);
+}

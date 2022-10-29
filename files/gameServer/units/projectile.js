@@ -1,5 +1,6 @@
 
 import { MovableObject } from "../classes/movableObject.js";
+import * as MathUtils from "../utils/mathUtils.js";
 
 // Like unit IDs, projectile IDs are sent as a uint16 value to save on bandwidth,
 // allowing for around 65k active projectiles in the entire game at any one time,
@@ -70,6 +71,14 @@ export class Projectile extends MovableObject {
 	GetPlayer()
 	{
 		return this.#turret.GetUnit().GetPlayer();
+	}
+	
+	SetPosition(x, y)
+	{
+		// Projectile positions are transmitted as uint16s. To avoid letting projectiles go to
+		// positions that don't fit inside that range, ensure unit platform positions are clamped
+		// to the range of a uint16.
+		super.SetPosition(MathUtils.ClampUint16(x), MathUtils.ClampUint16(y));
 	}
 	
 	GetDamage()

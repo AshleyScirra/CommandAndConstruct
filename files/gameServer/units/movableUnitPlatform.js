@@ -59,10 +59,19 @@ export class MovableUnitPlatform extends UnitPlatform {
 	
 	MoveToPosition(x, y)
 	{
-		// Set the moving state to the target position
+		// Set the moving state to the target position. Also clamp the target position
+		// to the range of uint16s as that is used for the position.
 		this.#isMoving = true;
-		this.#targetX = x;
-		this.#targetY = y;
+		this.#targetX = MathUtils.ClampUint16(x);
+		this.#targetY = MathUtils.ClampUint16(y);
+	}
+	
+	SetPosition(x, y)
+	{
+		// Unit positions are transmitted as uint16s. To avoid letting units go to positions
+		// that don't fit inside that range, ensure unit platform positions are clamped to
+		// the range of a uint16.
+		this.#movable.SetPosition(MathUtils.ClampUint16(x), MathUtils.ClampUint16(y));
 	}
 	
 	ContainsPoint(x, y)
@@ -112,7 +121,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 			if (moveDist * moveDist >= MathUtils.DistanceSquared(currentX, currentY, this.#targetX, this.#targetY))
 			{
 				// Arrived at target position
-				this.#movable.SetPosition(this.#targetX, this.#targetY);
+				this.SetPosition(this.#targetX, this.#targetY);
 				this.#isMoving = false;
 			}
 			else
@@ -120,7 +129,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 				// Not yet arrived: advance by the move distance on the current angle.
 				const dx = Math.cos(targetAngle) * moveDist;
 				const dy = Math.sin(targetAngle) * moveDist;
-				this.#movable.SetPosition(currentX + dx, currentY + dy);
+				this.SetPosition(currentX + dx, currentY + dy);
 			}
 		}
 		else

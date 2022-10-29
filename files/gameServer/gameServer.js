@@ -3,6 +3,7 @@
  import { Unit } from "./units/unit.js";
  import { NetworkEvent } from "./networkEvents/networkEvents.js";
  import { KahanSum } from "./utils/kahanSum.js";
+ import * as MathUtils from "./utils/mathUtils.js";
  
  // Number of ticks per second to run the server at,
  // and the equivalent value in milliseconds between ticks.
@@ -326,28 +327,27 @@
 		pos += 2;
 		
 		// For each unit, write data about the unit.
-		// TODO: try to shrink some of these values to 16 bits to save bandwidth
 		for (const unit of this.allUnits())
 		{
 			// Write the unit ID
 			dataView.setUint16(pos, unit.GetId());
 			pos += 2;
 			
-			// Write the X and Y position as floats
+			// Write the X and Y position as uint16s
 			const platform = unit.GetPlatform();
 			const [x, y] = platform.GetPosition();
-			dataView.setFloat32(pos, x);
-			pos += 4;
-			dataView.setFloat32(pos, y);
-			pos += 4;
+			dataView.setUint16(pos, x);
+			pos += 2;
+			dataView.setUint16(pos, y);
+			pos += 2;
 			
-			// Write the platform angle as a float
-			dataView.setFloat32(pos, platform.GetAngle());
-			pos += 4;
+			// Write the platform angle as a uint16.
+			dataView.setUint16(pos, MathUtils.AngleToUint16(platform.GetAngle()));
+			pos += 2;
 			
-			// Write the turret offset angle as a float.
-			dataView.setFloat32(pos, unit.GetTurret().GetAngle());
-			pos += 4;
+			// Write the turret offset angle as a uint16.
+			dataView.setUint16(pos, MathUtils.AngleToUint16(unit.GetTurret().GetAngle()));
+			pos += 2;
 		}
 		
 		// Finished writing the game state data.
