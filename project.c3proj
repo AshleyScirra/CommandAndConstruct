@@ -107,7 +107,8 @@
 					"TankShell",
 					"Explosion",
 					"GameOverText",
-					"DirtTerrainBackground"
+					"DirtTerrainBackground",
+					"DragSelectionBox"
 				],
 				"subfolders": [],
 				"name": "Main game"

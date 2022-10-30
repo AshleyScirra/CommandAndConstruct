@@ -5,7 +5,7 @@ import * as MathUtils from "../utils/clientMathUtils.js";
 
 // If a pointerup comes within this distance of the corresponding pointerdown,
 // it will be counted as a tap. Otherwise it will be counted as a drag.
-const MAX_TAP_DIST = 10;
+const MAX_TAP_DIST = 30;
 
 // The SelectionManager class manages selecting units.
 // It has its own class to avoid cluttering GameClient and organise
@@ -97,7 +97,7 @@ export class SelectionManager {
 		
 		// Save the start position of this pointer. Most pointer inputs aren't interpreted until
 		// the pointerup event, to distinguish between taps and drags.
-		this.#pointerInfos.set(e.pointerId, new PointerInfo(e.clientX, e.clientY));
+		this.#pointerInfos.set(e.pointerId, new PointerInfo(this, e));
 	}
 	
 	#OnPointerMove(e)
@@ -107,11 +107,18 @@ export class SelectionManager {
 			return;		// unknown pointer id, ignore
 		
 		// If this pointer has moved more than the maximum tap distance from its start position,
-		// then flag it as a dragging pointer instead.
+		// then treat it as a drag instead. This will create a selection box and flag it as a drag
+		// so it's no longer treated as a tap in the pointerup event.
 		if (!pointerInfo.isDrag &&
 			MathUtils.DistanceTo(pointerInfo.clientX, pointerInfo.clientY, e.clientX, e.clientY) > MAX_TAP_DIST)
 		{
-			pointerInfo.isDrag = true;
+			pointerInfo.StartDrag();
+		}
+		
+		// If this pointer is dragging, update it while it moves, so the selection box follows the movement.
+		if (pointerInfo.isDrag)
+		{
+			pointerInfo.UpdateDrag(e);
 		}
 	}
 	
@@ -121,8 +128,14 @@ export class SelectionManager {
 		if (!pointerInfo)
 			return;		// unknown pointer id, ignore
 		
-		// If this pointer never moved far enough to count as a drag, treat it as a tap.
-		if (!pointerInfo.isDrag)
+		// If this pointer moved far enough to count as a drag, finish the drag and select
+		// all units inside the dragged box.
+		if (pointerInfo.isDrag)
+		{
+			pointerInfo.EndDrag(e);
+		}
+		// Otherwise if this pointer never moved far enough to count as a drag, treat it as a tap.
+		else
 		{
 			// A button value of 0 means the left mouse button, or a non-mouse input
 			// like a touch or a pen input.
@@ -204,5 +217,20 @@ export class SelectionManager {
 		// This can't be used via touch input, so instead when commanding units to move
 		// via touch input, all selected units are automatically unselected.
 		this.UnselectAll();
+	}
+	
+	SelectAllInRectangle(left, top, right, bottom)
+	{
+		// Called when ending a selection box drag. Select any units whose position is
+		// inside the selection box rectangle.
+		for (const unit of this.#gameClient.allLocalPlayerUnits())
+		{
+			const [x, y] = unit.GetPlatform().GetPosition();
+			
+			if (MathUtils.IsPointInRectangle(x, y, left, top, right, bottom))
+			{
+				this.SetSelected(unit, true);
+			}
+		}
 	}
 }

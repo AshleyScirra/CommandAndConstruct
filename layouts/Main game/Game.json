@@ -335,6 +335,39 @@
 			"global": false
 		},
 		{
+			"name": "DragSelectionBox",
+			"overriden": 0,
+			"subLayers": [],
+			"instances": [],
+			"sid": 593658404322465,
+			"effectTypes": [],
+			"isInitiallyVisible": true,
+			"isInitiallyInteractive": true,
+			"color": [
+				1,
+				1,
+				1,
+				1
+			],
+			"backgroundColor": [
+				1,
+				1,
+				1,
+				1
+			],
+			"isTransparent": true,
+			"parallaxX": 0,
+			"parallaxY": 0,
+			"scaleRate": 1,
+			"forceOwnTexture": false,
+			"renderingMode": "3d",
+			"drawOrder": "z-order",
+			"useRenderCells": false,
+			"blendMode": "normal",
+			"zElevation": 0,
+			"global": false
+		},
+		{
 			"name": "UI",
 			"overriden": 0,
 			"subLayers": [],

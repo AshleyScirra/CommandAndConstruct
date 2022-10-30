@@ -1,0 +1,20 @@
+{
+	"name": "DragSelectionBox",
+	"plugin-id": "NinePatch",
+	"sid": 365354901493079,
+	"isGlobal": false,
+	"instanceVariables": [],
+	"behaviorTypes": [],
+	"effectTypes": [],
+	"image": {
+		"width": 16,
+		"height": 16,
+		"originX": 0.5,
+		"originY": 0.5,
+		"originalSource": "",
+		"exportFormat": "lossless",
+		"exportQuality": 0.8,
+		"imageSpriteId": 9654119,
+		"useCollisionPoly": true
+	}
+}
