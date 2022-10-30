@@ -305,6 +305,14 @@
 							"script-info": {
 								"purpose": "none"
 							}
+						},
+						{
+							"name": "clientMathUtils.js",
+							"type": "application/javascript",
+							"sid": 521760629692845,
+							"script-info": {
+								"purpose": "none"
+							}
 						}
 					],
 					"subfolders": [],

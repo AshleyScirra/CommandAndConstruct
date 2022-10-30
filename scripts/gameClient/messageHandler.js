@@ -1,5 +1,6 @@
 
 import Globals from "../globals.js";
+import * as MathUtils from "../utils/clientMathUtils.js";
 
 // "Magic number" that binary messages start with to verify it's an expected message.
 // This avoids things like fragmented packets trying to be read as a whole packet.
@@ -8,12 +9,6 @@ const MAGIC_NUMBER = 0x63266321;	// "c&c!" in ASCII
 // The binary message types
 const MESSAGE_TYPE_UPDATE = 0;		// game state update
 const MESSAGE_TYPE_EVENTS = 1;		// list of events that have happened
- 
-// For converting a 16-bit angle back in to a float in the range [0, 2pi)
-function Uint16ToAngle(a)
-{
-	return (a * 2 * Math.PI) / 65535;
-};
 
 // This class handles receiving messages from the GameServer (whether it's hosted locally or receiving
 // messages over the network). It calls the appropriate GameClient methods for each message.
@@ -149,11 +144,11 @@ export class GameClientMessageHandler {
 			pos += 2;
 
 			// Read the platform angle
-			const platformAngle = Uint16ToAngle(dataView.getUint16(pos));
+			const platformAngle = MathUtils.Uint16ToAngle(dataView.getUint16(pos));
 			pos += 2;
 
 			// Read the turret offset angle
-			const turretOffsetAngle = Uint16ToAngle(dataView.getUint16(pos));
+			const turretOffsetAngle = MathUtils.Uint16ToAngle(dataView.getUint16(pos));
 			pos += 2;
 
 			// Now all the data has been read, look up the unit by its ID,
@@ -207,7 +202,7 @@ export class GameClientMessageHandler {
 		pos += 2;
 		const y = dataView.getUint16(pos);
 		pos += 2;
-		const angle = Uint16ToAngle(dataView.getUint16(pos));
+		const angle = MathUtils.Uint16ToAngle(dataView.getUint16(pos));
 		pos += 2;
 		const speed = dataView.getUint16(pos);
 		pos += 2;
