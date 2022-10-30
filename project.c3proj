@@ -253,6 +253,14 @@
 							"script-info": {
 								"purpose": "none"
 							}
+						},
+						{
+							"name": "pointerInfo.js",
+							"type": "application/javascript",
+							"sid": 611139322448243,
+							"script-info": {
+								"purpose": "none"
+							}
 						}
 					],
 					"subfolders": [],

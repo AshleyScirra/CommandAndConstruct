@@ -1,5 +1,6 @@
 
 import { MultiEventHandler } from "../utils/multiEventHandler.js";
+import { PointerInfo } from "./pointerInfo.js";
 import * as MathUtils from "../utils/clientMathUtils.js";
 
 // If a pointerup comes within this distance of the corresponding pointerdown,
@@ -12,10 +13,10 @@ const MAX_TAP_DIST = 10;
 export class SelectionManager {
 
 	// Private fields
-	#gameClient;					// Reference to GameClient
-	#selectedUnits = new Set();		// Set of all currently selected units
-	#eventHandlers;					// MultiEventHandler for selection events
-	#pointerStartPositions = new Map();	// map of pointer id -> { clientX, clientY, isDrag }
+	#gameClient;						// Reference to GameClient
+	#selectedUnits = new Set();			// Set of all currently selected units
+	#eventHandlers;						// MultiEventHandler for selection events
+	#pointerInfos = new Map();			// map of pointer id -> PointerInfo
 	
 	constructor(gameClient)
 	{
@@ -91,14 +92,17 @@ export class SelectionManager {
 	
 	#OnPointerDown(e)
 	{
+		if (this.#pointerInfos.has(e))
+			return;		// ignore if already got this pointer ID
+		
 		// Save the start position of this pointer. Most pointer inputs aren't interpreted until
 		// the pointerup event, to distinguish between taps and drags.
-		this.#pointerStartPositions.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+		this.#pointerInfos.set(e.pointerId, new PointerInfo(e.clientX, e.clientY));
 	}
 	
 	#OnPointerMove(e)
 	{
-		const pointerInfo = this.#pointerStartPositions.get(e.pointerId);
+		const pointerInfo = this.#pointerInfos.get(e.pointerId);
 		if (!pointerInfo)
 			return;		// unknown pointer id, ignore
 		
@@ -113,7 +117,7 @@ export class SelectionManager {
 	
 	#OnPointerUp(e)
 	{
-		const pointerInfo = this.#pointerStartPositions.get(e.pointerId);
+		const pointerInfo = this.#pointerInfos.get(e.pointerId);
 		if (!pointerInfo)
 			return;		// unknown pointer id, ignore
 		
@@ -134,7 +138,7 @@ export class SelectionManager {
 		}
 		
 		// Delete the pointer id from the start position map as the pointer is no longer in use.
-		this.#pointerStartPositions.delete(e.pointerId);
+		this.#pointerInfos.delete(e.pointerId);
 	}
 	
 	#OnTap_MainButton(e)
