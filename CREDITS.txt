@@ -2,3 +2,6 @@ Project and JavaScript code by Ashley Gullen
 
 Tank artwork by 'Bleed' (CC-BY 3.0)
 https://opengameart.org/content/tank-pack-bleeds-game-art
+
+Background artwork by 'Cethiel' (CC0)
+https://opengameart.org/content/tileable-dirt-textures

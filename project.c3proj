@@ -32,6 +32,14 @@
 		},
 		{
 			"type": "plugin",
+			"id": "TiledBg",
+			"name": "Tiled Background",
+			"author": "Scirra",
+			"version": "r316",
+			"bundled": false
+		},
+		{
+			"type": "plugin",
 			"id": "Button",
 			"name": "Button",
 			"author": "Scirra",
@@ -98,7 +106,8 @@
 					"TankTurret",
 					"TankShell",
 					"Explosion",
-					"GameOverText"
+					"GameOverText",
+					"DirtTerrainBackground"
 				],
 				"subfolders": [],
 				"name": "Main game"
