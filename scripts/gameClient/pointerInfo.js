@@ -10,7 +10,7 @@ export class PointerInfo {
 
 	#pointerManager;
 	
-	#actionType = "tap";	// one of "tap" or "drag"
+	#actionType = "tap";	// one of "tap", "drag" or "pan"
 	#pointerType = "";		// one of "mouse", "touch", "pen"
 	
 	#startClientX = 0;		// start position in client co-ordinates
@@ -35,6 +35,13 @@ export class PointerInfo {
 		const [layerX, layerY] = backgroundLayer.cssPxToLayer(e.clientX, e.clientY);
 		this.#startLayerX = layerX;
 		this.#startLayerY = layerY;
+		
+		// Use the middle mouse button for pan scrolling.
+		if (e.pointerType === "mouse" && e.button === 1)
+		{
+			this.#actionType = "pan";
+			this.#pointerManager.StartPan();
+		}
 	}
 	
 	GetRuntime()
@@ -62,6 +69,10 @@ export class PointerInfo {
 		if (this.#actionType === "drag")
 		{
 			this.#UpdateDrag(e);
+		}
+		else if (this.#actionType === "pan")
+		{
+			this.#UpdatePan(e);
 		}
 	}
 	
@@ -164,5 +175,12 @@ export class PointerInfo {
 		
 		// Destroy the selection box instance as it's no longer needed.
 		this.#selectionBoxInst.destroy();
+	}
+	
+	#UpdatePan(e)
+	{
+		// Handle pan scrolling in PointerManager.
+		// Pass it the distance this pointer has moved in client co-ordinates.
+		this.#pointerManager.UpdatePan(e.clientX - this.#startClientX, e.clientY - this.#startClientY);
 	}
 }
