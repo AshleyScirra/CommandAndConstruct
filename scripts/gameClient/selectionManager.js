@@ -1,11 +1,5 @@
 
-import { MultiEventHandler } from "../utils/multiEventHandler.js";
-import { PointerInfo } from "./pointerInfo.js";
 import * as MathUtils from "../utils/clientMathUtils.js";
-
-// If a pointerup comes within this distance of the corresponding pointerdown,
-// it will be counted as a tap. Otherwise it will be counted as a drag.
-const MAX_TAP_DIST = 30;
 
 // The SelectionManager class manages selecting units.
 // It has its own class to avoid cluttering GameClient and organise
@@ -15,25 +9,14 @@ export class SelectionManager {
 	// Private fields
 	#gameClient;						// Reference to GameClient
 	#selectedUnits = new Set();			// Set of all currently selected units
-	#eventHandlers;						// MultiEventHandler for selection events
-	#pointerInfos = new Map();			// map of pointer id -> PointerInfo
 	
 	constructor(gameClient)
 	{
 		this.#gameClient = gameClient;
-		
-		const runtime = this.#gameClient.GetRuntime();
-		
-		this.#eventHandlers = new MultiEventHandler([
-			[runtime,		"pointerdown",		e => this.#OnPointerDown(e)],
-			[runtime,		"pointermove",		e => this.#OnPointerMove(e)],
-			[runtime,		"pointerup",		e => this.#OnPointerUp(e)]
-		]);
 	}
 	
 	Release()
 	{
-		this.#eventHandlers.Release();
 	}
 	
 	GetRuntime()
@@ -90,71 +73,8 @@ export class SelectionManager {
 		this.#selectedUnits.clear();
 	}
 	
-	#OnPointerDown(e)
-	{
-		if (this.#pointerInfos.has(e))
-			return;		// ignore if already got this pointer ID
-		
-		// Save the start position of this pointer. Most pointer inputs aren't interpreted until
-		// the pointerup event, to distinguish between taps and drags.
-		this.#pointerInfos.set(e.pointerId, new PointerInfo(this, e));
-	}
-	
-	#OnPointerMove(e)
-	{
-		const pointerInfo = this.#pointerInfos.get(e.pointerId);
-		if (!pointerInfo)
-			return;		// unknown pointer id, ignore
-		
-		// If this pointer has moved more than the maximum tap distance from its start position,
-		// then treat it as a drag instead. This will create a selection box and flag it as a drag
-		// so it's no longer treated as a tap in the pointerup event.
-		if (!pointerInfo.isDrag &&
-			MathUtils.DistanceTo(pointerInfo.clientX, pointerInfo.clientY, e.clientX, e.clientY) > MAX_TAP_DIST)
-		{
-			pointerInfo.StartDrag();
-		}
-		
-		// If this pointer is dragging, update it while it moves, so the selection box follows the movement.
-		if (pointerInfo.isDrag)
-		{
-			pointerInfo.UpdateDrag(e);
-		}
-	}
-	
-	#OnPointerUp(e)
-	{
-		const pointerInfo = this.#pointerInfos.get(e.pointerId);
-		if (!pointerInfo)
-			return;		// unknown pointer id, ignore
-		
-		// If this pointer moved far enough to count as a drag, finish the drag and select
-		// all units inside the dragged box.
-		if (pointerInfo.isDrag)
-		{
-			pointerInfo.EndDrag(e);
-		}
-		// Otherwise if this pointer never moved far enough to count as a drag, treat it as a tap.
-		else
-		{
-			// A button value of 0 means the left mouse button, or a non-mouse input
-			// like a touch or a pen input.
-			if (e.button === 0)
-			{
-				this.#OnTap_MainButton(e);
-			}
-			// A button value of 2 means the right mouse button.
-			else if (e.pointerType === "mouse" && e.button === 2)
-			{
-				this.#OnTap_RightMouseButton();
-			}
-		}
-		
-		// Delete the pointer id from the start position map as the pointer is no longer in use.
-		this.#pointerInfos.delete(e.pointerId);
-	}
-	
-	#OnTap_MainButton(e)
+	// Called by a PointerInfo when the pointer down and up positions are close.
+	OnTap_MainButton(e)
 	{
 		// Determine the position of the pointer on the UnitPlatforms layer.
 		const runtime = this.GetRuntime();
@@ -211,7 +131,7 @@ export class SelectionManager {
 		}
 	}
 	
-	#OnTap_RightMouseButton()
+	OnTap_RightMouseButton()
 	{
 		// Unselect all units when pressing the right mouse button.
 		// This can't be used via touch input, so instead when commanding units to move

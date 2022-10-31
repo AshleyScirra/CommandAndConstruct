@@ -1,52 +1,112 @@
 
-// This represents extra state for tracking pointers in SelectionManager.
-// It's used like a struct or normal JavaScript object, so has public fields, but also
-// adds some extra private fields and methods for handling selection boxes.
+import * as MathUtils from "../utils/clientMathUtils.js";
+
+// If a pointerup comes within this distance of the corresponding pointerdown,
+// it will be counted as a tap. Otherwise it will be counted as a drag.
+const MAX_TAP_DIST = 30;
+
+// This class holds extra state for tracking individual pointers in PointerManager.
 export class PointerInfo {
 
-	// Public fields, directly used by SelectionManager
-	clientX = 0;
-	clientY = 0;
-	isDrag = false;
+	#pointerManager;
 	
-	// Private fields
-	#selectionManager;
-	#startLayerX = 0;		// Start position on background layer
+	#actionType = "tap";	// one of "tap" or "drag"
+	#pointerType = "";		// one of "mouse", "touch", "pen"
+	
+	#startClientX = 0;		// start position in client co-ordinates
+	#startClientY = 0;
+	#startLayerX = 0;		// start position on background layer
 	#startLayerY = 0;
+	
 	#selectionBoxInst;		// Construct instance for selection box
 	
-	constructor(selectionManager, e)
+	constructor(pointerManager, e)
 	{
-		this.#selectionManager = selectionManager;
-		this.clientX = e.clientX;
-		this.clientY = e.clientY;
+		this.#pointerManager = pointerManager;
+		this.#startClientX = e.clientX;
+		this.#startClientY = e.clientY;
+		this.#pointerType = e.pointerType;
 		
 		// Get the start position of this pointer on the background layer.
-		// This allows the start position to remain in place regardless of scrolling and zooming.
-		const runtime = this.#selectionManager.GetRuntime();
+		// This allows the start position of a selection box to remain in place regardless
+		// of scrolling and zooming.
+		const runtime = this.GetRuntime();
 		const backgroundLayer = runtime.layout.getLayer("Background");
 		const [layerX, layerY] = backgroundLayer.cssPxToLayer(e.clientX, e.clientY);
 		this.#startLayerX = layerX;
 		this.#startLayerY = layerY;
 	}
 	
-	// Called when the pointer moves far enough to count as a drag.
-	StartDrag()
+	GetRuntime()
 	{
-		this.isDrag = true;
+		return this.#pointerManager.GetRuntime();
+	}
+	
+	GetSelectionManager()
+	{
+		return this.#pointerManager.GetSelectionManager();
+	}
+	
+	OnMove(e)
+	{
+		// If this pointer has moved more than the maximum tap distance from its start position,
+		// then treat it as a drag instead. This will create a selection box and mark it as a drag
+		// so it's no longer treated as a tap in the pointerup event.
+		if (this.#actionType === "tap" &&
+			MathUtils.DistanceTo(this.#startClientX, this.#startClientY, e.clientX, e.clientY) > MAX_TAP_DIST)
+		{
+			this.#StartDrag();
+		}
 		
-		// Create a DragSElectionBox instance on the DragSelectionBox layer.
+		// If this pointer is dragging, update it while it moves, so the selection box follows the movement.
+		if (this.#actionType === "drag")
+		{
+			this.#UpdateDrag(e);
+		}
+	}
+	
+	OnUp(e)
+	{
+		// If this pointer moved far enough to count as a drag, finish the drag and select
+		// all units inside the dragged box.
+		if (this.#actionType === "drag")
+		{
+			this.#EndDrag(e);
+		}
+		// Otherwise if this pointer never moved far enough to count as a drag, treat it as a tap.
+		else if (this.#actionType === "tap")
+		{
+			// A button value of 0 means the left mouse button, or a non-mouse input
+			// like a touch or a pen input.
+			if (e.button === 0)
+			{
+				this.GetSelectionManager().OnTap_MainButton(e);
+			}
+			// A button value of 2 means the right mouse button.
+			else if (e.pointerType === "mouse" && e.button === 2)
+			{
+				this.GetSelectionManager().OnTap_RightMouseButton();
+			}
+		}
+	}
+	
+	// Called when the pointer moves far enough to count as a drag.
+	#StartDrag()
+	{
+		this.#actionType = "drag";
+		
+		// Create a DragSelectionBox instance on the DragSelectionBox layer.
 		// Note the position is 0,0 but it doesn't matter - when a drag starts it will immediately
 		// be followed up with a call to UpdateDrag() which updates the size and position.
-		const runtime = this.#selectionManager.GetRuntime();
+		const runtime = this.GetRuntime();
 		this.#selectionBoxInst = runtime.objects.DragSelectionBox.createInstance("DragSelectionBox", 0, 0);
 	}
 	
 	// Called when the pointer moves during a drag.
-	UpdateDrag(e)
+	#UpdateDrag(e)
 	{
 		// Get both the background and selection box layers.
-		const runtime = this.#selectionManager.GetRuntime();
+		const runtime = this.GetRuntime();
 		const backgroundLayer = runtime.layout.getLayer("Background");
 		const dragSelectionBoxLayer = runtime.layout.getLayer("DragSelectionBox");
 		
@@ -75,11 +135,11 @@ export class PointerInfo {
 	}
 	
 	// Called when the pointer is released during a drag.
-	EndDrag(e)
+	#EndDrag(e)
 	{
 		// Get the end position of the selection box on the background layer,
 		// i.e. in the co-ordinate system of units.
-		const runtime = this.#selectionManager.GetRuntime();
+		const runtime = this.GetRuntime();
 		const backgroundLayer = runtime.layout.getLayer("Background");
 		const [endLayerX, endLayerY] = backgroundLayer.cssPxToLayer(e.clientX, e.clientY);
 		
@@ -97,10 +157,10 @@ export class PointerInfo {
 		// over an empty area can be used to unselect units if the player changes their mind.
 		if (e.pointerType !== "mouse")
 		{
-			this.#selectionManager.UnselectAll();
+			this.GetSelectionManager().UnselectAll();
 		}
 		
-		this.#selectionManager.SelectAllInRectangle(minX, minY, maxX, maxY);
+		this.GetSelectionManager().SelectAllInRectangle(minX, minY, maxX, maxY);
 		
 		// Destroy the selection box instance as it's no longer needed.
 		this.#selectionBoxInst.destroy();

@@ -262,6 +262,14 @@
 							"script-info": {
 								"purpose": "none"
 							}
+						},
+						{
+							"name": "pointerManager.js",
+							"type": "application/javascript",
+							"sid": 309881539756289,
+							"script-info": {
+								"purpose": "none"
+							}
 						}
 					],
 					"subfolders": [],

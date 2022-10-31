@@ -3,6 +3,7 @@ import { MultiEventHandler } from "../utils/multiEventHandler.js";
 import { ClientUnit } from "../clientUnits/clientUnit.js";
 import { ClientProjectile } from "../clientUnits/clientProjectile.js";
 import { GameClientMessageHandler } from "./messageHandler.js";
+import { PointerManager } from "./pointerManager.js";
 import { SelectionManager } from "./selectionManager.js";
 
 const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
@@ -21,6 +22,7 @@ export class GameClient {
 	
 	#eventHandlers;					// MultiEventHandler for runtime events
 	#messageHandler;				// MessageHandler class
+	#pointerManager;				// PointerManager class
 	#selectionManager;				// SelectionManager class
 	
 	#player = 0;					// Player number this client controls
@@ -39,6 +41,9 @@ export class GameClient {
 		// and calls the appropriate methods on this class.
 		this.#messageHandler = new GameClientMessageHandler(this);
 		
+		// Create PointerManager which handles pointer inputs (mouse, touch and pen).
+		this.#pointerManager = new PointerManager(this);
+		
 		// Create SelectionManager which handles unit selections.
 		this.#selectionManager = new SelectionManager(this);
 	}
@@ -46,6 +51,7 @@ export class GameClient {
 	Release()
 	{
 		this.#eventHandlers.Release();
+		this.#pointerManager.Release();
 		this.#selectionManager.Release();
 	}
 	
