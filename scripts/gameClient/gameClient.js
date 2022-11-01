@@ -230,6 +230,9 @@ export class GameClient {
 	{
 		const dt = this.#runtime.dt;
 		
+		// Tick PointerManager for smooth zooming.
+		this.#pointerManager.Tick(dt);
+		
 		// Advance all projectiles. These are moved by the client as their movement
 		// is entirely predictable: they just proceed at the same speed and angle
 		// from the point they were created.

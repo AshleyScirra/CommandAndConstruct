@@ -12,11 +12,16 @@ export class PointerManager {
 	#eventHandlers;						// MultiEventHandler for selection events
 	#pointerInfos = new Map();			// map of pointer id -> PointerInfo
 	
+	// For tracking the last mouse position
+	#lastMouseX = 0;
+	#lastMouseY = 0;
+	
 	// For panning, the scroll position at the start of the pan
 	#panStartScrollX = 0;
 	#panStartScrollY = 0;
 	
-	#zoom = 1;							// Zoom scale, e.g. 0.5 for zoomed out to 50%
+	#zoom = 1;							// Current zoom scale, e.g. 0.5 for zoomed out to 50%
+	#targetZoom = 1;					// Target zoom scale for smooth zoom
 	
 	constructor(gameClient)
 	{
@@ -64,6 +69,13 @@ export class PointerManager {
 	
 	#OnPointerMove(e)
 	{
+		// If this pointer is the mouse, track the last mouse position in client co-ordinates.
+		if (e.pointerType === "mouse")
+		{
+			this.#lastMouseX = e.clientX;
+			this.#lastMouseY = e.clientY;
+		}
+		
 		const pointerInfo = this.#pointerInfos.get(e.pointerId);
 		if (!pointerInfo)
 			return;		// unknown pointer id, ignore
@@ -109,13 +121,10 @@ export class PointerManager {
 	// view past the edges of the layout.
 	#ScrollTo(x, y)
 	{
-		const [viewportWidth, viewportHeight] = this.#GetViewportSize();
-		const [layoutWidth, layoutHeight] = this.#GetLayoutSize();
-		
 		// Calculate how large the viewport is at this zoom level and use half that
 		// size as a margin around the edge of the layout.
-		const scaledViewportWidth = viewportWidth / this.#zoom;
-		const scaledViewportHeight = viewportHeight / this.#zoom;
+		const [layoutWidth, layoutHeight] = this.#GetLayoutSize();
+		const [scaledViewportWidth, scaledViewportHeight] = this.#GetScaledViewportSize();
 		const hbound = scaledViewportWidth / 2;
 		const vbound = scaledViewportHeight / 2;
 		
@@ -126,26 +135,32 @@ export class PointerManager {
 		);
 	}
 	
-	// Re-apply the same scroll position so any changed scroll boundaries take effect.
-	#ApplyScrollBounds()
-	{
-		const layout = this.GetRuntime().layout;
-		this.#ScrollTo(layout.scrollX, layout.scrollY);
-	}
-	
-	// Use the mouse wheel to zoom by 20% a step.
+	// Use the mouse wheel to zoom.
 	#OnMouseWheel(e)
 	{
+		// Use the wheel deltaY amount in the zoom factor calculation. On one system deltaY
+		// was +/- 200, so this calculation gives a zoom factor of 1.2 per step which feels
+		// about right, and that should scale according to the device/system settings.
+		const zoomFactor = 1 + (Math.abs(e.deltaY) / 1000);
+		
+		// Note that zooming adjusts the target zoom level, rather than the actual zoom level.
+		// The target zoom level is what the zoom level smoothly moves towards.
 		if (e.deltaY < 0)
-			this.SetZoom(this.#zoom * 1.2);
+			this.SetZoom(this.#targetZoom * zoomFactor);
 		else
-			this.SetZoom(this.#zoom / 1.2);
+			this.SetZoom(this.#targetZoom / zoomFactor);
 	}
 	
 	#GetViewportSize()
 	{
 		// TODO: get from a runtime API
 		return [1920, 1080];
+	}
+	
+	#GetScaledViewportSize()
+	{
+		const [vw, vh] = this.#GetViewportSize();
+		return [vw / this.#zoom, vh / this.#zoom];
 	}
 	
 	#GetLayoutSize()
@@ -168,22 +183,53 @@ export class PointerManager {
 	SetZoom(z)
 	{
 		// Limit the provided zoom level to the allowed range (with 2x zoomed in the maximum allowed).
-		z = MathUtils.Clamp(z, this.#GetMinZoom(), 2);
-		
+		// Note this only sets the target zoom level. To smooth out zooms, the actual zoom level
+		// is adjusted over time towards the target zoom level.
+		this.#targetZoom = MathUtils.Clamp(z, this.#GetMinZoom(), 2);
+	}
+	
+	// When ticking, smoothly move the actual zoom level towards the target zoom level.
+	Tick(dt)
+	{
+		// Once within 0.01% of the target zoom level, just jump to the target zoom level.
+		if (Math.abs(this.#targetZoom - this.#zoom) < this.#targetZoom * 0.0001)
+		{
+			this.#SetActualZoom(this.#targetZoom);
+		}
+		else
+		{
+			// Smoothly adjust the zoom level towards the target zoom level at a rate of 99.99% per second.
+			// The maths for this, in the form lerp(a, b, 1 - f ^ dt) is explained in this blog post:
+			// https://www.construct.net/en/blogs/ashleys-blog-2/using-lerp-delta-time-924
+			this.#SetActualZoom(MathUtils.lerp(this.#zoom, this.#targetZoom, 1 - Math.pow(0.0001, dt)));
+		}
+	}
+	
+	#SetActualZoom(z)
+	{
 		if (this.#zoom === z)
 			return;		// no change
 		
+		const lastZoom = this.#zoom;		// save the last zoom value for zoom-to-mouse calculation
 		this.#zoom = z;
 		
+		// Get the current mouse position on the background layer for zoom-to-mouse.
+		const layout = this.GetRuntime().layout;
+		const backgroundLayer = layout.getLayer("Background");
+		const [mouseX, mouseY] = backgroundLayer.cssPxToLayer(this.#lastMouseX, this.#lastMouseY);
+		
+		// Adjust the scroll position to ensure the zoom happens towards the mouse position.
+		const zoomFactor = 1 - (lastZoom / this.#zoom);
+		const dx = mouseX - layout.scrollX;
+		const dy = mouseY - layout.scrollY;
+		this.#ScrollTo(layout.scrollX + dx * zoomFactor,
+					   layout.scrollY + dy * zoomFactor);
+		
 		// Update all "Game" sub-layers to scale according to the zoom value.
-		const gameLayer = this.GetRuntime().layout.getLayer("Game");
+		const gameLayer = layout.getLayer("Game");
 		for (const layer of gameLayer.allSubLayers())
 		{
 			layer.scale = this.#zoom;
 		}
-		
-		// Zooming out could cause areas outside the layout to become visible. So re-apply the scroll
-		// boundaries to ensure the scroll position moves to keep the view inside the layout.
-		this.#ApplyScrollBounds();
 	}
 }

@@ -26,3 +26,9 @@ export function IsPointInRectangle(x, y, left, top, right, bottom)
 {
 	return x >= left && x <= right && y >= top && y <= bottom;
 }
+
+// Linear interpolation
+export function lerp(a, b, x)
+{
+	return a + (b - a) * x;
+}
