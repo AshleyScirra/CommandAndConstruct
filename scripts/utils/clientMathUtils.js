@@ -6,6 +6,17 @@ export function Uint16ToAngle(a)
 };
 
 // Same as equivalent GameServer function
+export function Clamp(x, lower, upper)
+{
+	if (x < lower)
+		return lower;
+	else if (x > upper)
+		return upper;
+	else
+		return x;
+};
+
+// Same as equivalent GameServer function
 export function DistanceTo(x1, y1, x2, y2)
 {
 	return Math.hypot(x2 - x1, y2 - y1);
