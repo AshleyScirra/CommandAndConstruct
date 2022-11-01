@@ -15,6 +15,8 @@ export class PointerInfo {
 	
 	#startClientX = 0;		// start position in client co-ordinates
 	#startClientY = 0;
+	#lastClientX = 0;		// last position in client co-ordinates
+	#lastClientY = 0;
 	#startLayerX = 0;		// start position on background layer
 	#startLayerY = 0;
 	
@@ -25,6 +27,8 @@ export class PointerInfo {
 		this.#pointerManager = pointerManager;
 		this.#startClientX = e.clientX;
 		this.#startClientY = e.clientY;
+		this.#lastClientX = e.clientX;
+		this.#lastClientY = e.clientY;
 		this.#pointerType = e.pointerType;
 		
 		// Get the start position of this pointer on the background layer.
@@ -56,6 +60,10 @@ export class PointerInfo {
 	
 	OnMove(e)
 	{
+		// Save the last client position.
+		this.#lastClientX = e.clientX;
+		this.#lastClientY = e.clientY;
+		
 		// If this pointer has moved more than the maximum tap distance from its start position,
 		// then treat it as a drag instead. This will create a selection box and mark it as a drag
 		// so it's no longer treated as a tap in the pointerup event.
@@ -68,11 +76,22 @@ export class PointerInfo {
 		// If this pointer is dragging, update it while it moves, so the selection box follows the movement.
 		if (this.#actionType === "drag")
 		{
-			this.#UpdateDrag(e);
+			this.#UpdateDrag(e.clientX, e.clientY);
 		}
 		else if (this.#actionType === "pan")
 		{
 			this.#UpdatePan(e);
+		}
+	}
+	
+	// When the zoom level changes, Update() is called, which is essentially treated as a pointermove
+	// event but just re-using the last client position. This keeps the selection box updated while
+	// the zoom level changes.
+	Update()
+	{
+		if (this.#actionType === "drag")
+		{
+			this.#UpdateDrag(this.#lastClientX, this.#lastClientY);
 		}
 	}
 	
@@ -114,7 +133,7 @@ export class PointerInfo {
 	}
 	
 	// Called when the pointer moves during a drag.
-	#UpdateDrag(e)
+	#UpdateDrag(clientX, clientY)
 	{
 		// Get both the background and selection box layers.
 		const runtime = this.GetRuntime();
@@ -129,7 +148,7 @@ export class PointerInfo {
 		const [startX, startY] = dragSelectionBoxLayer.cssPxToLayer(startClientX, startClientY);
 		
 		// Get the end position on the DragSelectionBox layer, which is the current pointer position.
-		const [endX, endY] = dragSelectionBoxLayer.cssPxToLayer(e.clientX, e.clientY);
+		const [endX, endY] = dragSelectionBoxLayer.cssPxToLayer(clientX, clientY);
 		
 		// Set the drag selection box size and position from the maximum and minimum bounds of the
 		// selection position on the DragSelectionBox layer.

@@ -95,6 +95,15 @@ export class PointerManager {
 		this.#pointerInfos.delete(e.pointerId);
 	}
 	
+	// Calls Update() on every active PointerInfo to adapt to any changes.
+	#UpdateAllPointers()
+	{
+		for (const pointerInfo of this.#pointerInfos.values())
+		{
+			pointerInfo.Update();
+		}
+	}
+	
 	// Called when the middle mouse button is pressed, which is used for pan scrolling.
 	// Remember the scroll position at the start of the pan.
 	StartPan()
@@ -231,5 +240,10 @@ export class PointerManager {
 		{
 			layer.scale = this.#zoom;
 		}
+		
+		// Now the zoom level has changed, the layer positions of pointers will have changed.
+		// Update all pointers, which acts the same as a pointermove but using the last
+		// client position. This helps keep selection boxes in place while zooming.
+		this.#UpdateAllPointers();
 	}
 }
