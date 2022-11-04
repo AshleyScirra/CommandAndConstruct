@@ -10,7 +10,7 @@ export class PointerInfo {
 
 	#pointerManager;
 	
-	#actionType = "tap";	// one of "tap", "drag" or "pan"
+	#actionType = "tap";	// one of "tap", "drag", "pan" or "pinch-zoom"
 	#pointerType = "";		// one of "mouse", "touch", "pen"
 	
 	#startClientX = 0;		// start position in client co-ordinates
@@ -58,6 +58,26 @@ export class PointerInfo {
 		return this.#pointerManager.GetSelectionManager();
 	}
 	
+	GetPointerType()
+	{
+		return this.#pointerType;
+	}
+	
+	GetActionType()
+	{
+		return this.#actionType;
+	}
+	
+	GetStartClientPosition()
+	{
+		return [this.#startClientX, this.#startClientY];
+	}
+	
+	GetLastClientPosition()
+	{
+		return [this.#lastClientX, this.#lastClientY];
+	}
+	
 	OnMove(e)
 	{
 		// Save the last client position.
@@ -81,6 +101,13 @@ export class PointerInfo {
 		else if (this.#actionType === "pan")
 		{
 			this.#UpdatePan(e);
+		}
+		else if (this.#actionType === "pinch-zoom")
+		{
+			// Since pinch-to-zoom gestures typically involve two pointers, rather than handle the
+			// gesture in each pointermove event, just flag that pinch zoom changed in PointerManager
+			// which will then update it based on both pointers at the end of the tick.
+			this.#pointerManager.SetPinchZoomChanged();
 		}
 	}
 	
@@ -118,6 +145,20 @@ export class PointerInfo {
 				this.GetSelectionManager().OnTap_RightMouseButton();
 			}
 		}
+	}
+	
+	// Cancel a pointer so it stops doing any action without applying the results of that action.
+	Cancel()
+	{
+		// Destroy selection box if one was created for a drag
+		if (this.#actionType === "drag")
+		{
+			this.#selectionBoxInst.destroy();
+			this.#selectionBoxInst = null;
+		}
+		
+		// Revert to default "tap" state
+		this.#actionType = "tap";
 	}
 	
 	// Called when the pointer moves far enough to count as a drag.
@@ -199,7 +240,26 @@ export class PointerInfo {
 	#UpdatePan(e)
 	{
 		// Handle pan scrolling in PointerManager.
-		// Pass it the distance this pointer has moved in client co-ordinates.
-		this.#pointerManager.UpdatePan(e.clientX - this.#startClientX, e.clientY - this.#startClientY);
+		// Pass it where the pointer currently is in client co-ordinates.
+		// It will scroll based on the movement since the last call to UpdatePan().
+		this.#pointerManager.UpdatePan(e.clientX, e.clientY);
+	}
+	
+	// Called for both pointers when there are two simultaneous touch pointers.
+	// These start a pinch-to-zoom gesture together.
+	StartPinchZoom()
+	{
+		// Cancel any prior pointer action, such as dragging a selection box.
+		this.Cancel();
+		
+		// Mark pointer action as being pinch-to-zoom.
+		this.#actionType = "pinch-zoom";
+		
+		// Reset the start client position. This is because if a single touch pointer is dragged
+		// some distance before a second touch pointer is started, the existing touch pointer
+		// should pinch-to-zoom from its current position when the second touch pointer starts,
+		// rather than where it originally started.
+		this.#startClientX = this.#lastClientX;
+		this.#startClientY = this.#lastClientY;
 	}
 }
