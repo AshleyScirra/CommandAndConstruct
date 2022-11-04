@@ -4,6 +4,7 @@ import { ClientUnit } from "../clientUnits/clientUnit.js";
 import { ClientProjectile } from "../clientUnits/clientProjectile.js";
 import { GameClientMessageHandler } from "./messageHandler.js";
 import { PointerManager } from "./pointerManager.js";
+import { ViewManager } from "./viewManager.js";
 import { SelectionManager } from "./selectionManager.js";
 
 const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
@@ -23,6 +24,7 @@ export class GameClient {
 	#eventHandlers;					// MultiEventHandler for runtime events
 	#messageHandler;				// MessageHandler class
 	#pointerManager;				// PointerManager class
+	#viewManager;					// ViewManager class
 	#selectionManager;				// SelectionManager class
 	
 	#player = 0;					// Player number this client controls
@@ -44,6 +46,9 @@ export class GameClient {
 		// Create PointerManager which handles pointer inputs (mouse, touch and pen).
 		this.#pointerManager = new PointerManager(this);
 		
+		// Create ViewManager which handles scrolling and zooming.
+		this.#viewManager = new ViewManager(this);
+		
 		// Create SelectionManager which handles unit selections.
 		this.#selectionManager = new SelectionManager(this);
 	}
@@ -63,6 +68,21 @@ export class GameClient {
 	GetPlayer()
 	{
 		return this.#player;
+	}
+	
+	GetViewManager()
+	{
+		return this.#viewManager;
+	}
+	
+	GetSelectionManager()
+	{
+		return this.#selectionManager;
+	}
+	
+	GetPointerManager()
+	{
+		return this.#pointerManager;
 	}
 	
 	// Return an array of all Construct object types used for units.
@@ -124,11 +144,6 @@ export class GameClient {
 			const clientUnit = ClientUnit.CreateFromInitialData(this, unitData);
 			this.#allUnitsById.set(clientUnit.GetId(), clientUnit);
 		}
-	}
-	
-	GetSelectionManager()
-	{
-		return this.#selectionManager;
 	}
 	
 	// Iterates all units in the game.
@@ -240,8 +255,11 @@ export class GameClient {
 	{
 		const dt = this.#runtime.dt;
 		
-		// Tick PointerManager for smooth zooming.
+		// Tick PointerManager for handling pinch-to-zoom;
 		this.#pointerManager.Tick(dt);
+		
+		// Tick ViewManager for handling smooth zoom.
+		this.#viewManager.Tick(dt);
 		
 		// Advance all projectiles. These are moved by the client as their movement
 		// is entirely predictable: they just proceed at the same speed and angle

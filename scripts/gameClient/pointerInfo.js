@@ -44,7 +44,7 @@ export class PointerInfo {
 		if (e.pointerType === "mouse" && e.button === 1)
 		{
 			this.#actionType = "pan";
-			this.#pointerManager.StartPan();
+			this.GetViewManager().StartPan();
 		}
 	}
 	
@@ -56,6 +56,11 @@ export class PointerInfo {
 	GetSelectionManager()
 	{
 		return this.#pointerManager.GetSelectionManager();
+	}
+	
+	GetViewManager()
+	{
+		return this.#pointerManager.GetViewManager();
 	}
 	
 	GetPointerType()
@@ -239,10 +244,10 @@ export class PointerInfo {
 	
 	#UpdatePan(e)
 	{
-		// Handle pan scrolling in PointerManager.
+		// Handle pan scrolling in ViewManager.
 		// Pass it where the pointer currently is in client co-ordinates.
 		// It will scroll based on the movement since the last call to UpdatePan().
-		this.#pointerManager.UpdatePan(e.clientX, e.clientY);
+		this.GetViewManager().UpdatePan(e.clientX, e.clientY);
 	}
 	
 	// Called for both pointers when there are two simultaneous touch pointers.

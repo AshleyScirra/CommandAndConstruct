@@ -16,19 +16,9 @@ export class PointerManager {
 	#lastMouseX = 0;
 	#lastMouseY = 0;
 	
-	// For pan-scrolling, the last client position of the pan position.
-	// These values start as NaN for the first update but are then the last client position.
-	#panLastClientX = NaN;
-	#panLastClientY = NaN;
-	
 	// For pinch-to-zoom
 	#didPinchZoomChange = false;		// set to true when any pinch-to-zoom pointer moves
 	#pinchStartZoom = 0;				// zoom level at the start of the pinch-to-zoom gesture
-	
-	#zoom = 1;							// Current zoom scale, e.g. 0.5 for zoomed out to 50%
-	#targetZoom = 1;					// Target zoom scale for smooth zoom
-	#zoomToX = 0;						// Position to zoom to or from
-	#zoomToY = 0;
 	
 	constructor(gameClient)
 	{
@@ -63,6 +53,11 @@ export class PointerManager {
 	GetSelectionManager()
 	{
 		return this.#gameClient.GetSelectionManager();
+	}
+	
+	GetViewManager()
+	{
+		return this.#gameClient.GetViewManager();
 	}
 	
 	#OnPointerDown(e)
@@ -112,72 +107,16 @@ export class PointerManager {
 		// pointer that is used for pan scrolling only. To avoid the scroll position jumping
 		// due to the old mid-point being somewhere else, restart the pan.
 		if (pointerInfo.GetActionType() === "pinch-zoom")
-			this.StartPan();
+			this.GetViewManager().StartPan();
 	}
 	
 	// Calls Update() on every active PointerInfo to adapt to any changes.
-	#UpdateAllPointers()
+	UpdateAllPointers()
 	{
 		for (const pointerInfo of this.#pointerInfos.values())
 		{
 			pointerInfo.Update();
 		}
-	}
-	
-	// Called when starting a pan, either by middle mouse button or a pinch-to-zoom gesture.
-	StartPan()
-	{
-		// Reset the last pan client position to NaN so the next call to UpdatePan()
-		// knows it's the first update since the pan started.
-		this.#panLastClientX = NaN;
-		this.#panLastClientY = NaN;
-	}
-	
-	// Called when the pan position moves during a middle-mouse or touch pan.
-	// It passes the current position in client co-ordinates, and uses the difference from
-	// the last pan client position to determine how far to scroll.
-	UpdatePan(clientX, clientY)
-	{
-		// The first time this method is called the last client pan position is NaN.
-		// In that case don't attempt to scroll, as we don't know what the difference is
-		// from the last position yet.
-		if (!isNaN(this.#panLastClientX) && !isNaN(this.#panLastClientY))
-		{
-			// Identify the distance moved in client co-ordinates.
-			const clientDx = clientX - this.#panLastClientX;
-			const clientDy = clientY - this.#panLastClientY;
-			
-			// To find how far the given distance in client co-ordinates is on the background layer,
-			// find both (0, 0) and this position in layer co-ordinates, and use the distance between
-			// those points. Use that to offset the scroll position.
-			const layout = this.GetRuntime().layout;
-			const backgroundLayer = layout.getLayer("Background");
-			const [ax, ay] = backgroundLayer.cssPxToLayer(0, 0);
-			const [bx, by] = backgroundLayer.cssPxToLayer(clientDx, clientDy);
-			this.#ScrollTo(layout.scrollX + (ax - bx), layout.scrollY + (ay - by));
-		}
-		
-		// Save the last client pan position for the next call.
-		this.#panLastClientX = clientX;
-		this.#panLastClientY = clientY;
-	}
-	
-	// Scroll to the given position, but apply scroll bounding so the player can't move the
-	// view past the edges of the layout.
-	#ScrollTo(x, y)
-	{
-		// Calculate how large the viewport is at this zoom level and use half that
-		// size as a margin around the edge of the layout.
-		const [layoutWidth, layoutHeight] = this.#GetLayoutSize();
-		const [scaledViewportWidth, scaledViewportHeight] = this.#GetScaledViewportSize();
-		const hbound = scaledViewportWidth / 2;
-		const vbound = scaledViewportHeight / 2;
-		
-		// Scroll to the given position, but limited to the scroll boundaries.
-		this.GetRuntime().layout.scrollTo(
-			MathUtils.Clamp(x, hbound, layoutWidth - hbound),
-			MathUtils.Clamp(y, vbound, layoutHeight - vbound)
-		);
 	}
 	
 	// Use the mouse wheel to zoom.
@@ -189,55 +128,16 @@ export class PointerManager {
 		const zoomFactor = 1 + (Math.abs(e.deltaY) / 1000);
 		
 		// Use the mouse position as the position to zoom in to/out from.
-		this.#zoomToX = this.#lastMouseX;
-		this.#zoomToY = this.#lastMouseY;
+		const viewManager = this.GetViewManager();
+		viewManager.SetZoomToPosition(this.#lastMouseX, this.#lastMouseY);
 		
-		// Note that zooming adjusts the target zoom level, rather than the actual zoom level.
-		// The target zoom level is what the zoom level smoothly moves towards.
+		// Set the zoom level in ViewManager.
 		if (e.deltaY < 0)
-			this.SetZoom(this.#targetZoom * zoomFactor);
+			viewManager.SetZoom(viewManager.GetZoom() * zoomFactor);
 		else
-			this.SetZoom(this.#targetZoom / zoomFactor);
+			viewManager.SetZoom(viewManager.GetZoom() / zoomFactor);
 	}
 	
-	#GetViewportSize()
-	{
-		// TODO: get from a runtime API
-		return [1920, 1080];
-	}
-	
-	#GetScaledViewportSize()
-	{
-		const [vw, vh] = this.#GetViewportSize();
-		return [vw / this.#zoom, vh / this.#zoom];
-	}
-	
-	#GetLayoutSize()
-	{
-		const runtime = this.GetRuntime();
-		return [runtime.layout.width, runtime.layout.height];
-	}
-	
-	// Get the minimum zoom value allowed (i.e. the furthest the player can zoom out).
-	// This is whatever zoom level is hit first: the viewport width equalling the width
-	// of the layout, or the viewport height equalling the height of the layout.
-	#GetMinZoom()
-	{
-		const [viewportWidth, viewportHeight] = this.#GetViewportSize();
-		const [layoutWidth, layoutHeight] = this.#GetLayoutSize();
-		return Math.max(viewportWidth / layoutWidth, viewportHeight / layoutHeight);
-	}
-	
-	// Set the view to a given zoom level.
-	SetZoom(z)
-	{
-		// Limit the provided zoom level to the allowed range (with 2x zoomed in the maximum allowed).
-		// Note this only sets the target zoom level. To smooth out zooms, the actual zoom level
-		// is adjusted over time towards the target zoom level.
-		this.#targetZoom = MathUtils.Clamp(z, this.#GetMinZoom(), 2);
-	}
-	
-	// When ticking, smoothly move the actual zoom level towards the target zoom level.
 	Tick(dt)
 	{
 		// If a pinch-to-zoom pointer changed in the past tick, call #UpdatePinchZoom().
@@ -247,52 +147,6 @@ export class PointerManager {
 			this.#UpdatePinchZoom();
 			this.#didPinchZoomChange = false;
 		}
-		
-		// Once within 0.01% of the target zoom level, just jump to the target zoom level.
-		if (Math.abs(this.#targetZoom - this.#zoom) < this.#targetZoom * 0.0001)
-		{
-			this.#SetActualZoom(this.#targetZoom);
-		}
-		else
-		{
-			// Smoothly adjust the zoom level towards the target zoom level at a rate of 99.99% per second.
-			// The maths for this, in the form lerp(a, b, 1 - f ^ dt) is explained in this blog post:
-			// https://www.construct.net/en/blogs/ashleys-blog-2/using-lerp-delta-time-924
-			this.#SetActualZoom(MathUtils.lerp(this.#zoom, this.#targetZoom, 1 - Math.pow(0.0001, dt)));
-		}
-	}
-	
-	#SetActualZoom(z)
-	{
-		if (this.#zoom === z)
-			return;		// no change
-		
-		const lastZoom = this.#zoom;		// save the last zoom value for zoom-to-position calculation
-		this.#zoom = z;
-		
-		// Get the zoom position (from which to zoom in to/out from) on the background layer.
-		const layout = this.GetRuntime().layout;
-		const backgroundLayer = layout.getLayer("Background");
-		const [zoomToX, zoomToY] = backgroundLayer.cssPxToLayer(this.#zoomToX, this.#zoomToY);
-		
-		// Adjust the scroll position to ensure the zoom happens towards the given position.
-		const zoomFactor = 1 - (lastZoom / this.#zoom);
-		const dx = zoomToX - layout.scrollX;
-		const dy = zoomToY - layout.scrollY;
-		this.#ScrollTo(layout.scrollX + dx * zoomFactor,
-					   layout.scrollY + dy * zoomFactor);
-		
-		// Update all "Game" sub-layers to scale according to the zoom value.
-		const gameLayer = layout.getLayer("Game");
-		for (const layer of gameLayer.allSubLayers())
-		{
-			layer.scale = this.#zoom;
-		}
-		
-		// Now the zoom level has changed, the layer positions of pointers will have changed.
-		// Update all pointers, which acts the same as a pointermove but using the last
-		// client position. This helps keep selection boxes in place while zooming.
-		this.#UpdateAllPointers();
 	}
 	
 	// Called when a new touch pointer starts to check if a pinch-to-zoom gesture should start.
@@ -331,8 +185,9 @@ export class PointerManager {
 		{
 			// Save the zoom level at the start of the pinch-to-zoom gesture, and start a new
 			// pan as the gesture can also scroll the view.
-			this.#pinchStartZoom = this.#zoom;
-			this.StartPan();
+			const viewManager = this.GetViewManager();
+			this.#pinchStartZoom = viewManager.GetZoom();
+			viewManager.StartPan();
 			
 			// Start pinch-to-zoom with both touch pointers.
 			newPointer.StartPinchZoom();
@@ -375,11 +230,13 @@ export class PointerManager {
 	{
 		// Using just one pinch-to-zoom pointer keeps scrolling the view.
 		const [curX, curY] = pointerInfo.GetLastClientPosition();
-		this.UpdatePan(curX, curY);
+		this.GetViewManager().UpdatePan(curX, curY);
 	}
 	
 	#UpdatePinchZoom_2Pointers(pointer0, pointer1)
 	{
+		const viewManager = this.GetViewManager();
+		
 		// Get both the start position and current position of both pointers.
 		const [p0startX, p0startY] = pointer0.GetStartClientPosition();
 		const [p1startX, p1startY] = pointer1.GetStartClientPosition();
@@ -389,17 +246,16 @@ export class PointerManager {
 		// Find the current mid-point of the two pointers. Use this position for scrolling.
 		const curMidX = (p0curX + p1curX) / 2;
 		const curMidY = (p0curY + p1curY) / 2;
-		this.UpdatePan(curMidX, curMidY);
+		viewManager.UpdatePan(curMidX, curMidY);
 		
 		// Also use the current mid-point as the zoom position, so zooming happens relative
 		// to that position the same way it does with mouse wheel zooming.
-		this.#zoomToX = curMidX;
-		this.#zoomToY = curMidY;
+		viewManager.SetZoomToPosition(curMidX, curMidY);
 		
 		// Find the original distance between the two pointers, and the current distance.
 		// Zoom the view according to the change in distance.
 		const startDist = MathUtils.DistanceTo(p0startX, p0startY, p1startX, p1startY);
 		const curDist = MathUtils.DistanceTo(p0curX, p0curY, p1curX, p1curY);
-		this.SetZoom(this.#pinchStartZoom * (curDist / startDist));
+		viewManager.SetZoom(this.#pinchStartZoom * (curDist / startDist));
 	}
 }

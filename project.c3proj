@@ -270,6 +270,14 @@
 							"script-info": {
 								"purpose": "none"
 							}
+						},
+						{
+							"name": "viewManager.js",
+							"type": "application/javascript",
+							"sid": 925362525026348,
+							"script-info": {
+								"purpose": "none"
+							}
 						}
 					],
 					"subfolders": [],
@@ -653,7 +661,7 @@
 	},
 	"properties": {
 		"description": "",
-		"version": "0.0.2.4",
+		"version": "0.0.2.5",
 		"author": "Ashley Gullen",
 		"authorEmail": "",
 		"authorWebsite": "",
