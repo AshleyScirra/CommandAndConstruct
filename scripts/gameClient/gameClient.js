@@ -108,6 +108,16 @@ export class GameClient {
 	// The client needs to create objects to represent the server state.
 	CreateInitialState(data)
 	{
+		// Set the layout size
+		const layout = this.#runtime.layout;
+		const [layoutWidth, layoutHeight] = data["layoutSize"];
+		layout.width = layoutWidth;
+		layout.height = layoutHeight;
+		
+		const backgroundInst = this.#runtime.objects.DirtTerrainBackground.getFirstInstance();
+		backgroundInst.width = layoutWidth;
+		backgroundInst.height = layoutHeight;
+		
 		for (const unitData of data["units"])
 		{
 			// Create a ClientUnit from each unit data.

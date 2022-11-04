@@ -23,6 +23,11 @@ export class UnitPlatform {
 		return this.#unit;
 	}
 	
+	GetGameServer()
+	{
+		return this.GetUnit().GetGameServer();
+	}
+	
 	// Collision checks require knowing the platform angle. Provide a default GetAngle()
 	// method that just returns 0 so an angle can always be retrieved. MovableUnitPlatform
 	// overrides this method to return the platform angle.

@@ -43,6 +43,10 @@
 	
 	#messageSequenceNumber = 0;		// an increasing number for every binary message
 	
+	// Level size
+	#layoutWidth = 4000;
+	#layoutHeight = 3000;
+	
 	#isGameOver = false;			// set to true once victory/defeat condition met
 	
  	constructor(sendMessageFunc, constructObjectData)
@@ -86,6 +90,7 @@
 		
 		this.SendToRuntime({
 			"type": "create-initial-state",
+			"layoutSize": [this.#layoutWidth, this.#layoutHeight],
 			"units": [...this.allUnits()].map(u => u.GetInitData())
 		});
 		
@@ -140,6 +145,12 @@
 	GetGameTime()
 	{
 		return this.#gameTime.Get();
+	}
+	
+	ClampToLayout(x, y)
+	{
+		return [MathUtils.Clamp(x, 0, this.#layoutWidth),
+				MathUtils.Clamp(y, 0, this.#layoutHeight)];
 	}
 	
 	MoveUnits(player, units)

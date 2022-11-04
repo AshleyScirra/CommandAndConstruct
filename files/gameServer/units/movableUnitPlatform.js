@@ -60,18 +60,18 @@ export class MovableUnitPlatform extends UnitPlatform {
 	MoveToPosition(x, y)
 	{
 		// Set the moving state to the target position. Also clamp the target position
-		// to the range of uint16s as that is used for the position.
+		// to the layout.
 		this.#isMoving = true;
-		this.#targetX = MathUtils.ClampUint16(x);
-		this.#targetY = MathUtils.ClampUint16(y);
+		[x, y] = this.GetGameServer().ClampToLayout(x, y);
+		this.#targetX = x;
+		this.#targetY = y;
 	}
 	
 	SetPosition(x, y)
 	{
-		// Unit positions are transmitted as uint16s. To avoid letting units go to positions
-		// that don't fit inside that range, ensure unit platform positions are clamped to
-		// the range of a uint16.
-		this.#movable.SetPosition(MathUtils.ClampUint16(x), MathUtils.ClampUint16(y));
+		// Prevent the position going outside the layout.
+		[x, y] = this.GetGameServer().ClampToLayout(x, y);
+		this.#movable.SetPosition(x, y);
 	}
 	
 	ContainsPoint(x, y)

@@ -116,12 +116,6 @@ export function SegmentsIntersect(a1x, a1y, a2x, a2y, b1x, b1y, b2x, b2y)
 	}
 };
 
-// Clamp a value to the range of a uint16 (0-65535).
-export function ClampUint16(x)
-{
-	return Clamp(x, 0, 65535);
-};
-
 // To save bandwidth, angles are transmitted as 16-bit values. These have a range of
 // 0-65536, so a value in radians is expanded to that range. This has a precision of
 // about 0.005 degrees per increment, which is pretty good - over a distance of

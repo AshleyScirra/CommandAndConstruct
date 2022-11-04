@@ -75,10 +75,9 @@ export class Projectile extends MovableObject {
 	
 	SetPosition(x, y)
 	{
-		// Projectile positions are transmitted as uint16s. To avoid letting projectiles go to
-		// positions that don't fit inside that range, ensure unit platform positions are clamped
-		// to the range of a uint16.
-		super.SetPosition(MathUtils.ClampUint16(x), MathUtils.ClampUint16(y));
+		// Prevent the position going outside the layout.
+		[x, y] = this.GetGameServer().ClampToLayout(x, y);
+		super.SetPosition(x, y);
 	}
 	
 	GetDamage()
