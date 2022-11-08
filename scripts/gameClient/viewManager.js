@@ -95,8 +95,8 @@ export class ViewManager {
 	
 	GetViewportSize()
 	{
-		// TODO: get from a runtime API
-		return [1920, 1080];
+		const runtime = this.GetRuntime();
+		return [runtime.viewportWidth, runtime.viewportHeight];
 	}
 	
 	GetScaledViewportSize()
