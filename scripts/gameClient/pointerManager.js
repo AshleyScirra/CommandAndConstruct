@@ -138,6 +138,11 @@ export class PointerManager {
 			viewManager.SetZoom(viewManager.GetZoom() / zoomFactor);
 	}
 	
+	SetMouseCursor(cursor)
+	{
+		this.GetRuntime().mouse.setCursorStyle(cursor);
+	}
+	
 	Tick(dt)
 	{
 		// If a pinch-to-zoom pointer changed in the past tick, call #UpdatePinchZoom().

@@ -43,8 +43,7 @@ export class PointerInfo {
 		// Use the middle mouse button for pan scrolling.
 		if (e.pointerType === "mouse" && e.button === 1)
 		{
-			this.#actionType = "pan";
-			this.GetViewManager().StartPan();
+			this.#StartPan();
 		}
 	}
 	
@@ -150,6 +149,10 @@ export class PointerInfo {
 				this.GetSelectionManager().OnTap_RightMouseButton();
 			}
 		}
+		else if (this.#actionType === "pan")
+		{
+			this.#EndPan();
+		}
 	}
 	
 	// Cancel a pointer so it stops doing any action without applying the results of that action.
@@ -242,12 +245,24 @@ export class PointerInfo {
 		this.#selectionBoxInst.destroy();
 	}
 	
+	#StartPan()
+	{
+		this.#actionType = "pan";
+		this.GetViewManager().StartPan();
+		this.#pointerManager.SetMouseCursor("move");		// show move cursor
+	}
+	
 	#UpdatePan(e)
 	{
 		// Handle pan scrolling in ViewManager.
 		// Pass it where the pointer currently is in client co-ordinates.
 		// It will scroll based on the movement since the last call to UpdatePan().
 		this.GetViewManager().UpdatePan(e.clientX, e.clientY);
+	}
+	
+	#EndPan()
+	{
+		this.#pointerManager.SetMouseCursor("auto");		// restore default cursor
 	}
 	
 	// Called for both pointers when there are two simultaneous touch pointers.

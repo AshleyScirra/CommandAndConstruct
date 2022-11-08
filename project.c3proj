@@ -36,6 +36,13 @@
 		},
 		{
 			"type": "plugin",
+			"id": "Mouse",
+			"name": "Mouse",
+			"author": "Scirra",
+			"bundled": false
+		},
+		{
+			"type": "plugin",
 			"id": "Multiplayer",
 			"name": "Multiplayer",
 			"author": "Scirra",
@@ -139,7 +146,8 @@
 				"items": [
 					"Multiplayer",
 					"Browser",
-					"Keyboard"
+					"Keyboard",
+					"Mouse"
 				],
 				"subfolders": [],
 				"name": "Global"
