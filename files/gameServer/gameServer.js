@@ -78,15 +78,15 @@
 	Init()
 	{
 		// Hard-code 8 starting units: four for player 0 and four for player 1.
-		this._AddUnitAtPosition(0, 250, 400);
-		this._AddUnitAtPosition(0, 125, 600);
-		this._AddUnitAtPosition(0, 400, 600);
-		this._AddUnitAtPosition(0, 250, 800);
+		this._AddUnitAtPosition(0, 250, 400, 0);
+		this._AddUnitAtPosition(0, 125, 600, 0);
+		this._AddUnitAtPosition(0, 400, 600, 0);
+		this._AddUnitAtPosition(0, 250, 800, 0);
 		
-		this._AddUnitAtPosition(1, 1920 - 250, 400);
-		this._AddUnitAtPosition(1, 1920 - 125, 600);
-		this._AddUnitAtPosition(1, 1920 - 400, 600);
-		this._AddUnitAtPosition(1, 1920 - 250, 800);
+		this._AddUnitAtPosition(1, 1920 - 250, 400, Math.PI);
+		this._AddUnitAtPosition(1, 1920 - 125, 600, Math.PI);
+		this._AddUnitAtPosition(1, 1920 - 400, 600, Math.PI);
+		this._AddUnitAtPosition(1, 1920 - 250, 800, Math.PI);
 		
 		this.SendToRuntime({
 			"type": "create-initial-state",
@@ -100,10 +100,10 @@
 		this.#Tick();
 	}
 	
-	_AddUnitAtPosition(player, x, y)
+	_AddUnitAtPosition(player, x, y, angle)
 	{
 		// Create a unit and add it to the units by ID map
-		const unit = new Unit(this, player, x, y);
+		const unit = new Unit(this, player, x, y, angle);
 		this.#allUnitsById.set(unit.GetId(), unit);
 	}
 	

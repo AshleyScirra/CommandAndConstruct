@@ -38,7 +38,7 @@ export class Unit {
 	
 	#health = 100;		// unit health - unit is destroyed if it reaches 0
 	
-	constructor(gameServer, player, x, y)
+	constructor(gameServer, player, x, y, angle)
 	{
 		this.#gameServer = gameServer;
 		this.#id = GetNewUnitId(gameServer);
@@ -46,7 +46,7 @@ export class Unit {
 		
 		// Create unit platform, hard-coded as a movable one for now (TODO: different types)
 		const platformObjectData = this.#gameServer.GetObjectData("TankPlatform");
-		this.#platform = new MovableUnitPlatform(this, platformObjectData, x, y);
+		this.#platform = new MovableUnitPlatform(this, platformObjectData, x, y, angle);
 		
 		// Create unit turret. Note refer to the platform's image point for the location
 		// of the turret as an offset from the platform's origin.

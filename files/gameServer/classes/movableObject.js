@@ -8,9 +8,9 @@ export class MovableObject extends PositionedAndAngledObject {
 	// Private fields
 	#speed = 0;				// speed in pixels per second
 	
-	constructor(gameServer, x, y)
+	constructor(gameServer, x, y, angle)
 	{
-		super(gameServer, x, y);
+		super(gameServer, x, y, angle);
 	}
 	
 	SetSpeed(s)

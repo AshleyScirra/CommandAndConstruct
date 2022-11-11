@@ -10,11 +10,11 @@ export class PositionedAndAngledObject extends PositionedObject {
 	// Private fields
 	#angle = 0;				// angle in radians
 	
-	constructor(gameServer, x, y)
+	constructor(gameServer, x, y, angle = 0)
 	{
 		super(gameServer, x, y);
 		
-		this.#angle = 0;
+		this.#angle = angle;
 	}
 	
 	SetAngle(a)

@@ -25,16 +25,11 @@ export class MovableUnitPlatform extends UnitPlatform {
 	// Rotation speed in radians per second
 	#rotateSpeed = MathUtils.ToRadians(90);
 	
-	constructor(unit, objectData, x, y)
+	constructor(unit, objectData, x, y, angle)
 	{
 		super(unit, objectData);
 		
-		this.#movable = new MovableObject(unit.GetGameServer(), x, y);
-		
-		// Temporary hack: initialise player 1's units facing left,
-		// otherwise they face away from player 0's units.
-		if (this.GetUnit().GetPlayer() === 1)
-			this.#movable.SetAngle(Math.PI);
+		this.#movable = new MovableObject(unit.GetGameServer(), x, y, angle);
 	}
 	
 	GetPosition()
