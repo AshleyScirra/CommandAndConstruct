@@ -53,6 +53,7 @@
 	#statStateData = 0;
 	#statEventData = 0;
 	#frameCount = 0;
+	#timeInTickCalls = 0;
 	
  	constructor(sendMessageFunc, constructObjectData)
 	{
@@ -278,7 +279,9 @@
 		// point summation is not precise enough to keep an accurate clock time.
 		this.#gameTime.Add(dt);
 		
-		this.#frameCount++;		// increment frame count
+		// Increment frame count and add to the time spent processing Tick(), for stats.
+		this.#frameCount++;
+		this.#timeInTickCalls += (performance.now() - tickStartTimeMs);
 		
 		// Schedule a timer to run the next tick.
 		this.#ScheduleNextTick();
@@ -440,6 +443,7 @@
 		this.SendToRuntime({
 			"type": "stats",
 			"server-fps": this.#frameCount,
+			"server-thread-usage": this.#timeInTickCalls / 1000,
 			"num-units": this.#allUnitsById.size,
 			"num-projectiles": this.#allProjectilesById.size,
 			"sent-state-bytes": this.#statStateData,
@@ -448,6 +452,7 @@
 		
 		// Reset counters
 		this.#frameCount = 0;
+		this.#timeInTickCalls = 0;
 		this.#statStateData = 0;
 		this.#statEventData = 0;
 	}
