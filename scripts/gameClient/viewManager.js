@@ -53,6 +53,10 @@ export class ViewManager {
 		
 		// Update minimap to use this size
 		this.#gameClient.GetMinimap().SetLayoutSize(layoutWidth, layoutHeight);
+		
+		// Start zoomed out all the way and center the scroll position
+		this.#SetActualZoom(this.#GetMinZoom(), true /* force */);
+		this.ScrollTo(layoutWidth / 2, layoutHeight / 2);
 	}
 	
 	// Called when starting a pan, either by middle mouse button or a pinch-to-zoom gesture.
@@ -186,7 +190,10 @@ export class ViewManager {
 	
 	#SetActualZoom(z, force = false)
 	{
-		if (this.#zoom === z && !force)
+		// Forcing the zoom is used on startup to assign the zoom level with no animation.
+		if (force)
+			this.#targetZoom = z;
+		else if (this.#zoom === z)
 			return;		// no change
 		
 		const lastZoom = this.#zoom;		// save the last zoom value for zoom-to-position calculation

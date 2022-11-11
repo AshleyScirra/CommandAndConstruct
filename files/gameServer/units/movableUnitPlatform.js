@@ -20,7 +20,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 	#targetY = 0;
 	
 	// Movement speed in units per second
-	#moveSpeed = 200;
+	#moveSpeed = 250;
 	
 	// Rotation speed in radians per second
 	#rotateSpeed = MathUtils.ToRadians(90);

@@ -44,8 +44,8 @@
 	#messageSequenceNumber = 0;		// an increasing number for every binary message
 	
 	// Level size
-	#layoutWidth = 4000;
-	#layoutHeight = 3000;
+	#layoutWidth = 25000;
+	#layoutHeight = 6000;
 	
 	#isGameOver = false;			// set to true once victory/defeat condition met
 	
@@ -77,16 +77,21 @@
 	
 	Init()
 	{
-		// Hard-code 8 starting units: four for player 0 and four for player 1.
-		this._AddUnitAtPosition(0, 250, 400, 0);
-		this._AddUnitAtPosition(0, 125, 600, 0);
-		this._AddUnitAtPosition(0, 400, 600, 0);
-		this._AddUnitAtPosition(0, 250, 800, 0);
+		// Add 500 starting units for each player in rows opposing each other.
+		const randomOffset = (v => (v / -2) + Math.random() * v);
 		
-		this._AddUnitAtPosition(1, 1920 - 250, 400, Math.PI);
-		this._AddUnitAtPosition(1, 1920 - 125, 600, Math.PI);
-		this._AddUnitAtPosition(1, 1920 - 400, 600, Math.PI);
-		this._AddUnitAtPosition(1, 1920 - 250, 800, Math.PI);
+		for (let i = 0; i < 500; ++i)
+		{
+			// Use a formula to arrange units in 5 rows
+			const x = 2000 + i * 40;
+			const y = 500 + (i % 5) * 300;
+			
+			// Add player 0 unit along the top
+			this._AddUnitAtPosition(0, x + randomOffset(50), y + randomOffset(50), Math.PI / 2 + randomOffset(0.5));
+			
+			// Add player 1 unit along the bottom
+			this._AddUnitAtPosition(1, x + randomOffset(50), this.#layoutHeight - y + randomOffset(50), Math.PI / -2 + randomOffset(0.5));
+		}
 		
 		this.SendToRuntime({
 			"type": "create-initial-state",

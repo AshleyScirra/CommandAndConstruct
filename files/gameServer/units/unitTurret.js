@@ -14,7 +14,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 	#unit;					// reference to Unit
 	#targetUnitId = -1;		// ID of unit turret is targeting, or -1 if none
 	
-	#range = 1000;			// maximum range to identify a target
+	#range = 1400;			// maximum range to identify a target
 	#rotateSpeed = MathUtils.ToRadians(70);
 	
 	// The accuracy is a random adjustment to the projectile angle when firing.

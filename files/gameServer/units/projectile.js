@@ -32,8 +32,8 @@ export class Projectile extends MovableObject {
 	#id = -1;					// unique ID for this unit (determined in constructor)
 	#distanceTravelled = 0;		// how far this projectile has travelled
 	#didHitTarget = false;		// set to true if hit a target
-	#damage = 10;				// amount of damage this projectile does
-	#damageVariance = 0.05;		// random variation in damage done as a percentage
+	#damage = 20;				// amount of damage this projectile does
+	#damageVariance = 0.1;		// random variation in damage done as a percentage
 	
 	constructor(turret, x, y)
 	{
