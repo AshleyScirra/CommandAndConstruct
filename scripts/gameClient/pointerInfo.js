@@ -100,7 +100,7 @@ export class PointerInfo {
 		// If this pointer is dragging, update it while it moves, so the selection box follows the movement.
 		if (this.#actionType === "drag")
 		{
-			this.#UpdateDrag(e.clientX, e.clientY);
+			this.#UpdateDrag();
 		}
 		else if (this.#actionType === "pan")
 		{
@@ -122,7 +122,7 @@ export class PointerInfo {
 	{
 		if (this.#actionType === "drag")
 		{
-			this.#UpdateDrag(this.#lastClientX, this.#lastClientY);
+			this.#UpdateDrag();
 		}
 	}
 	
@@ -182,7 +182,7 @@ export class PointerInfo {
 	}
 	
 	// Called when the pointer moves during a drag.
-	#UpdateDrag(clientX, clientY)
+	#UpdateDrag()
 	{
 		// Get both the background and selection box layers.
 		const runtime = this.GetRuntime();
@@ -197,7 +197,7 @@ export class PointerInfo {
 		const [startX, startY] = dragSelectionBoxLayer.cssPxToLayer(startClientX, startClientY);
 		
 		// Get the end position on the DragSelectionBox layer, which is the current pointer position.
-		const [endX, endY] = dragSelectionBoxLayer.cssPxToLayer(clientX, clientY);
+		const [endX, endY] = dragSelectionBoxLayer.cssPxToLayer(this.#lastClientX, this.#lastClientY);
 		
 		// Set the drag selection box size and position from the maximum and minimum bounds of the
 		// selection position on the DragSelectionBox layer.
@@ -211,6 +211,29 @@ export class PointerInfo {
 		this.#selectionBoxInst.y = minY;
 		this.#selectionBoxInst.width = maxX - minX;
 		this.#selectionBoxInst.height = maxY - minY;
+	}
+	
+	// For a dragging pointer, return the selection box area in game layer co-ordinates.
+	// This is used for the minimap. Note this is not the same as the selection box object's
+	// area, as that is in UI co-ordinates on the DragSelectionBox layer.
+	GetSelectionBoxArea()
+	{
+		const runtime = this.GetRuntime();
+		const backgroundLayer = runtime.layout.getLayer("Background");
+		
+		// Get start and end positions in layer co-ordinates
+		const startX = this.#startLayerX;
+		const startY = this.#startLayerY;
+		const [endX, endY] = backgroundLayer.cssPxToLayer(this.#lastClientX, this.#lastClientY);
+		
+		// Normalize to the minimum and maximum bounds
+		const minX = Math.min(startX, endX);
+		const minY = Math.min(startY, endY);
+		const maxX = Math.max(startX, endX);
+		const maxY = Math.max(startY, endY);
+		
+		// Return as [left, top, width, height] as that is how the minimap draws things
+		return [minX, minY, maxX - minX, maxY - minY];
 	}
 	
 	// Called when the pointer is released during a drag.

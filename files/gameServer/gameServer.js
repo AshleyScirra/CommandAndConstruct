@@ -77,16 +77,16 @@
 	
 	Init()
 	{
-		// Hard-code six starting units: three for player 0 and three for player 1.
-		this._AddUnitAtPosition(0, 250, 200);
-		this._AddUnitAtPosition(0, 125, 400);
-		this._AddUnitAtPosition(0, 400, 400);
-		this._AddUnitAtPosition(0, 250, 600);
+		// Hard-code 8 starting units: four for player 0 and four for player 1.
+		this._AddUnitAtPosition(0, 250, 400);
+		this._AddUnitAtPosition(0, 125, 600);
+		this._AddUnitAtPosition(0, 400, 600);
+		this._AddUnitAtPosition(0, 250, 800);
 		
-		this._AddUnitAtPosition(1, 1920 - 250, 200);
-		this._AddUnitAtPosition(1, 1920 - 125, 400);
-		this._AddUnitAtPosition(1, 1920 - 400, 400);
-		this._AddUnitAtPosition(1, 1920 - 250, 600);
+		this._AddUnitAtPosition(1, 1920 - 250, 400);
+		this._AddUnitAtPosition(1, 1920 - 125, 600);
+		this._AddUnitAtPosition(1, 1920 - 400, 600);
+		this._AddUnitAtPosition(1, 1920 - 250, 800);
 		
 		this.SendToRuntime({
 			"type": "create-initial-state",

@@ -37,6 +37,24 @@ export class ViewManager {
 		return this.#gameClient.GetPointerManager();
 	}
 	
+	// Called during initialisation to set the size of the level.
+	SetLayoutSize(layoutWidth, layoutHeight)
+	{
+		// Set the layout size
+		const runtime = this.GetRuntime();
+		const layout = runtime.layout;
+		layout.width = layoutWidth;
+		layout.height = layoutHeight;
+		
+		// Resize the background to cover the layout
+		const backgroundInst = runtime.objects.DirtTerrainBackground.getFirstInstance();
+		backgroundInst.width = layoutWidth;
+		backgroundInst.height = layoutHeight;
+		
+		// Update minimap to use this size
+		this.#gameClient.GetMinimap().SetLayoutSize(layoutWidth, layoutHeight);
+	}
+	
 	// Called when starting a pan, either by middle mouse button or a pinch-to-zoom gesture.
 	StartPan()
 	{
@@ -91,6 +109,13 @@ export class ViewManager {
 			MathUtils.Clamp(x, hbound, layoutWidth - hbound),
 			MathUtils.Clamp(y, vbound, layoutHeight - vbound)
 		);
+	}
+	
+	// Get the current scroll position, where the view is centered on.
+	GetScrollPosition()
+	{
+		const layout = this.GetRuntime().layout;
+		return [layout.scrollX, layout.scrollY];
 	}
 	
 	GetViewportSize()

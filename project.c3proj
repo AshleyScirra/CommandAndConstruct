@@ -22,6 +22,13 @@
 		},
 		{
 			"type": "plugin",
+			"id": "DrawingCanvas",
+			"name": "Drawing canvas",
+			"author": "Scirra",
+			"bundled": false
+		},
+		{
+			"type": "plugin",
 			"id": "HTMLElement",
 			"name": "HTML Element",
 			"author": "Scirra",
@@ -104,7 +111,8 @@
 					"Explosion",
 					"GameOverText",
 					"DirtTerrainBackground",
-					"DragSelectionBox"
+					"DragSelectionBox",
+					"MinimapCanvas"
 				],
 				"subfolders": [],
 				"name": "Main game"
@@ -272,6 +280,14 @@
 							"name": "viewManager.js",
 							"type": "application/javascript",
 							"sid": 925362525026348,
+							"script-info": {
+								"purpose": "none"
+							}
+						},
+						{
+							"name": "minimap.js",
+							"type": "application/javascript",
+							"sid": 576332944892003,
 							"script-info": {
 								"purpose": "none"
 							}

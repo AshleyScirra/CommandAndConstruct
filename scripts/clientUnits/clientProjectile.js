@@ -33,6 +33,11 @@ export class ClientProjectile {
 		this.#inst.destroy();
 	}
 	
+	GetPosition()
+	{
+		return [this.#inst.x, this.#inst.y];
+	}
+	
 	Tick(dt)
 	{
 		// Advance the projectile at its speed and angle

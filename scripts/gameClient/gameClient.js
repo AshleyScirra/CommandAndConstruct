@@ -6,6 +6,7 @@ import { GameClientMessageHandler } from "./messageHandler.js";
 import { PointerManager } from "./pointerManager.js";
 import { ViewManager } from "./viewManager.js";
 import { SelectionManager } from "./selectionManager.js";
+import { Minimap } from "./minimap.js";
 
 const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
 
@@ -26,6 +27,7 @@ export class GameClient {
 	#pointerManager;				// PointerManager class
 	#viewManager;					// ViewManager class
 	#selectionManager;				// SelectionManager class
+	#minimap;						// Minimap class
 	
 	#player = 0;					// Player number this client controls
 	
@@ -51,6 +53,9 @@ export class GameClient {
 		
 		// Create SelectionManager which handles unit selections.
 		this.#selectionManager = new SelectionManager(this);
+		
+		// Create Minimap class which handles the minimap
+		this.#minimap = new Minimap(this);
 	}
 	
 	Release()
@@ -83,6 +88,11 @@ export class GameClient {
 	GetPointerManager()
 	{
 		return this.#pointerManager;
+	}
+	
+	GetMinimap()
+	{
+		return this.#minimap;
 	}
 	
 	// Return an array of all Construct object types used for units.
@@ -129,14 +139,8 @@ export class GameClient {
 	CreateInitialState(data)
 	{
 		// Set the layout size
-		const layout = this.#runtime.layout;
 		const [layoutWidth, layoutHeight] = data["layoutSize"];
-		layout.width = layoutWidth;
-		layout.height = layoutHeight;
-		
-		const backgroundInst = this.#runtime.objects.DirtTerrainBackground.getFirstInstance();
-		backgroundInst.width = layoutWidth;
-		backgroundInst.height = layoutHeight;
+		this.#viewManager.SetLayoutSize(layoutWidth, layoutHeight);
 		
 		for (const unitData of data["units"])
 		{
@@ -152,14 +156,20 @@ export class GameClient {
 		return this.#allUnitsById.values();
 	}
 	
-	// Iterates all units that belong to the local player.
-	*allLocalPlayerUnits()
+	// Iterates all units for a specific player.
+	*allUnitsForPlayer(player)
 	{
 		for (const unit of this.allUnits())
 		{
-			if (unit.GetPlayer() === this.GetPlayer())
+			if (unit.GetPlayer() === player)
 				yield unit;
 		}
+	}
+	
+	// Iterates all units that belong to the local player.
+	allLocalPlayerUnits()
+	{
+		return this.allUnitsForPlayer(this.GetPlayer());
 	}
 	
 	GetUnitById(id)
@@ -226,6 +236,12 @@ export class GameClient {
 		explosionInst.angle = Math.random() * 2 * Math.PI;
 	}
 	
+	// Iterate all projectiles currently in the game.
+	allProjectiles()
+	{
+		return this.#allProjectilesById.values();
+	}
+	
 	// When a network event is received indicating a unit was destroyed, remove its corresponding
 	// unit and also create an explosion to represent its destruction.
 	OnUnitDestroyed(unitId)
@@ -274,6 +290,9 @@ export class GameClient {
 				this.#allProjectilesById.delete(id);
 			}
 		}
+		
+		// Redraw the minimap to reflect changes.
+		this.#minimap.Update();
 	}
 	
 	// Called when GameServer sends a "game-over" message

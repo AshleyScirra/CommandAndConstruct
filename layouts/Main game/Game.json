@@ -409,7 +409,35 @@
 					"name": "UI",
 					"overriden": 0,
 					"subLayers": [],
-					"instances": [],
+					"instances": [
+						{
+							"type": "MinimapCanvas",
+							"properties": {
+								"resolution-mode": "auto",
+								"initially-visible": true,
+								"origin": "top-left",
+								"antialiasing": "off"
+							},
+							"uid": 32,
+							"instanceVariables": {},
+							"behaviors": {},
+							"world": {
+								"x": 0,
+								"y": 0,
+								"width": 200,
+								"height": 200,
+								"originX": 0,
+								"originY": 0,
+								"color": [
+									1,
+									1,
+									1,
+									1
+								],
+								"angle": 0
+							}
+						}
+					],
 					"sid": 486341906092172,
 					"effectTypes": [],
 					"isInitiallyVisible": true,

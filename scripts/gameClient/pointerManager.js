@@ -138,9 +138,28 @@ export class PointerManager {
 			viewManager.SetZoom(viewManager.GetZoom() / zoomFactor);
 	}
 	
+	// Set the current mouse cursor style.
 	SetMouseCursor(cursor)
 	{
 		this.GetRuntime().mouse.setCursorStyle(cursor);
+	}
+	
+	// Get the current mouse position in game layer co-ordinates.
+	GetMousePositionInLayout()
+	{
+		const backgroundLayer = this.GetRuntime().layout.getLayer("Background");
+		return backgroundLayer.cssPxToLayer(this.#lastMouseX, this.#lastMouseY);
+	}
+	
+	// Iterates all pointers used for dragging a selection box.
+	// Used by the minimap to render selection boxes on the minimap.
+	*dragPointers()
+	{
+		for (const pointerInfo of this.#pointerInfos.values())
+		{
+			if (pointerInfo.GetActionType() === "drag")
+				yield pointerInfo;
+		}
 	}
 	
 	Tick(dt)
