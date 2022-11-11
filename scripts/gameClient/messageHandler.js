@@ -29,7 +29,8 @@ export class GameClientMessageHandler {
 		// and the function to call to handle each of them.
 		this.#messageMap = new Map([
 			["create-initial-state", m => this.#OnCreateInitialState(m)],
-			["game-over", m => this.#OnGameOver(m)]
+			["game-over", m => this.#OnGameOver(m)],
+			["stats", m => this.#OnStats(m)]
 		]);
 	}
 	
@@ -301,5 +302,19 @@ export class GameClientMessageHandler {
 		const winningPlayer = m["winning-player"];
 		const didWin = (this.#gameClient.GetPlayer() === winningPlayer);
 		this.#gameClient.OnGameOver(didWin);
+	}
+	
+	// Received every 1 second as the server sends stats messages.
+	// Display the received statistics in the StatsText object.
+	#OnStats(m)
+	{
+		const runtime = this.#gameClient.GetRuntime();
+		const inst = runtime.objects.StatsText.getFirstInstance();
+		inst.text = `Server FPS: ${m["server-fps"]}
+Net state: ${Math.round(m["sent-state-bytes"] / 1024)} kb/s
+Net events: ${Math.round(m["sent-event-bytes"] / 1024)} kb/s
+Net total: ${Math.round((m["sent-state-bytes"] + m["sent-event-bytes"]) / 1024)} kb/s
+Unit count: ${m["num-units"]}
+Projectile count: ${m["num-projectiles"]}`;
 	}
 }

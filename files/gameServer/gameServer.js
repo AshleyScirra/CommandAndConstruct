@@ -49,6 +49,11 @@
 	
 	#isGameOver = false;			// set to true once victory/defeat condition met
 	
+	// For stats
+	#statStateData = 0;
+	#statEventData = 0;
+	#frameCount = 0;
+	
  	constructor(sendMessageFunc, constructObjectData)
 	{
 		// The function to send a message to the runtime is passed to the constructor.
@@ -103,6 +108,9 @@
 		this.#lastTickTimeMs = performance.now();
 		this.#nextTickScheduledTimeMs = this.#lastTickTimeMs + SERVER_TICK_MS_INTERVAL;
 		this.#Tick();
+		
+		// Every 1 second send a stats message for testing purposes
+		setInterval(() => this.#SendStats(), 1000);
 	}
 	
 	_AddUnitAtPosition(player, x, y, angle)
@@ -270,6 +278,8 @@
 		// point summation is not precise enough to keep an accurate clock time.
 		this.#gameTime.Add(dt);
 		
+		this.#frameCount++;		// increment frame count
+		
 		// Schedule a timer to run the next tick.
 		this.#ScheduleNextTick();
 	}
@@ -369,6 +379,7 @@
 		// Finished writing the game state data.
 		// Copy out a new ArrayBuffer with just the data written.
 		const arrayBuffer = this.#dataArrayBuffer.slice(0, pos);
+		this.#statStateData += arrayBuffer.byteLength;		// measure data sent for stats
 		
 		// Send the binary data with the game state update to the runtime.
 		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
@@ -413,6 +424,7 @@
 		// Finished writing network events.
 		// Copy out a new ArrayBuffer with just the data written.
 		const arrayBuffer = this.#dataArrayBuffer.slice(0, pos);
+		this.#statEventData += arrayBuffer.byteLength;		// measure data sent for stats
 		
 		// Send the binary data with the list of events to the runtime.
 		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
@@ -420,6 +432,24 @@
 		// but they don't have to be received in the correct order. Clients can compensate
 		// for late events.
 		this.SendToRuntime(arrayBuffer, "r", [arrayBuffer])
+	}
+	
+	// Called every 1 second to send stats to clients so they can display it for testing purposes.
+	#SendStats()
+	{
+		this.SendToRuntime({
+			"type": "stats",
+			"server-fps": this.#frameCount,
+			"num-units": this.#allUnitsById.size,
+			"num-projectiles": this.#allProjectilesById.size,
+			"sent-state-bytes": this.#statStateData,
+			"sent-event-bytes": this.#statEventData
+		});
+		
+		// Reset counters
+		this.#frameCount = 0;
+		this.#statStateData = 0;
+		this.#statEventData = 0;
 	}
 	
 	#CheckGameEndCondition()

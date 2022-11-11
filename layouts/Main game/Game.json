@@ -436,6 +436,48 @@
 								],
 								"angle": 0
 							}
+						},
+						{
+							"type": "StatsText",
+							"properties": {
+								"text": "Stats...",
+								"enable-bbcode": true,
+								"font": "Arial",
+								"size": 12,
+								"line-height": 0,
+								"bold": false,
+								"italic": false,
+								"color": [
+									1,
+									1,
+									1,
+									1
+								],
+								"horizontal-alignment": "left",
+								"vertical-alignment": "bottom",
+								"wrapping": "word",
+								"initially-visible": true,
+								"origin": "top-left"
+							},
+							"uid": 33,
+							"instanceVariables": {},
+							"behaviors": {},
+							"world": {
+								"x": 3,
+								"y": 811,
+								"width": 434,
+								"height": 265,
+								"originX": 0,
+								"originY": 0,
+								"color": [
+									1,
+									1,
+									1,
+									1
+								],
+								"angle": 0,
+								"zElevation": 0
+							}
 						}
 					],
 					"sid": 486341906092172,

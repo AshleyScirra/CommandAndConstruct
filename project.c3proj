@@ -112,7 +112,8 @@
 					"GameOverText",
 					"DirtTerrainBackground",
 					"DragSelectionBox",
-					"MinimapCanvas"
+					"MinimapCanvas",
+					"StatsText"
 				],
 				"subfolders": [],
 				"name": "Main game"
