@@ -312,9 +312,10 @@ export class GameClientMessageHandler {
 		const inst = runtime.objects.StatsText.getFirstInstance();
 		inst.text = `Server FPS: ${m["server-fps"]}
 Server thread CPU: ${Math.round(m["server-thread-usage"] * 100)}%
-Net state: ${Math.round(m["sent-state-bytes"] / 1024)} kb/s
-Net events: ${Math.round(m["sent-event-bytes"] / 1024)} kb/s
-Net total: ${Math.round((m["sent-state-bytes"] + m["sent-event-bytes"]) / 1024)} kb/s
+Server state: ${Math.round(m["sent-state-bytes"] / 1024)} kb/s
+Server events: ${Math.round(m["sent-event-bytes"] / 1024)} kb/s
+Net upload: ${Math.round(runtime.objects.Multiplayer.stats.outboundBandwidth / 1024)} kb/s
+Net download: ${Math.round(runtime.objects.Multiplayer.stats.inboundBandwidth / 1024)} kb/s
 Unit count: ${m["num-units"]}
 Projectile count: ${m["num-projectiles"]}`;
 	}
