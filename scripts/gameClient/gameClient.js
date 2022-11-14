@@ -202,8 +202,10 @@ export class GameClient {
 				const [x, y] = unit.GetPlatform().GetPosition();
 				return {
 					"id": unit.GetId(),
-					"x": targetX + (x - midX),
-					"y": targetY + (y - midY)
+					// Note the position is rounded to the nearest pixel, mainly to make sure long
+					// fractional digits (e.g. 100.3333333333...) don't waste bandwidth.
+					"x": Math.round(targetX + (x - midX)),
+					"y": Math.round(targetY + (y - midY))
 				};
 			})
 		});
