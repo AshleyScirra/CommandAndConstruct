@@ -86,12 +86,7 @@ export class ClientUnit {
 		this.#turret.Update();
 		
 		// If this unit has a selection box, update that too.
-		if (this.#selectionBoxInst)
-		{
-			this.#selectionBoxInst.x = x;
-			this.#selectionBoxInst.y = y;
-			this.#selectionBoxInst.angle = platformAngle;
-		}
+		this.UpdateSelectionBox();
 		
 		// Flag unit as having updated state. This means it's already up-to-date so the next tick
 		// shouldn't try to advance it any further.
@@ -110,6 +105,20 @@ export class ClientUnit {
 		}
 		
 		this.#platform.Tick(dt);
+	}
+	
+	// Update the selection box position and angle to match the unit platform.
+	UpdateSelectionBox()
+	{
+		if (!this.#selectionBoxInst)
+			return;		// no selection box
+		
+		const [x, y] = this.#platform.GetPosition();
+		const angle = this.#platform.GetAngle();
+		
+		this.#selectionBoxInst.x = x;
+		this.#selectionBoxInst.y = y;
+		this.#selectionBoxInst.angle = angle;
 	}
 	
 	// Use the unit platform for collision checks.

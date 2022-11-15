@@ -136,6 +136,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 		else
 		{
 			// Unit is not pointing directly at its target: rotate towards the target.
+			this.#movable.SetSpeed(0);
 			this.#movable.SetAngle(MathUtils.AngleRotate(currentAngle, targetAngle, this.#rotateSpeed * dt));
 		}
 	}

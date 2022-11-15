@@ -82,8 +82,9 @@ export class ClientPlatform {
 			const angle = this.GetAngle();
 			this.SetPosition(x + Math.cos(angle) * moveDist, y + Math.sin(angle) * moveDist);
 			
-			// Update turret to follow platform movement
+			// Update turret and selection box to follow platform movement
 			this.#unit.GetTurret().Update();
+			this.#unit.UpdateSelectionBox();
 		}
 	}
 	
