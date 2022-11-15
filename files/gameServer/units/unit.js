@@ -1,6 +1,7 @@
 
 import { MovableUnitPlatform } from "./movableUnitPlatform.js";
 import { UnitTurret } from "./unitTurret.js";
+import * as MathUtils from "../utils/mathUtils.js";
 
 // Unit IDs are sent as a uint16 value to save on bandwidth, allowing for around 65k
 // active units in the entire game at any one time, which should (?!) be enough.
@@ -24,6 +25,12 @@ function GetNewUnitId(gameServer)
 	return nextId;
 }
 
+// For delta updates, a byte is sent with a series of bits set to indicate
+// which values have changed. These flags are defined here.
+const FLAG_CHANGED_SPEED =				 (1 << 0);
+const FLAG_CHANGED_PLATFORM_ANGLE =		 (1 << 1);
+const FLAG_CHANGED_TURRET_OFFSET_ANGLE = (1 << 2);
+
 // A Unit represents any static or movable unit in the game
 export class Unit {
 	
@@ -37,6 +44,10 @@ export class Unit {
 	#turret;			// unit turret
 	
 	#health = 100;		// unit health - unit is destroyed if it reaches 0
+	
+	// For delta updates, this value is sent as a byte with bits set according to which
+	// values for the unit have changed in the last tick.
+	#deltaChangeFlags = 0;
 	
 	constructor(gameServer, player, x, y, angle)
 	{
@@ -105,5 +116,68 @@ export class Unit {
 	{
 		this.#platform.Tick(dt);
 		this.#turret.Tick(dt);
+	}
+	
+	// For sending delta updates, the unit keeps track of which values have changed over the
+	// past tick, accumulating flags to indicate which kinds of value changed. Any time a
+	// value changes it also adds this unit to the GameServer list of units pending a delta update.
+	MarkPlatformSpeedChanged()
+	{
+		this.#deltaChangeFlags |= FLAG_CHANGED_SPEED;
+		this.#AddForDeltaUpdate();
+	}
+	
+	MarkPlatformAngleChanged()
+	{
+		this.#deltaChangeFlags |= FLAG_CHANGED_PLATFORM_ANGLE;
+		this.#AddForDeltaUpdate();
+	}
+	
+	MarkTurretOffsetAngleChanged()
+	{
+		this.#deltaChangeFlags |= FLAG_CHANGED_TURRET_OFFSET_ANGLE;
+		this.#AddForDeltaUpdate();
+	}
+	
+	#AddForDeltaUpdate()
+	{
+		this.GetGameServer().AddUnitForDeltaUpdate(this);
+	}
+	
+	// Called by GameServer when it's time to write a delta update for this unit.
+	WriteDeltaUpdate(dataView, pos)
+	{
+		// Write the unit ID.
+		dataView.setUint16(pos, this.GetId());
+		pos += 2;
+		
+		// Write the delta change flags as a byte.
+		dataView.setUint8(pos, this.#deltaChangeFlags);
+		pos += 1;
+		
+		// Write each value that has changed. Note the order used here must match
+		// on both the server and the client.
+		if ((this.#deltaChangeFlags & FLAG_CHANGED_SPEED) !== 0)
+		{
+			dataView.setUint16(pos, this.GetPlatform().GetSpeed());
+			pos += 2;
+		}
+		
+		if ((this.#deltaChangeFlags & FLAG_CHANGED_PLATFORM_ANGLE) !== 0)
+		{
+			dataView.setUint16(pos, MathUtils.AngleToUint16(this.GetPlatform().GetAngle()));
+			pos += 2;
+		}
+		
+		if ((this.#deltaChangeFlags & FLAG_CHANGED_TURRET_OFFSET_ANGLE) !== 0)
+		{
+			dataView.setUint16(pos, MathUtils.AngleToUint16(this.GetTurret().GetAngle()));
+			pos += 2;
+		}
+		
+		// Reset all the delta change flags now they have been used.
+		this.#deltaChangeFlags = 0;
+		
+		return pos;
 	}
 }

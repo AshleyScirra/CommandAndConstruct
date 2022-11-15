@@ -3,6 +3,8 @@ import { PositionedAndAngledObject } from "../classes/positionedAndAngledObject.
 import { Projectile } from "./projectile.js";
 import * as MathUtils from "../utils/mathUtils.js";
 
+const _2PI = 2 * Math.PI;
+
 // A UnitTurret is the firing part of a unit, that rotates independently of the platform
 // to aim and fire projectiles at other player's units.
 // Note that importantly the UnitTurret position and angle are treated as offsets
@@ -24,6 +26,12 @@ export class UnitTurret extends PositionedAndAngledObject {
 	#lastFireTime = 0;		// game time when last shot was fired
 	#rateOfFire = 2;		// number of seconds between shots
 	#projectileSpeed = 900;	// speed projectile travels at
+	
+	// Turrets also make sure they only send their offset angle when the value sent over
+	// the network changes. This follows the pattern in MovableUnitPlatform - see the comments
+	// there. It's probably less necessary for turrets, but is worth doing to avoid redundant
+	// delta updates anyway.
+	#lastAngleAsUint16 = 0;
 	
 	constructor(unit, x, y)
 	{
@@ -47,6 +55,31 @@ export class UnitTurret extends PositionedAndAngledObject {
 	GetOverallAngle()
 	{
 		return this.GetPlatform().GetAngle() + this.GetAngle();
+	}
+	
+	// Override SetAngle() to call MarkTurretOffsetAngleChanged() on the unit
+	// when the angle is changed.
+	SetAngle(a)
+	{
+		// Wrap the angle the same way it is in PositionedAndAngledObject
+		// to ensure the subsequent comparison works as intended
+		a = a % _2PI;
+		if (a < 0)
+			a += _2PI;
+		
+		if (a === this.GetAngle())
+			return;		// no change
+		
+		super.SetAngle(a);
+		
+		// Flag that the turret offset angle changed for delta updates, but only if
+		// the angle rounded to a uint16 has changed (as that is what is sent).
+		const angleAsUint16 = MathUtils.AngleToUint16(a);
+		if (this.#lastAngleAsUint16 !== angleAsUint16)
+		{
+			this.#unit.MarkTurretOffsetAngleChanged();
+			this.#lastAngleAsUint16 = angleAsUint16;
+		}
 	}
 	
 	GetRange()

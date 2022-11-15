@@ -3,6 +3,8 @@ import { UnitPlatform } from "./unitPlatform.js";
 import { MovableObject } from "../classes/movableObject.js";
 import * as MathUtils from "../utils/mathUtils.js";
 
+const _2PI = 2 * Math.PI;
+
 // A MovableUnitPlatform is a unit platform that can move, such as the driving platform
 // of a tank. This is in contrast to a static platform, such as a fixed gun emplacement.
 // Notice that here we could do with multiple inheritance, as we want to inherit from
@@ -25,16 +27,30 @@ export class MovableUnitPlatform extends UnitPlatform {
 	// Rotation speed in radians per second
 	#rotateSpeed = MathUtils.ToRadians(90);
 	
+	// Last angle in the network Uint16 format, so delta updates are only sent when
+	// the value sent over the network changes.
+	#lastAngleAsUint16 = 0;
+	
 	constructor(unit, objectData, x, y, angle)
 	{
 		super(unit, objectData);
 		
 		this.#movable = new MovableObject(unit.GetGameServer(), x, y, angle);
+		
+		// Initialise the angle in network uint16 format.
+		this.#lastAngleAsUint16 = MathUtils.AngleToUint16(angle);
 	}
 	
 	GetPosition()
 	{
 		return this.#movable.GetPosition();
+	}
+	
+	SetPosition(x, y)
+	{
+		// Prevent the position going outside the layout.
+		[x, y] = this.GetGameServer().ClampToLayout(x, y);
+		this.#movable.SetPosition(x, y);
 	}
 	
 	// Return the position of the turret on this platform. This gets the turret's position
@@ -52,9 +68,47 @@ export class MovableUnitPlatform extends UnitPlatform {
 		return this.#movable.GetSpeed();
 	}
 	
+	SetSpeed(s)
+	{
+		if (s === this.GetSpeed())
+			return;		// no change
+		
+		this.#movable.SetSpeed(s);
+		
+		// Flag that the speed changed for delta updates
+		this.GetUnit().MarkPlatformSpeedChanged();
+	}
+	
 	GetAngle()
 	{
 		return this.#movable.GetAngle();
+	}
+	
+	SetAngle(a)
+	{
+		// Wrap the angle the same way it is in PositionedAndAngledObject
+		// to ensure the subsequent comparison works as intended
+		a = a % _2PI;
+		if (a < 0)
+			a += _2PI;
+		
+		if (a === this.GetAngle())
+			return;		// no change
+		
+		this.#movable.SetAngle(a);
+		
+		// Platform angles are sent as uint16s over the network. The actual angle continuously
+		// varies by tiny fractional amounts as units move, due to floating point precision errors -
+		// the calculated angle to the target will be constantly recomputed slightly differently.
+		// That should not cause delta updates to keep being sent, since the value rounded to
+		// a uint16 does not actually change with extremely small changes in the angle. Therefore
+		// only send a delta update if the angle changes enough for the corresponding uint16 to change.
+		const angleAsUint16 = MathUtils.AngleToUint16(a);
+		if (this.#lastAngleAsUint16 !== angleAsUint16)
+		{
+			this.GetUnit().MarkPlatformAngleChanged(a);
+			this.#lastAngleAsUint16 = angleAsUint16;
+		}
 	}
 	
 	MoveToPosition(x, y)
@@ -65,13 +119,6 @@ export class MovableUnitPlatform extends UnitPlatform {
 		[x, y] = this.GetGameServer().ClampToLayout(x, y);
 		this.#targetX = x;
 		this.#targetY = y;
-	}
-	
-	SetPosition(x, y)
-	{
-		// Prevent the position going outside the layout.
-		[x, y] = this.GetGameServer().ClampToLayout(x, y);
-		this.#movable.SetPosition(x, y);
 	}
 	
 	ContainsPoint(x, y)
@@ -98,7 +145,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 		// TODO: pathfinding, better movement, per-unit speeds etc.
 		const [currentX, currentY] = this.GetPosition();
 		const targetAngle = MathUtils.AngleTo(currentX, currentY, this.#targetX, this.#targetY);
-		const currentAngle = this.#movable.GetAngle();
+		const currentAngle = this.GetAngle();
 		
 		// Current angle points at angle to target: start moving.
 		// Note this counts being within 0.01 degrees as pointing at the target. This helps avoid
@@ -106,14 +153,14 @@ export class MovableUnitPlatform extends UnitPlatform {
 		if (MathUtils.AngleDifference(targetAngle, currentAngle) < MathUtils.ToRadians(0.01))
 		{
 			// Set the movement speed. (TODO: acceleration)
-			this.#movable.SetSpeed(this.#moveSpeed);
+			this.SetSpeed(this.#moveSpeed);
 			
 			// Also update the angle directly to the target to correct any small rounding errors.
 			// This will only perform a small correction so is unlikely to be visible to players.
-			this.#movable.SetAngle(targetAngle);
+			this.SetAngle(targetAngle);
 			
 			// Calculate the distance to move this tick.
-			const moveDist = this.#movable.GetSpeed() * dt;
+			const moveDist = this.GetSpeed() * dt;
 			
 			// Check if we've arrived, which is when the target position is nearer than the
 			// distance to move. Note this compares squared distances so there doesn't have
@@ -122,7 +169,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 			{
 				// Arrived at target position
 				this.SetPosition(this.#targetX, this.#targetY);
-				this.#movable.SetSpeed(0);
+				this.SetSpeed(0);
 				this.#isMoving = false;
 			}
 			else
@@ -136,8 +183,8 @@ export class MovableUnitPlatform extends UnitPlatform {
 		else
 		{
 			// Unit is not pointing directly at its target: rotate towards the target.
-			this.#movable.SetSpeed(0);
-			this.#movable.SetAngle(MathUtils.AngleRotate(currentAngle, targetAngle, this.#rotateSpeed * dt));
+			this.SetSpeed(0);
+			this.SetAngle(MathUtils.AngleRotate(currentAngle, targetAngle, this.#rotateSpeed * dt));
 		}
 	}
 }

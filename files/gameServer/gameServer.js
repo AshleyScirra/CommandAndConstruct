@@ -9,13 +9,9 @@
  // and the equivalent value in milliseconds between ticks.
  const SERVER_TICK_RATE = 30;
  const SERVER_TICK_MS_INTERVAL = (1000 / SERVER_TICK_RATE);
-
- // "Magic number" that binary messages start with to verify it's an expected message.
- // This avoids things like fragmented packets trying to be read as a whole packet.
- const MAGIC_NUMBER = 0x63266321;	// "c&c!" in ASCII
  
  // The binary message types
- const MESSAGE_TYPE_FULL_UPDATES = 0;	// full unit updates
+ const MESSAGE_TYPE_UNIT_UPDATES = 0;	// full and delta unit updates
  const MESSAGE_TYPE_EVENTS = 1;			// list of events that have happened
  
  // The amount of time over which all units in the game will have a full update sent
@@ -45,13 +41,14 @@
 	#unitsPendingFullUpdate = new Set();
 	#numUnitFullUpdatesPerTick = 0;	// number of unit full updates to send out per tick
 	
+	// A set of units that have changed this tick, so need to send delta updates.
+	#unitsPendingDeltaUpdate = new Set();
+	
 	#networkEvents = [];			// array of NetworkEvents waiting to send over the network
 	
 	// A 256kb binary data buffer to use for sending binary updates to clients
 	#dataArrayBuffer = new ArrayBuffer(262144);
 	#dataView = new DataView(this.#dataArrayBuffer);
-	
-	#messageSequenceNumber = 0;		// an increasing number for every binary message
 	
 	// Level size
 	#layoutWidth = 25000;
@@ -61,6 +58,7 @@
 	
 	// For stats
 	#statStateData = 0;
+	#statDeltaData = 0;
 	#statEventData = 0;
 	#frameCount = 0;
 	#timeInTickCalls = 0;
@@ -281,9 +279,10 @@
 			unit.Tick(dt);
 		}
 		
-		// Send some full unit updates for this tick. These are all spread over
-		// ticks across the time period UNIT_FULL_UPDATE_PERIOD.
-		this.#SendFullUnitUpdates();
+		// Send some full unit updates for this tick, which are all spread over
+		// ticks across the time period UNIT_FULL_UPDATE_PERIOD, along with delta
+		// updates, which are a set of specific values that have changed in units.
+		this.#SendUnitUpdates();
 		
 		// Send any events that have happened over the network.
 		this.#SendNetworkEvents();
@@ -341,6 +340,13 @@
 		this.#tickTimerId = setTimeout(() => this.#Tick(), msToNextTick);
 	}
 	
+	// When some value in a unit changes, it calls this method to add it to a set of
+	// units for sending delta updates over the network.
+	AddUnitForDeltaUpdate(unit)
+	{
+		this.#unitsPendingDeltaUpdate.add(unit);
+	}
+	
 	// Calculate how many units to send a full update for every server tick to get them
 	// all sent out in the UNIT_FULL_UPDATE_PERIOD. Round the number up to make sure there
 	// is always at least 1 unit sent out every update, and that it errs on the side of
@@ -351,12 +357,15 @@
 		this.#numUnitFullUpdatesPerTick = Math.ceil(this.#allUnitsById.size / updatePeriodTicks);
 	}
 	
-	// Send binary data with some unit full updates. These contain all the information about
-	// a unit, such as its position, angle, speed and turret offset angle. Each tick this is
-	// called to send only some full updates; it will work its way through all units over the
-	// time period UNIT_FULL_UPDATE_PERIOD in order to limit the total bandwidth used.
-	#SendFullUnitUpdates()
+	// Send full and delta unit updates in one message. They both use the same transmission mode
+	// and sending them together allows compression to work more effectively.
+	#SendUnitUpdates()
 	{
+		// Send data with some unit full updates. These contain all the information about
+		// a unit, such as its position, angle, speed and turret offset angle. Each tick this is
+		// called to send only some full updates; it will work its way through all units over the
+		// time period UNIT_FULL_UPDATE_PERIOD in order to limit the total bandwidth used.
+		
 		// From the queue of units pending a full update, fill up an array with the number to send this tick.
 		const sendUnits = [];
 		for (const unit of this.#unitsPendingFullUpdate)
@@ -396,27 +405,25 @@
 			this.#UpdateNumFullUpdatesPerTick();
 		}
 		
-		// If for some reason there are no units to send (maybe every single unit was destroyed?)
-		// then skip sending any update.
-		if (sendUnits.length === 0)
+		// If for some reason there are no full updates to send (maybe every single unit was destroyed?)
+		// *and* no delta updates, then skip sending any update.
+		if (sendUnits.length === 0 && this.#unitsPendingDeltaUpdate.size === 0)
+		{
 			return;
+		}
 		
 		const dataView = this.#dataView;
 		let pos = 0;		// write position in bytes
 		
-		// Write the magic number to identify this kind of message.
-		dataView.setUint32(pos, MAGIC_NUMBER);
-		pos += 4;
-		
 		// Write the message type as a byte.
-		dataView.setUint8(pos, MESSAGE_TYPE_FULL_UPDATES);
+		dataView.setUint8(pos, MESSAGE_TYPE_UNIT_UPDATES);
 		pos += 1;
 		
 		// Write the game time at the tick this message was sent.
 		dataView.setFloat32(pos, this.GetGameTime());
 		pos += 4;
 		
-		// Write the total number of units to be sent in this update.
+		// Write the total number of full updates to be sent in this update.
 		dataView.setUint16(pos, sendUnits.length);
 		pos += 2;
 		
@@ -448,10 +455,34 @@
 			pos += 2;
 		}
 		
-		// Finished writing the game state data.
+		// Save size of state data for stats
+		this.#statStateData += pos;
+		const stateDataEndPos = pos;
+		
+		// Continue on to writing delta updates following on from the full updates.
+		// These are a list of specific values that have changed in units this tick, such as
+		// the platform angle, or the turret offset angle. Values that have not changed are
+		// not transmitted here, in order to save bandwidth.
+		
+		// Write the number of delta updates.
+		dataView.setUint16(pos, this.#unitsPendingDeltaUpdate.size);
+		pos += 2;
+		
+		// Write each delta update.
+		for (const unit of this.#unitsPendingDeltaUpdate)
+		{
+			pos = unit.WriteDeltaUpdate(dataView, pos);
+		}
+		
+		// Clear all units pending delta updates now they have been written.
+		this.#unitsPendingDeltaUpdate.clear();
+		
+		// Save size of delta data for stats
+		this.#statDeltaData += pos - stateDataEndPos;
+		
+		// Finished writing the unit update data.
 		// Copy out a new ArrayBuffer with just the data written.
 		const arrayBuffer = this.#dataArrayBuffer.slice(0, pos);
-		this.#statStateData += arrayBuffer.byteLength;		// measure data sent for stats
 		
 		// Send the binary data with the game state update to the runtime.
 		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
@@ -467,10 +498,6 @@
 		
 		const dataView = this.#dataView;
 		let pos = 0;		// write position in bytes
-		
-		// Write the magic number to identify this kind of message.
-		dataView.setUint32(pos, MAGIC_NUMBER);
-		pos += 4;
 		
 		// Write the message type as a byte.
 		dataView.setUint8(pos, MESSAGE_TYPE_EVENTS);
@@ -490,7 +517,7 @@
 			pos = networkEvent.Write(dataView, pos);
 		}
 		
-		// Clear all the network events now they have been sent.
+		// Clear all the network events now they have been written.
 		this.#networkEvents.length = 0;
 		
 		// Finished writing network events.
@@ -503,7 +530,7 @@
 		// This also uses reliable but unordered transmission. Events must arrive at clients,
 		// but they don't have to be received in the correct order. Clients can compensate
 		// for late events.
-		this.SendToRuntime(arrayBuffer, "r", [arrayBuffer])
+		this.SendToRuntime(arrayBuffer, "r", [arrayBuffer]);
 	}
 	
 	// Called every 1 second to send stats to clients so they can display it for testing purposes.
@@ -516,6 +543,7 @@
 			"num-units": this.#allUnitsById.size,
 			"num-projectiles": this.#allProjectilesById.size,
 			"sent-state-bytes": this.#statStateData,
+			"sent-delta-bytes": this.#statDeltaData,
 			"sent-event-bytes": this.#statEventData
 		});
 		
@@ -523,6 +551,7 @@
 		this.#frameCount = 0;
 		this.#timeInTickCalls = 0;
 		this.#statStateData = 0;
+		this.#statDeltaData = 0;
 		this.#statEventData = 0;
 	}
 	

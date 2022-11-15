@@ -2,13 +2,14 @@
 import Globals from "../globals.js";
 import * as MathUtils from "../utils/clientMathUtils.js";
 
-// "Magic number" that binary messages start with to verify it's an expected message.
-// This avoids things like fragmented packets trying to be read as a whole packet.
-const MAGIC_NUMBER = 0x63266321;	// "c&c!" in ASCII
-
 // The binary message types
-const MESSAGE_TYPE_FULL_UPDATES = 0; // full unit updates
-const MESSAGE_TYPE_EVENTS = 1;		// list of events that have happened
+const MESSAGE_TYPE_UNIT_UPDATES = 0;	// full and delta unit updates
+const MESSAGE_TYPE_EVENTS = 1;			// list of events that have happened
+
+// Flags delta updates, which must match those on the server side.
+const FLAG_CHANGED_SPEED =				 (1 << 0);
+const FLAG_CHANGED_PLATFORM_ANGLE =		 (1 << 1);
+const FLAG_CHANGED_TURRET_OFFSET_ANGLE = (1 << 2);
 
 // This class handles receiving messages from the GameServer (whether it's hosted locally or receiving
 // messages over the network). It calls the appropriate GameClient methods for each message.
@@ -71,27 +72,14 @@ export class GameClientMessageHandler {
 		try {
 			const dataView = new DataView(arrayBuffer);
 			let pos = 0;		// read position in bytes
-
-			// Read the magic number.
-			const magicNumber = dataView.getUint32(pos);
-			pos += 4;
-
-			// Verify the magic number. Ignore any messages with the wrong magic number.
-			// This should make sure this code doesn't attempt to read an update from
-			// a fragmented or corrupt message.
-			if (magicNumber !== MAGIC_NUMBER)
-			{
-				console.error(`Ignored binary message with incorrect magic number 0x${magicNumber.toString(16)}`);
-				return;
-			}
 			
 			// Read the message type as a byte.
 			const messageType = dataView.getUint8(pos);
 			pos += 1;
 			
 			// Read the message with a different method depending on the message type.
-			if (messageType === MESSAGE_TYPE_FULL_UPDATES)
-				this.#OnFullUnitUpdates(dataView, pos);
+			if (messageType === MESSAGE_TYPE_UNIT_UPDATES)
+				this.#OnUnitUpdates(dataView, pos);
 			else if (messageType === MESSAGE_TYPE_EVENTS)
 				this.#OnNetworkEvents(dataView, pos);
 			else
@@ -103,14 +91,23 @@ export class GameClientMessageHandler {
 		}
 	}
 	
-	// Receiving full data updates about some units.
-	#OnFullUnitUpdates(dataView, pos)
+	// Receiving full and delta data updates about some units.
+	#OnUnitUpdates(dataView, pos)
 	{
 		// Read the game time. TODO: use this to help smooth game state.
 		const gameTime = dataView.getFloat32(pos);
 		pos += 4;
 		
-		// Read the total number of units in this update.
+		// Read the full unit updates that come first.
+		pos = this.#ReadFullUnitUpdates(dataView, pos);
+		
+		// Read the delta updates that follow.
+		this.#ReadDeltaUnitUpdates(dataView, pos);
+	}
+	
+	#ReadFullUnitUpdates(dataView, pos)
+	{
+		// Read the total number of full updates in this update.
 		const unitCount = dataView.getUint16(pos);
 		pos += 2;
 
@@ -146,7 +143,84 @@ export class GameClientMessageHandler {
 			const unit = this.#gameClient.GetUnitById(unitId);
 			if (unit)
 			{
-				unit.UpdateState(x, y, speed, platformAngle, turretOffsetAngle);
+				// Update platform position, speed and angle.
+				const platform = unit.GetPlatform();
+				platform.SetPosition(x, y);
+				platform.SetSpeed(speed);
+				platform.SetAngle(platformAngle);
+				
+				// Update turret offset angle.
+				const turret = unit.GetTurret();
+				turret.SetOffsetAngle(turretOffsetAngle);
+				
+				// Tell unit it received a full update.
+				unit.OnFullUpdate();
+			}
+		}
+		
+		return pos;
+	}
+	
+	#ReadDeltaUnitUpdates(dataView, pos)
+	{
+		// Read the total number of delta updates in this message.
+		const updateCount = dataView.getUint16(pos);
+		pos += 2;
+
+		// For each unit in the data, read the unit's data.
+		for (let i = 0; i < updateCount; ++i)
+		{
+			// Read unit ID.
+			const unitId = dataView.getUint16(pos);
+			pos += 2;
+			
+			// Look up the unit from the ID.
+			// NOTE: if the unit ID is not found, read the rest of the values
+			// anyway, since the read position still has to be advanced.
+			const unit = this.#gameClient.GetUnitById(unitId);
+			
+			// Read the delta change flags.
+			const deltaChangeFlags = dataView.getUint8(pos);
+			pos += 1;
+			
+			// Check which delta change flags are set and read values accordingly,
+			// in exactly the same way (notably also in the same order) as the server writes them.
+			if ((deltaChangeFlags & FLAG_CHANGED_SPEED) !== 0)
+			{
+				const speed = dataView.getUint16(pos);
+				pos += 2;
+				
+				if (unit)
+					unit.GetPlatform().SetSpeed(speed);
+			}
+			
+			if ((deltaChangeFlags & FLAG_CHANGED_PLATFORM_ANGLE) !== 0)
+			{
+				const platformAngle = MathUtils.Uint16ToAngle(dataView.getUint16(pos));
+				pos += 2;
+				
+				if (unit)
+				{
+					unit.GetPlatform().SetAngle(platformAngle);
+					
+					// Update the turret to follow the platform.
+					unit.GetTurret().Update();
+
+					// If this unit has a selection box, update that too.
+					unit.UpdateSelectionBox();
+				}
+			}
+			
+			if ((deltaChangeFlags & FLAG_CHANGED_TURRET_OFFSET_ANGLE) !== 0)
+			{
+				const offsetAngle = MathUtils.Uint16ToAngle(dataView.getUint16(pos));
+				pos += 2;
+				
+				if (unit)
+				{
+					unit.GetTurret().SetOffsetAngle(offsetAngle);
+					unit.GetTurret().Update();
+				}
 			}
 		}
 	}
@@ -299,13 +373,13 @@ export class GameClientMessageHandler {
 	{
 		const runtime = this.#gameClient.GetRuntime();
 		const inst = runtime.objects.StatsText.getFirstInstance();
-		inst.text = `Server FPS: ${m["server-fps"]}
-Server thread CPU: ${Math.round(m["server-thread-usage"] * 100)}%
+		inst.text = `Unit count: ${m["num-units"]}
+Projectile count: ${m["num-projectiles"]}
 Server state: ${Math.round(m["sent-state-bytes"] / 1024)} kb/s
+Server deltas: ${Math.round(m["sent-delta-bytes"] / 1024)} kb/s
 Server events: ${Math.round(m["sent-event-bytes"] / 1024)} kb/s
-Net upload: ${Math.round(runtime.objects.Multiplayer.stats.outboundBandwidth / 1024)} kb/s
-Net download: ${Math.round(runtime.objects.Multiplayer.stats.inboundBandwidth / 1024)} kb/s
-Unit count: ${m["num-units"]}
-Projectile count: ${m["num-projectiles"]}`;
+Net bandwidth: ${Math.round(runtime.objects.Multiplayer.stats.outboundBandwidth / 1024)} kb/s up, ${Math.round(runtime.objects.Multiplayer.stats.inboundBandwidth / 1024)} kb/s down
+Server compression: ${Math.max(100 - Math.round(runtime.objects.Multiplayer.stats.outboundBandwidth * 100 / (m["sent-state-bytes"] + m["sent-delta-bytes"] + m["sent-event-bytes"])), 0)}%
+Server performance: ${m["server-fps"]} FPS, ${Math.round(m["server-thread-usage"] * 100)}% CPU`;
 	}
 }
