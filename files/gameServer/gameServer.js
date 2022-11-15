@@ -15,8 +15,12 @@
  const MAGIC_NUMBER = 0x63266321;	// "c&c!" in ASCII
  
  // The binary message types
- const MESSAGE_TYPE_UPDATE = 0;		// game state update
- const MESSAGE_TYPE_EVENTS = 1;		// list of events that have happened
+ const MESSAGE_TYPE_FULL_UPDATES = 0;	// full unit updates
+ const MESSAGE_TYPE_EVENTS = 1;			// list of events that have happened
+ 
+ // The amount of time over which all units in the game will have a full update sent
+ // out by the server, currently set to every 2 seconds.
+ const UNIT_FULL_UPDATE_PERIOD = 2;
  
  // The GameServer class represents the state of the game and runs the main game logic.
  // It runs in a Web Worker and communicates with clients by messaging - either local messages
@@ -34,6 +38,12 @@
 	#gameTime = new KahanSum();		// serves as the clock for the game in seconds
 	
 	#objectData = new Map();		// name -> ObjectData
+	
+	// A set of all units pending a full update (which sends all the unit data).
+	// The set will be filled with all units every UNIT_FULL_UPDATE_PERIOD,
+	// and then gradually drained over time as updates are sent out.
+	#unitsPendingFullUpdate = new Set();
+	#numUnitFullUpdatesPerTick = 0;	// number of unit full updates to send out per tick
 	
 	#networkEvents = [];			// array of NetworkEvents waiting to send over the network
 	
@@ -126,8 +136,10 @@
 		// Queue a network event to tell clients that the unit was destroyed.
 		this.#networkEvents.push(new NetworkEvent.UnitDestroyed(unit.GetId()));
 		
-		// Remove the unit from the server.
+		// Remove the unit from the server. Also remove it from the set of units
+		// pending an absolute update, as it no longer needs updating.
 		this.#allUnitsById.delete(unit.GetId());
+		this.#unitsPendingFullUpdate.delete(unit);
 	}
 	
 	// Iterates all units in the game, using the values of the units map.
@@ -265,8 +277,9 @@
 			unit.Tick(dt);
 		}
 		
-		// Send data about the game state to the clients.
-		this.#SendGameStateUpdate();
+		// Send some full unit updates for this tick. These are all spread over
+		// ticks across the time period UNIT_FULL_UPDATE_PERIOD.
+		this.#SendFullUnitUpdates();
 		
 		// Send any events that have happened over the network.
 		this.#SendNetworkEvents();
@@ -324,11 +337,46 @@
 		this.#tickTimerId = setTimeout(() => this.#Tick(), msToNextTick);
 	}
 	
-	// Send binary data with the game state for clients to update to.
-	// Currently this just sends a full update of every unit in the game.
-	// TODO: come up with a smarter strategy that reduces bandwidth.
-	#SendGameStateUpdate()
+	// Send binary data with some unit full updates. These contain all the information about
+	// a unit, such as its position, angle, speed and turret offset angle. Each tick this is
+	// called to send only some full updates; it will work its way through all units over the
+	// time period UNIT_FULL_UPDATE_PERIOD in order to limit the total bandwidth used.
+	#SendFullUnitUpdates()
 	{
+		// If there are no more full updates to send, start over sending full updates for
+		// all units again.
+		if (this.#unitsPendingFullUpdate.size === 0)
+		{
+			// Replace the set with a new one with every unit in the game in it.
+			this.#unitsPendingFullUpdate = new Set([...this.allUnits()]);
+			
+			// Calculate how many of these units to send every tick to get them all sent out
+			// in the UNIT_FULL_UPDATE_PERIOD. Round the number up to make sure there is always
+			// at least 1 unit sent out every update, and that it errs on the side of finishing
+			// slightly ahead of the deadline, rather than slightly behind.
+			// TODO: the rounding on this may cause the last update to be significantly smaller.
+			// Maybe add support for refilling the queue in the last update.
+			const updatePeriodTicks = SERVER_TICK_RATE * UNIT_FULL_UPDATE_PERIOD;
+			this.#numUnitFullUpdatesPerTick = Math.ceil(this.#unitsPendingFullUpdate.size / updatePeriodTicks);
+		}
+		
+		// From the queue of units pending a full update, fill up an array with the number to send this tick.
+		const sendUnits = [];
+		for (const unit of this.#unitsPendingFullUpdate)
+		{
+			sendUnits.push(unit);
+			this.#unitsPendingFullUpdate.delete(unit);
+			
+			if (sendUnits.length >= this.#numUnitFullUpdatesPerTick)
+				break;
+		}
+		
+		// If for some reason there are no units to send (maybe everything left in the batch
+		// was destroyed?) then just bail out and don't send an update.
+		// TODO: maybe find more units to send in this case?
+		if (sendUnits.length === 0)
+			return;
+		
 		const dataView = this.#dataView;
 		let pos = 0;		// write position in bytes
 		
@@ -337,26 +385,19 @@
 		pos += 4;
 		
 		// Write the message type as a byte.
-		dataView.setUint8(pos, MESSAGE_TYPE_UPDATE);
+		dataView.setUint8(pos, MESSAGE_TYPE_FULL_UPDATES);
 		pos += 1;
 		
 		// Write the game time at the tick this message was sent.
 		dataView.setFloat32(pos, this.GetGameTime());
 		pos += 4;
 		
-		// Write an incrementing sequence number with every binary message.
-		// Since these updates use unreliable transmission, messages could arrive
-		// out-of-order. The client can use the sequence number to discard any
-		// delayed messages that arrive after a newer message.
-		dataView.setUint32(pos, this.#messageSequenceNumber++);
-		pos += 4;
-		
-		// Write the total number of units.
-		dataView.setUint16(pos, this.#allUnitsById.size);
+		// Write the total number of units to be sent in this update.
+		dataView.setUint16(pos, sendUnits.length);
 		pos += 2;
 		
-		// For each unit, write data about the unit.
-		for (const unit of this.allUnits())
+		// For each unit, write the full data about the unit.
+		for (const unit of sendUnits)
 		{
 			// Write the unit ID
 			dataView.setUint16(pos, unit.GetId());

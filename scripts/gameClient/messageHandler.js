@@ -7,7 +7,7 @@ import * as MathUtils from "../utils/clientMathUtils.js";
 const MAGIC_NUMBER = 0x63266321;	// "c&c!" in ASCII
 
 // The binary message types
-const MESSAGE_TYPE_UPDATE = 0;		// game state update
+const MESSAGE_TYPE_FULL_UPDATES = 0; // full unit updates
 const MESSAGE_TYPE_EVENTS = 1;		// list of events that have happened
 
 // This class handles receiving messages from the GameServer (whether it's hosted locally or receiving
@@ -18,8 +18,6 @@ export class GameClientMessageHandler {
 	// Private fields
 	#gameClient;					// reference to GameClient
 	#messageMap;					// Map of message type -> handler function
-	
-	#lastMessageSequenceNumber = -1;
 	
 	constructor(gameClient)
 	{
@@ -92,8 +90,8 @@ export class GameClientMessageHandler {
 			pos += 1;
 			
 			// Read the message with a different method depending on the message type.
-			if (messageType === MESSAGE_TYPE_UPDATE)
-				this.#OnStateUpdate(dataView, pos);
+			if (messageType === MESSAGE_TYPE_FULL_UPDATES)
+				this.#OnFullUnitUpdates(dataView, pos);
 			else if (messageType === MESSAGE_TYPE_EVENTS)
 				this.#OnNetworkEvents(dataView, pos);
 			else
@@ -105,26 +103,13 @@ export class GameClientMessageHandler {
 		}
 	}
 	
-	
-	#OnStateUpdate(dataView, pos)
+	// Receiving full data updates about some units.
+	#OnFullUnitUpdates(dataView, pos)
 	{
 		// Read the game time. TODO: use this to help smooth game state.
 		const gameTime = dataView.getFloat32(pos);
 		pos += 4;
 		
-		// Read the sequence number. This is incremented with every message sent out,
-		// but these binary updates are transmitted in unreliable mode, meaning some
-		// messages could arrive late and come after a newer message. Ignoring messages
-		// with a lower sequence number than the last one received avoids using an older
-		// state update than the last one received.
-		const sequenceNumber = dataView.getUint32(pos);
-		pos += 4;
-
-		if (sequenceNumber <= this.#lastMessageSequenceNumber)
-			return;		// ignore this message
-		else
-			this.#lastMessageSequenceNumber = sequenceNumber;
-
 		// Read the total number of units in this update.
 		const unitCount = dataView.getUint16(pos);
 		pos += 2;
