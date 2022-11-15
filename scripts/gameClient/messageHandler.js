@@ -143,6 +143,10 @@ export class GameClientMessageHandler {
 			pos += 2;
 			const y = dataView.getUint16(pos);
 			pos += 2;
+			
+			// Read the speed
+			const speed = dataView.getUint16(pos);
+			pos += 2;
 
 			// Read the platform angle
 			const platformAngle = MathUtils.Uint16ToAngle(dataView.getUint16(pos));
@@ -157,7 +161,7 @@ export class GameClientMessageHandler {
 			const unit = this.#gameClient.GetUnitById(unitId);
 			if (unit)
 			{
-				unit.UpdateState(x, y, platformAngle, turretOffsetAngle);
+				unit.UpdateState(x, y, speed, platformAngle, turretOffsetAngle);
 			}
 		}
 	}

@@ -47,6 +47,11 @@ export class MovableUnitPlatform extends UnitPlatform {
 		return [platformX + offX, platformY + offY];
 	}
 	
+	GetSpeed()
+	{
+		return this.#movable.GetSpeed();
+	}
+	
 	GetAngle()
 	{
 		return this.#movable.GetAngle();
@@ -117,6 +122,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 			{
 				// Arrived at target position
 				this.SetPosition(this.#targetX, this.#targetY);
+				this.#movable.SetSpeed(0);
 				this.#isMoving = false;
 			}
 			else

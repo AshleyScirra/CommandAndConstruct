@@ -279,6 +279,13 @@ export class GameClient {
 		// Tick ViewManager for handling smooth zoom.
 		this.#viewManager.Tick(dt);
 		
+		// Tick all units for client-side interpolation.
+		// TODO: only tick units that need it.
+		for (const unit of this.allUnits())
+		{
+			unit.Tick(dt);
+		}
+		
 		// Advance all projectiles. These are moved by the client as their movement
 		// is entirely predictable: they just proceed at the same speed and angle
 		// from the point they were created.

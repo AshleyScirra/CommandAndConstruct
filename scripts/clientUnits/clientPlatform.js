@@ -6,6 +6,7 @@ export class ClientPlatform {
 	// Private fields
 	#unit;				// ClientUnit this platform belongs to
 	#inst;				// Construct instance representing this platform
+	#speed = 0;			// Current speed in px/s
 	
 	constructor(unit, x, y)
 	{
@@ -51,6 +52,16 @@ export class ClientPlatform {
 		return [this.#inst.width, this.#inst.height];
 	}
 	
+	SetSpeed(speed)
+	{
+		this.#speed = speed;
+	}
+	
+	GetSpeed()
+	{
+		return this.#speed;
+	}
+	
 	GetAngle()
 	{
 		return this.#inst.angle;
@@ -59,6 +70,21 @@ export class ClientPlatform {
 	SetAngle(a)
 	{
 		this.#inst.angle = a;
+	}
+	
+	Tick(dt)
+	{
+		// If the speed is nonzero, move the unit forwards.
+		if (this.#speed !== 0)
+		{
+			const moveDist = this.#speed * dt;
+			const [x, y] = this.GetPosition();
+			const angle = this.GetAngle();
+			this.SetPosition(x + Math.cos(angle) * moveDist, y + Math.sin(angle) * moveDist);
+			
+			// Update turret to follow platform movement
+			this.#unit.GetTurret().Update();
+		}
 	}
 	
 	ContainsPoint(x, y)

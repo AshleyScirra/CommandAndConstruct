@@ -370,6 +370,10 @@
 			dataView.setUint16(pos, y);
 			pos += 2;
 			
+			// Write the speed as a uint16,
+			dataView.setUint16(pos, platform.GetSpeed());
+			pos += 2;
+			
 			// Write the platform angle as a uint16.
 			dataView.setUint16(pos, MathUtils.AngleToUint16(platform.GetAngle()));
 			pos += 2;
