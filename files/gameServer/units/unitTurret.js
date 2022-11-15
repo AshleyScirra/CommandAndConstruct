@@ -68,6 +68,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 	}
 	
 	// Identify if there is a unit this turret can target in range.
+	// If there are multiple targets, it will try to find the best one to target.
 	#FindTarget(dt)
 	{
 		const forPlayer = this.GetUnit().GetPlayer();
@@ -77,6 +78,9 @@ export class UnitTurret extends PositionedAndAngledObject {
 		// position, otherwise an offset turret position can make it possible for a turret to fire
 		// at a target that can't fire back.
 		const [fromX, fromY] = this.GetPlatform().GetPosition();
+		
+		// Collect all available targets in range.
+		const availableTargets = [];
 		
 		// This uses a brute-force approach iterating all units.
 		// TODO: make this more efficient so it can scale for 1000s of units.
@@ -93,15 +97,57 @@ export class UnitTurret extends PositionedAndAngledObject {
 			const dy = toY - fromY;
 			if (dx * dx + dy * dy <= this.#range * this.#range)
 			{
-				// Found a target. Save its ID and return.
-				this.#targetUnitId = unit.GetId();
-				return;
+				// Found a target. Add it to the list of available targets.
+				// Keep looking for further available targets.
+				availableTargets.push(unit);
 			}
 		}
 		
 		// Did not find a target. Rotate the turret back to angle 0,
 		// so it returns to its default orientation with the unit platform.
-		this.SetAngle(MathUtils.AngleRotate(this.GetAngle(), 0, this.#rotateSpeed * dt));
+		if (availableTargets.length === 0)
+		{
+			this.SetAngle(MathUtils.AngleRotate(this.GetAngle(), 0, this.#rotateSpeed * dt));
+		}
+		// Only found one available target. Just aim for that.
+		else if (availableTargets.length === 1)
+		{
+			this.#targetUnitId = availableTargets[0].GetId();
+		}
+		// Multiple targets are available in range.
+		else
+		{
+			// When multiple targets are available, aim for the one that requires the least
+			// rotation by the turret. This avoids things like rotating the turret all the way around
+			// in the opposite direction to fire at something behind the unit when there is already
+			// a target in front of the unit, saving time in combat. Therefore we need to find the
+			// target with the minimum angular distance from the current turret angle.
+			const turretAngle = this.GetOverallAngle();
+			
+			// Find the "best" target, i.e. the one with the least angular distance from the turret.
+			let bestTargetUnit = null;
+			let bestTargetAngleDist = Infinity;		// start with Infinity so first target always beats this
+			
+			for (const unit of availableTargets)
+			{
+				// Find this available target's angular distance from the turret angle.
+				const [targetX, targetY] = unit.GetPlatform().GetPosition();
+				const angleToTarget = MathUtils.AngleTo(fromX, fromY, targetX, targetY);
+				const angleDist = MathUtils.AngleDifference(turretAngle, angleToTarget);
+				
+				// If this target has a smaller angular distance to the turret angle than the current best,
+				// then replace it as the best target.
+				if (angleDist < bestTargetAngleDist)
+				{
+					bestTargetUnit = unit;
+					bestTargetAngleDist = angleDist;
+				}
+			}
+			
+			// Now the best target is set to the available target with the smallest angular distance to the turret's current angle.
+			// Start targeting that unit.
+			this.#targetUnitId = bestTargetUnit.GetId();
+		}
 	}
 	
 	#TrackTarget(dt)
