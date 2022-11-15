@@ -115,6 +115,10 @@
 			"units": [...this.allUnits()].map(u => u.GetInitData())
 		});
 		
+		// Initialise the number of full unit updates to be sending out every tick,
+		// based on the starting number of units.
+		this.#UpdateNumFullUpdatesPerTick();
+		
 		// Start ticking the game
 		this.#lastTickTimeMs = performance.now();
 		this.#nextTickScheduledTimeMs = this.#lastTickTimeMs + SERVER_TICK_MS_INTERVAL;
@@ -337,29 +341,22 @@
 		this.#tickTimerId = setTimeout(() => this.#Tick(), msToNextTick);
 	}
 	
+	// Calculate how many units to send a full update for every server tick to get them
+	// all sent out in the UNIT_FULL_UPDATE_PERIOD. Round the number up to make sure there
+	// is always at least 1 unit sent out every update, and that it errs on the side of
+	// finishing slightly ahead of the deadline, rather than slightly behind.
+	#UpdateNumFullUpdatesPerTick()
+	{
+		const updatePeriodTicks = SERVER_TICK_RATE * UNIT_FULL_UPDATE_PERIOD;
+		this.#numUnitFullUpdatesPerTick = Math.ceil(this.#allUnitsById.size / updatePeriodTicks);
+	}
+	
 	// Send binary data with some unit full updates. These contain all the information about
 	// a unit, such as its position, angle, speed and turret offset angle. Each tick this is
 	// called to send only some full updates; it will work its way through all units over the
 	// time period UNIT_FULL_UPDATE_PERIOD in order to limit the total bandwidth used.
 	#SendFullUnitUpdates()
 	{
-		// If there are no more full updates to send, start over sending full updates for
-		// all units again.
-		if (this.#unitsPendingFullUpdate.size === 0)
-		{
-			// Replace the set with a new one with every unit in the game in it.
-			this.#unitsPendingFullUpdate = new Set([...this.allUnits()]);
-			
-			// Calculate how many of these units to send every tick to get them all sent out
-			// in the UNIT_FULL_UPDATE_PERIOD. Round the number up to make sure there is always
-			// at least 1 unit sent out every update, and that it errs on the side of finishing
-			// slightly ahead of the deadline, rather than slightly behind.
-			// TODO: the rounding on this may cause the last update to be significantly smaller.
-			// Maybe add support for refilling the queue in the last update.
-			const updatePeriodTicks = SERVER_TICK_RATE * UNIT_FULL_UPDATE_PERIOD;
-			this.#numUnitFullUpdatesPerTick = Math.ceil(this.#unitsPendingFullUpdate.size / updatePeriodTicks);
-		}
-		
 		// From the queue of units pending a full update, fill up an array with the number to send this tick.
 		const sendUnits = [];
 		for (const unit of this.#unitsPendingFullUpdate)
@@ -367,13 +364,40 @@
 			sendUnits.push(unit);
 			this.#unitsPendingFullUpdate.delete(unit);
 			
+			// Stop when hitting the limit for the number of units to send this tick.
 			if (sendUnits.length >= this.#numUnitFullUpdatesPerTick)
 				break;
 		}
 		
-		// If for some reason there are no units to send (maybe everything left in the batch
-		// was destroyed?) then just bail out and don't send an update.
-		// TODO: maybe find more units to send in this case?
+		// The last update, when #unitsPendingFullUpdate becomes empty, may not have filled up
+		// the sendUnits array with enough units. In this case we can start over sending the next
+		// round of units in this update to top it up. (This also happens on the very first tick.)
+		if (sendUnits.length < this.#numUnitFullUpdatesPerTick)
+		{
+			// Iterate all units in the game.
+			for (const unit of this.allUnits())
+			{
+				// For the first few units, top up the sendUnits array so they are included
+				// in this tick's full update.
+				if (sendUnits.length < this.#numUnitFullUpdatesPerTick)
+				{
+					sendUnits.push(unit);
+				}
+				else
+				{
+					// Once sendUnits reaches the limit, add the rest of the units to the
+					// set of units to be sent out over the next UNIT_FULL_UPDATE_PERIOD.
+					this.#unitsPendingFullUpdate.add(unit);
+				}
+			}
+			
+			// Also recalculate the number of units to be sending per tick to adapt it to
+			// the current number of units.
+			this.#UpdateNumFullUpdatesPerTick();
+		}
+		
+		// If for some reason there are no units to send (maybe every single unit was destroyed?)
+		// then skip sending any update.
 		if (sendUnits.length === 0)
 			return;
 		
