@@ -118,6 +118,41 @@ export class Unit {
 		this.#turret.Tick(dt);
 	}
 	
+	// Called by GameServer when it's time to write a full update for this unit.
+	// This includes complete details about the unit.
+	WriteFullUpdate(dataView, pos)
+	{
+		// Write the unit ID
+		dataView.setUint16(pos, this.GetId());
+		pos += 2;
+
+		// Write the X and Y position as uint16s
+		const platform = this.GetPlatform();
+		const [x, y] = platform.GetPosition();
+		dataView.setUint16(pos, x);
+		pos += 2;
+		dataView.setUint16(pos, y);
+		pos += 2;
+
+		// Write the speed as a uint16,
+		dataView.setUint16(pos, platform.GetSpeed());
+		pos += 2;
+
+		// Write the platform angle as a uint16.
+		dataView.setUint16(pos, MathUtils.AngleToUint16(platform.GetAngle()));
+		pos += 2;
+
+		// Write the turret offset angle as a uint16.
+		const turret = this.GetTurret();
+		dataView.setUint16(pos, MathUtils.AngleToUint16(turret.GetAngle()));
+		pos += 2;
+		
+		// Tell the turret a full update was written, since it tracks the last sent angle.
+		turret.OnSentFullUpdate();
+		
+		return pos;
+	}
+	
 	// For sending delta updates, the unit keeps track of which values have changed over the
 	// past tick, accumulating flags to indicate which kinds of value changed. Any time a
 	// value changes it also adds this unit to the GameServer list of units pending a delta update.
@@ -145,6 +180,7 @@ export class Unit {
 	}
 	
 	// Called by GameServer when it's time to write a delta update for this unit.
+	// This only writes changed values.
 	WriteDeltaUpdate(dataView, pos)
 	{
 		// Write the unit ID.

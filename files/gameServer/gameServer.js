@@ -430,29 +430,11 @@
 		// For each unit, write the full data about the unit.
 		for (const unit of sendUnits)
 		{
-			// Write the unit ID
-			dataView.setUint16(pos, unit.GetId());
-			pos += 2;
+			pos = unit.WriteFullUpdate(dataView, pos);
 			
-			// Write the X and Y position as uint16s
-			const platform = unit.GetPlatform();
-			const [x, y] = platform.GetPosition();
-			dataView.setUint16(pos, x);
-			pos += 2;
-			dataView.setUint16(pos, y);
-			pos += 2;
-			
-			// Write the speed as a uint16,
-			dataView.setUint16(pos, platform.GetSpeed());
-			pos += 2;
-			
-			// Write the platform angle as a uint16.
-			dataView.setUint16(pos, MathUtils.AngleToUint16(platform.GetAngle()));
-			pos += 2;
-			
-			// Write the turret offset angle as a uint16.
-			dataView.setUint16(pos, MathUtils.AngleToUint16(unit.GetTurret().GetAngle()));
-			pos += 2;
+			// If this unit is in the delta update list, remove it - it already just wrote
+			// its full information so there's no point following with a delta update.
+			this.#unitsPendingDeltaUpdate.delete(unit);
 		}
 		
 		// Save size of state data for stats

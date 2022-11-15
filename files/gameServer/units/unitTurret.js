@@ -5,6 +5,10 @@ import * as MathUtils from "../utils/mathUtils.js";
 
 const _2PI = 2 * Math.PI;
 
+// The amount of rotation difference before a turret sends a delta update for its angle,
+// currently set to 0.5 degrees.
+const TURRET_SEND_ANGLE_THRESHOLD = MathUtils.ToRadians(0.5);
+
 // A UnitTurret is the firing part of a unit, that rotates independently of the platform
 // to aim and fire projectiles at other player's units.
 // Note that importantly the UnitTurret position and angle are treated as offsets
@@ -27,11 +31,9 @@ export class UnitTurret extends PositionedAndAngledObject {
 	#rateOfFire = 2;		// number of seconds between shots
 	#projectileSpeed = 900;	// speed projectile travels at
 	
-	// Turrets also make sure they only send their offset angle when the value sent over
-	// the network changes. This follows the pattern in MovableUnitPlatform - see the comments
-	// there. It's probably less necessary for turrets, but is worth doing to avoid redundant
-	// delta updates anyway.
-	#lastAngleAsUint16 = 0;
+	// Turrets only send delta updates on their angle when it changes past a threshold,
+	// in order to reduce bandwidth.
+	#lastSentAngle = 0;
 	
 	constructor(unit, x, y)
 	{
@@ -72,14 +74,29 @@ export class UnitTurret extends PositionedAndAngledObject {
 		
 		super.SetAngle(a);
 		
-		// Flag that the turret offset angle changed for delta updates, but only if
-		// the angle rounded to a uint16 has changed (as that is what is sent).
-		const angleAsUint16 = MathUtils.AngleToUint16(a);
-		if (this.#lastAngleAsUint16 !== angleAsUint16)
+		// When testing intense combat, turret angle changes consumed a great deal of
+		// bandwidth in delta updates. The turret angle is actually purely cosmetic:
+		// when projectiles are fired, the network event includes the true angle of the
+		// projectile. Therefore the resolution of turret offset angles can be decreased
+		// without meaningfully affecting the client-side representation. Rather than
+		// sending turret offset angles whenever they change, instead they must rotate
+		// beyond a minimum threshold before it sends a delta update. This is currently
+		// set at 0.5 degrees, so the turret will only send an update when it rotates
+		// more than that amount from the last angle that was sent over the network.
+		// This appears to reduce the bandwidth requirement by up to two thirds, and
+		// clients will be able to interpolate smoothly over small differences anyway.
+		if (MathUtils.AngleDifference(this.#lastSentAngle, this.GetAngle()) >= TURRET_SEND_ANGLE_THRESHOLD)
 		{
 			this.#unit.MarkTurretOffsetAngleChanged();
-			this.#lastAngleAsUint16 = angleAsUint16;
+			this.#lastSentAngle = this.GetAngle();
 		}
+	}
+	
+	// When a full update is sent for the turret, update the last set angle again, so
+	// a delta update will only be sent if it rotates significantly away from this angle.
+	OnSentFullUpdate()
+	{
+		this.#lastSentAngle = this.GetAngle();
 	}
 	
 	GetRange()
