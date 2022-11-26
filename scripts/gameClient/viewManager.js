@@ -115,6 +115,13 @@ export class ViewManager {
 		);
 	}
 	
+	// Scroll by a given offset from the current scroll position.
+	OffsetScroll(dx, dy)
+	{
+		const [scrollX, scrollY] = this.GetScrollPosition();
+		this.ScrollTo(scrollX + dx, scrollY + dy);
+	}
+	
 	// Get the current scroll position, where the view is centered on.
 	GetScrollPosition()
 	{
@@ -122,16 +129,30 @@ export class ViewManager {
 		return [layout.scrollX, layout.scrollY];
 	}
 	
+	// Get the viewport size as set in project properties. Note this doesn't scale with zoom.
 	GetViewportSize()
 	{
 		const runtime = this.GetRuntime();
 		return [runtime.viewportWidth, runtime.viewportHeight];
 	}
 	
+	// Get the scaled viewport size, which takes in to account the zoom level.
 	GetScaledViewportSize()
 	{
 		const [vw, vh] = this.GetViewportSize();
 		return [vw / this.#zoom, vh / this.#zoom];
+	}
+	
+	// Get the scaled viewport area, which is the rectangle (left, top, right, bottom) of the
+	// visible area taking in to account the scroll position and zoom level.
+	GetScaledViewportArea()
+	{
+		const [scrollX, scrollY] = this.GetScrollPosition();
+		const [scaledViewportWidth, scaledViewportHeight] = this.GetScaledViewportSize();
+		return [scrollX - scaledViewportWidth / 2,
+				scrollY - scaledViewportHeight / 2,
+				scrollX + scaledViewportWidth / 2,
+				scrollY + scaledViewportHeight / 2];
 	}
 	
 	GetLayoutSize()

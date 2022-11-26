@@ -305,4 +305,69 @@ export class PointerInfo {
 		this.#startClientX = this.#lastClientX;
 		this.#startClientY = this.#lastClientY;
 	}
+	
+	// Called every tick for any pointers that need to change over time, such as scrolling
+	// when a drag pointer moves to the edge of the screen.
+	Tick(dt)
+	{
+		if (this.#actionType === "drag")
+		{
+			this.#TickDragPointer(dt);
+		}
+	}
+	
+	// If a pointer moves all the way to the edge of the viewport while it is dragging a selection box,
+	// scroll the view in the direction of the viewport side the pointer is against.
+	// This lets the player select more content than is visible on-screen.
+	#TickDragPointer(dt)
+	{
+		const runtime = this.GetRuntime();
+		const viewManager = this.GetViewManager();
+		const backgroundLayer = runtime.layout.getLayer("Background");
+		
+		// Get the pointer's last position on the background layer.
+		const [layerX, layerY] = backgroundLayer.cssPxToLayer(this.#lastClientX, this.#lastClientY);
+		
+		// Get the current viewport rectangle, as the "edge of viewport" calculation
+		// is done in layer co-ordinates. Also get the zoom level as it affects the scrolling.
+		const [vpLeft, vpTop, vpRight, vpBottom] = viewManager.GetScaledViewportArea();
+		const zoom = viewManager.GetZoom();
+		
+		// The scroll speed when dragging at the edge of the viewport is 800px/s, but it needs to be
+		// scaled according to the zoom level (since for example that speed is too slow when zoomed out).
+		const scrollSpeed = 800;
+		const scaledScrollSpeed = scrollSpeed / zoom;
+		
+		// Allow a small margin inwards from the edge of the viewport for detecting a pointer at the edge.
+		// This too must be scaled according to the zoom level to work consistently.
+		const margin = 30;
+		const scaledMargin = margin / zoom;
+
+		// For each edge of the viewport, if the pointer is near that edge, scroll in that direction.
+		// Also update the pointer if scrolling is done, as the start position of the selection box
+		// must be updated if the scroll position changes.
+		if (layerX <= vpLeft + scaledMargin)
+		{
+			viewManager.OffsetScroll(-scaledScrollSpeed * dt, 0);
+			this.Update();
+		}
+		
+		if (layerY <= vpTop + scaledMargin)
+		{
+			viewManager.OffsetScroll(0, -scaledScrollSpeed * dt);
+			this.Update();
+		}
+		
+		if (layerX >= vpRight - scaledMargin)
+		{
+			viewManager.OffsetScroll(scaledScrollSpeed * dt, 0);
+			this.Update();
+		}
+		
+		if (layerY >= vpBottom - scaledMargin)
+		{
+			viewManager.OffsetScroll(0, scaledScrollSpeed * dt);
+			this.Update();
+		}
+	}
 }

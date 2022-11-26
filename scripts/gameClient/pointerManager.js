@@ -164,6 +164,13 @@ export class PointerManager {
 	
 	Tick(dt)
 	{
+		// Tick all pointers in case they change anything over time (like scrolling
+		// when dragging a selection box to the edge of the screen).
+		for (const pointerInfo of this.#pointerInfos.values())
+		{
+			pointerInfo.Tick(dt);
+		}
+		
 		// If a pinch-to-zoom pointer changed in the past tick, call #UpdatePinchZoom().
 		// This handles both pinch-to-zoom pointers at the same time.
 		if (this.#didPinchZoomChange)
