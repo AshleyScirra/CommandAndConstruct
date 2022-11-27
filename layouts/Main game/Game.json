@@ -42,6 +42,39 @@
 								"angle": 0,
 								"zElevation": 0
 							}
+						},
+						{
+							"type": "CollisionGridMarker",
+							"properties": {
+								"initially-visible": false,
+								"origin": "top-left",
+								"wrap-horizontal": "repeat",
+								"wrap-vertical": "repeat",
+								"image-offset-x": 0,
+								"image-offset-y": 0,
+								"image-scale-x": 2,
+								"image-scale-y": 2,
+								"image-angle": 0
+							},
+							"uid": 34,
+							"instanceVariables": {},
+							"behaviors": {},
+							"world": {
+								"x": 0,
+								"y": 0,
+								"width": 100,
+								"height": 100,
+								"originX": 0,
+								"originY": 0,
+								"color": [
+									1,
+									1,
+									1,
+									1
+								],
+								"angle": 0,
+								"zElevation": 0
+							}
 						}
 					],
 					"sid": 998376288250594,

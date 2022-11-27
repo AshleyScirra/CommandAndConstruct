@@ -51,6 +51,11 @@ export class ViewManager {
 		backgroundInst.width = layoutWidth;
 		backgroundInst.height = layoutHeight;
 		
+		// Resize the collision cell marker tiled background to cover the layout
+		const collisionGridMarkerInst = runtime.objects.CollisionGridMarker.getFirstInstance();
+		collisionGridMarkerInst.width = layoutWidth;
+		collisionGridMarkerInst.height = layoutHeight;
+		
 		// Update minimap to use this size
 		this.#gameClient.GetMinimap().SetLayoutSize(layoutWidth, layoutHeight);
 		

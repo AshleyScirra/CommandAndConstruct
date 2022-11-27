@@ -113,7 +113,8 @@
 					"DirtTerrainBackground",
 					"DragSelectionBox",
 					"MinimapCanvas",
-					"StatsText"
+					"StatsText",
+					"CollisionGridMarker"
 				],
 				"subfolders": [],
 				"name": "Main game"
@@ -577,14 +578,6 @@
 									"file-info": {
 										"purpose": "none"
 									}
-								},
-								{
-									"name": "collisionShape.js",
-									"type": "application/javascript",
-									"sid": 797768093342991,
-									"file-info": {
-										"purpose": "none"
-									}
 								}
 							],
 							"subfolders": [],
@@ -657,6 +650,36 @@
 							],
 							"subfolders": [],
 							"name": "networkEvents"
+						},
+						{
+							"items": [
+								{
+									"name": "collisionShape.js",
+									"type": "application/javascript",
+									"sid": 797768093342991,
+									"file-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "collisionGrid.js",
+									"type": "application/javascript",
+									"sid": 756361925958533,
+									"file-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "collisionBox.js",
+									"type": "application/javascript",
+									"sid": 326470003671956,
+									"file-info": {
+										"purpose": "none"
+									}
+								}
+							],
+							"subfolders": [],
+							"name": "collisions"
 						}
 					],
 					"name": "gameServer"
