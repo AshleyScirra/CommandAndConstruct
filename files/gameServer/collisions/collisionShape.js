@@ -95,6 +95,11 @@ export class CollisionShape {
 		this.#boxBottom = bottom;
 	}
 	
+	GetBox()
+	{
+		return [this.#boxLeft, this.#boxTop, this.#boxRight, this.#boxBottom];
+	}
+	
 	// Check if a given position is inside the collision shape.
 	// Note the point must be relative to the origin, like the collision polygon is itself.
 	ContainsPoint(x, y)
