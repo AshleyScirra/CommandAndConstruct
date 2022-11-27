@@ -2,6 +2,7 @@
  import { ObjectData } from "./units/objectData.js";
  import { Unit } from "./units/unit.js";
  import { NetworkEvent } from "./networkEvents/networkEvents.js";
+ import { CollisionGrid } from "./collisions/collisionGrid.js";
  import { KahanSum } from "./utils/kahanSum.js";
  import * as MathUtils from "./utils/mathUtils.js";
  
@@ -56,6 +57,8 @@
 	
 	#isGameOver = false;			// set to true once victory/defeat condition met
 	
+	#collisionGrid;					// CollisionGrid for collision cells optimisation
+	
 	// For stats
 	#statStateData = 0;
 	#statDeltaData = 0;
@@ -91,6 +94,9 @@
 	
 	Init()
 	{
+		// Create the collision grid
+		this.#collisionGrid = new CollisionGrid(this);
+		
 		// Add 500 starting units for each player in rows opposing each other.
 		const randomOffset = (v => (v / -2) + Math.random() * v);
 		
@@ -135,6 +141,10 @@
 	
 	DestroyUnit(unit)
 	{
+		// Release the unit so it cleans up any leftover state, such as removing
+		// itself from any collision cells it was in.
+		unit.Release();
+		
 		// Queue a network event to tell clients that the unit was destroyed.
 		this.#networkEvents.push(new NetworkEvent.UnitDestroyed(unit.GetId()));
 		
@@ -173,6 +183,16 @@
 	GetGameTime()
 	{
 		return this.#gameTime.Get();
+	}
+	
+	GetCollisionGrid()
+	{
+		return this.#collisionGrid;
+	}
+	
+	GetLayoutSize()
+	{
+		return [this.#layoutWidth, this.#layoutHeight];
 	}
 	
 	ClampToLayout(x, y)
@@ -221,29 +241,44 @@
 		const [x, y] = projectile.GetPosition();
 		const player = projectile.GetPlayer();
 		
-		// This uses a brute-force approach iterating all units.
-		// TODO: make this more efficient so it can scale for 1000s of units.
-		for (const unit of this.allUnits())
-		{
-			// Skip units from the same player that fired the projectile.
-			if (unit.GetPlayer() === player)
-				continue;
-			
-			// Check if the projectile hit this unit. This only uses the projectile
-			// position as a point and tests if it is inside the unit platform's collision shape.
-			if (unit.GetPlatform().ContainsPoint(x, y))
-			{
-				// Queue a network event to tell clients that a projectile hit something.
-				this.#networkEvents.push(new NetworkEvent.ProjectileHit(projectile));
-				
-				// Apply the projectile damage to the unit health.
-				unit.ReduceHealth(projectile.GetDamage());
-				
-				return true;	// hit something
-			}
-		}
+		// Result to return from this method.
+		let result = false;
 		
-		return false;			// did not hit anything
+		// To efficiently eliminate most far-away units, use the collision grid to only
+		// check units in the same collision cell as this projectile. Note the method
+		// takes a rectangle, but projectiles are just a point, so a zero-sized rectangle
+		// is passed using the same left/right and top/bottom values. Also note that
+		// ForEachItemInArea() call run the callback repeatedly with the same thing,
+		// but that doesn't matter here - as soon as a hit is detected it stops iterating,
+		// and checking something that isn't hit multiple times will have negligible
+		// performance overhead (and collision cells overall are a huge improvement).
+		this.#collisionGrid.ForEachItemInArea(
+			x, y, x, y,
+			unitPlatform =>
+			{
+				const unit = unitPlatform.GetUnit();
+				
+				// Skip units from the same player that fired the projectile.
+				if (unit.GetPlayer() === player)
+					return false;	// bail out but keep iterating in ForEachItemInArea()
+
+				// Check if the projectile hit this unit. This only uses the projectile
+				// position as a point and tests if it is inside the unit platform's collision shape.
+				if (unitPlatform.ContainsPoint(x, y))
+				{
+					// Queue a network event to tell clients that a projectile hit something.
+					this.#networkEvents.push(new NetworkEvent.ProjectileHit(projectile));
+
+					// Apply the projectile damage to the unit health.
+					unit.ReduceHealth(projectile.GetDamage());
+
+					result = true;	// return true from CheckProjectileCollision()
+					return true;	// bail out and stop iterating in ForEachItemInArea()
+				}
+			});
+		
+		// Return true if a collision happened.
+		return result;
 	}
 	
 	// Tick the game to advance the game by one step.

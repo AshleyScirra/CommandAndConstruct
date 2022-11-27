@@ -65,6 +65,12 @@ export class Unit {
 		this.#turret = new UnitTurret(this, turretX, turretY);
 	}
 	
+	Release()
+	{
+		this.#platform.Release();
+		this.#turret.Release();
+	}
+	
 	// Get data for the "create-initial-state" message
 	GetInitData()
 	{

@@ -42,6 +42,11 @@ export class UnitTurret extends PositionedAndAngledObject {
 		this.#unit = unit;
 	}
 	
+	Release()
+	{
+		// not yet used
+	}
+	
 	GetUnit()
 	{
 		return this.#unit;
@@ -132,26 +137,35 @@ export class UnitTurret extends PositionedAndAngledObject {
 		// Collect all available targets in range.
 		const availableTargets = [];
 		
-		// This uses a brute-force approach iterating all units.
-		// TODO: make this more efficient so it can scale for 1000s of units.
-		for (const unit of this.GetGameServer().allUnits())
-		{
-			// Skip units from the same player
-			if (unit.GetPlayer() === forPlayer)
-				continue;
-			
-			// Check if this unit is within range.
-			// Use square distances to avoid computing a square root.
-			const [toX, toY] = unit.GetPlatform().GetPosition();
-			const dx = toX - fromX;
-			const dy = toY - fromY;
-			if (dx * dx + dy * dy <= this.#range * this.#range)
+		// Iterating every unit in the game would be extremely inefficient, leading to an O(n^2) number
+		// of checks. Instead only check the contents of the collision cells that the range covers.
+		// This covers a square area that may be larger than the actual range circle, but it checks
+		// the circular range inside the callback, and the most important thing is it will skip
+		// most units in the game, making it far more efficient. Also note that ForEachItemInArea()
+		// can run the callback multiple times with the same unit platform. However this does not
+		// matter; if availableTargets has duplicates, it will fall through to picking the best one
+		// by nearest angular difference to the turret, and that algorithm works the same with duplicates.
+		this.GetGameServer().GetCollisionGrid().ForEachItemInArea(
+			fromX - this.#range, fromY - this.#range, fromX + this.#range, fromY + this.#range,
+			unitPlatform =>
 			{
-				// Found a target. Add it to the list of available targets.
-				// Keep looking for further available targets.
-				availableTargets.push(unit);
-			}
-		}
+				// Skip units from the same player
+				const unit = unitPlatform.GetUnit();
+				if (unit.GetPlayer() === forPlayer)
+					return;
+
+				// Check if this unit is within range.
+				// Use square distances to avoid computing a square root.
+				const [toX, toY] = unitPlatform.GetPosition();
+				const dx = toX - fromX;
+				const dy = toY - fromY;
+				if (dx * dx + dy * dy <= this.#range * this.#range)
+				{
+					// Found a target. Add it to the list of available targets.
+					// Keep looking for further available targets.
+					availableTargets.push(unit);
+				}
+			});
 		
 		// Did not find a target. Rotate the turret back to angle 0,
 		// so it returns to its default orientation with the unit platform.
@@ -172,6 +186,8 @@ export class UnitTurret extends PositionedAndAngledObject {
 			// in the opposite direction to fire at something behind the unit when there is already
 			// a target in front of the unit, saving time in combat. Therefore we need to find the
 			// target with the minimum angular distance from the current turret angle.
+			// Note the availableTargets array could contain duplicates due to the way collision cells
+			// work; however this does not matter with this algorithm, it will work the same anyway.
 			const turretAngle = this.GetOverallAngle();
 			
 			// Find the "best" target, i.e. the one with the least angular distance from the turret.

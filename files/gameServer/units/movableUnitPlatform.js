@@ -39,6 +39,9 @@ export class MovableUnitPlatform extends UnitPlatform {
 		
 		// Initialise the angle in network uint16 format.
 		this.#lastAngleAsUint16 = MathUtils.AngleToUint16(angle);
+		
+		// Update collision shape and collision cells for initial position.
+		this.UpdateCollision();
 	}
 	
 	GetPosition()
@@ -50,7 +53,18 @@ export class MovableUnitPlatform extends UnitPlatform {
 	{
 		// Prevent the position going outside the layout.
 		[x, y] = this.GetGameServer().ClampToLayout(x, y);
+		
+		// Check if the position has really changed.
+		const [curX, curY] = this.GetPosition();
+		if (curX === x && curY === y)
+			return;		// no change
+		
+		// Set the movable position.
 		this.#movable.SetPosition(x, y);
+		
+		// Moving the platform could affect which collision cells it is in,
+		// so update the collision box.
+		this.UpdateCollision();
 	}
 	
 	// Return the position of the turret on this platform. This gets the turret's position
@@ -96,6 +110,10 @@ export class MovableUnitPlatform extends UnitPlatform {
 			return;		// no change
 		
 		this.#movable.SetAngle(a);
+		
+		// Update the collision shape so the polygon rotates with the object, and if necessary
+		// update which collision cells the platform is in, since rotation could affect that.
+		this.UpdateCollision();
 		
 		// Platform angles are sent as uint16s over the network. The actual angle continuously
 		// varies by tiny fractional amounts as units move, due to floating point precision errors -
