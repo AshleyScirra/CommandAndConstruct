@@ -7,6 +7,7 @@ import { PointerManager } from "./pointerManager.js";
 import { ViewManager } from "./viewManager.js";
 import { SelectionManager } from "./selectionManager.js";
 import { Minimap } from "./minimap.js";
+import * as MathUtils from "../utils/clientMathUtils.js";
 
 const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
 
@@ -180,20 +181,40 @@ export class GameClient {
 	// Called when the player commands some selected units to move to a position.
 	MoveUnits(unitsArray, targetX, targetY)
 	{
-		// Preserve unit formations when moving units. This is done by finding the average position
-		// of all the units being moved, and each unit's offset from the average position is also
-		// applied to the target position.
-		let sumX = 0;
-		let sumY = 0;
+		if (unitsArray.length === 0)
+			return;
+		
+		// Preserve unit formations when moving units. This is done by finding the bounding box
+		// of all the units being moved, and each unit's offset from the middle position is also
+		// applied to the target position. Further, the formation box is bounded to the edge of
+		// the layout, to prevent units bunching up if a formation is moved close to the edge.
+		let boxLeft = Infinity;
+		let boxTop = Infinity;
+		let boxRight = -Infinity;
+		let boxBottom = -Infinity;
 		for (const unit of unitsArray)
 		{
 			const [x, y] = unit.GetPlatform().GetPosition();
-			sumX += x;
-			sumY += y;
+			boxLeft = Math.min(boxLeft, x);
+			boxTop = Math.min(boxTop, y);
+			boxRight = Math.max(boxRight, x);
+			boxBottom = Math.max(boxBottom, y);
 		}
 		
-		const midX = sumX / unitsArray.length;
-		const midY = sumY / unitsArray.length;
+		// Find middle position inside the bounding box of all the units being moved.
+		const midX = (boxLeft + boxRight) / 2;
+		const midY = (boxTop + boxBottom) / 2;
+		
+		// Clamp target position to the layout area taking in to account the bounding box
+		// size, to prevent formations causing lots of units to try to move off the layout.
+		// Increase the margin size a bit so units don't go all the way to the very edge.
+		const EXTRA_MARGIN = 100;
+		const marginWidth = (boxRight - boxLeft) / 2 + EXTRA_MARGIN;
+		const marginHeight = (boxBottom - boxTop) / 2 + EXTRA_MARGIN;
+		const [layoutWidth, layoutHeight] = this.#viewManager.GetLayoutSize();
+		
+		targetX = MathUtils.Clamp(targetX, marginWidth, layoutWidth - marginWidth);
+		targetY = MathUtils.Clamp(targetY, marginHeight, layoutHeight - marginHeight);
 		
 		this.SendToServer({
 			"type": "move-units",
