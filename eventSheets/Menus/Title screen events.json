@@ -233,6 +233,64 @@
 				}
 			],
 			"sid": 554682497990135
+		},
+		{
+			"eventType": "comment",
+			"text": "Toggle fullscreen with the Browser object when clicking the fullscreen button."
+		},
+		{
+			"eventType": "block",
+			"conditions": [
+				{
+					"id": "on-clicked",
+					"objectClass": "TitleFullscreenButton",
+					"sid": 568902891773315
+				}
+			],
+			"actions": [],
+			"sid": 872868427128650,
+			"children": [
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "is-fullscreen",
+							"objectClass": "Browser",
+							"sid": 334611950539390
+						}
+					],
+					"actions": [
+						{
+							"id": "cancel-fullscreen",
+							"objectClass": "Browser",
+							"sid": 149247703242387
+						}
+					],
+					"sid": 522045877105335
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "else",
+							"objectClass": "System",
+							"sid": 784642723233189
+						}
+					],
+					"actions": [
+						{
+							"id": "request-fullscreen",
+							"objectClass": "Browser",
+							"sid": 958866502671827,
+							"parameters": {
+								"mode": "stretch-letterbox-scale",
+								"navigation-ui": "auto"
+							}
+						}
+					],
+					"sid": 768959376236883
+				}
+			]
 		}
 	],
 	"sid": 202028505943856

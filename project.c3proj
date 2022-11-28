@@ -132,7 +132,8 @@
 							"TitleSinglePlayerButton",
 							"TitleVersion",
 							"TitleWIPHTML",
-							"SubTitleText"
+							"SubTitleText",
+							"TitleFullscreenButton"
 						],
 						"subfolders": [],
 						"name": "Title"

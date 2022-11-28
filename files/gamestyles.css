@@ -26,6 +26,10 @@ a:active {
 	font-size: calc(var(--construct-scale) * 3em);
 }
 
+.titlebuttonsmall {
+	font-size: calc(var(--construct-scale) * 2.5em);
+}
+
 .backbutton {
 	font-size: calc(var(--construct-scale) * 2em);
 }

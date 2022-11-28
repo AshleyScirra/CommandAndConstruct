@@ -156,48 +156,6 @@
 					}
 				},
 				{
-					"type": "TitleText",
-					"properties": {
-						"text": "[b]Instructions:[/b]\nLeft click on a unit to select it.\nLeft click in a space to move selected units there.\nRight click to unselect all units.\n[i]Much more to come![/i]",
-						"enable-bbcode": true,
-						"font": "Arial",
-						"size": 24,
-						"line-height": 0,
-						"bold": false,
-						"italic": false,
-						"color": [
-							0.7294117647058823,
-							0.7294117647058823,
-							0.7294117647058823,
-							1
-						],
-						"horizontal-alignment": "center",
-						"vertical-alignment": "bottom",
-						"wrapping": "word",
-						"initially-visible": true,
-						"origin": "top-left"
-					},
-					"uid": 8,
-					"instanceVariables": {},
-					"behaviors": {},
-					"world": {
-						"x": 227.5,
-						"y": 863,
-						"width": 1465.35,
-						"height": 205.95833333333337,
-						"originX": 0,
-						"originY": 0,
-						"color": [
-							1,
-							1,
-							1,
-							1
-						],
-						"angle": 0,
-						"zElevation": 0
-					}
-				},
-				{
 					"type": "TitleMultiplayerHostButton",
 					"properties": {
 						"type": "button",
@@ -347,6 +305,37 @@
 						],
 						"angle": 0,
 						"zElevation": 0
+					}
+				},
+				{
+					"type": "TitleFullscreenButton",
+					"properties": {
+						"type": "button",
+						"text": "Go fullscreen",
+						"tooltip": "",
+						"initially-visible": true,
+						"enabled": true,
+						"auto-font-size": false,
+						"checked": false,
+						"id": "",
+						"class": "titlebuttonsmall"
+					},
+					"uid": 8,
+					"instanceVariables": {},
+					"behaviors": {},
+					"world": {
+						"x": 733,
+						"y": 951,
+						"width": 453.53084970262614,
+						"height": 101.47374457196878,
+						"originX": 0,
+						"originY": 0,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						]
 					}
 				}
 			],
