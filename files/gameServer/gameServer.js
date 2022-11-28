@@ -52,8 +52,8 @@
 	#dataView = new DataView(this.#dataArrayBuffer);
 	
 	// Level size
-	#layoutWidth = 25000;
-	#layoutHeight = 6000;
+	#layoutWidth = 30000;
+	#layoutHeight = 10000;
 	
 	#isGameOver = false;			// set to true once victory/defeat condition met
 	
@@ -103,8 +103,8 @@
 		for (let i = 0; i < 500; ++i)
 		{
 			// Use a formula to arrange units in 5 rows
-			const x = 2000 + i * 40;
-			const y = 500 + (i % 5) * 300;
+			const x = 5000 + i * 40;
+			const y = 2500 + (i % 5) * 300;
 			
 			// Add player 0 unit along the top
 			this._AddUnitAtPosition(0, x + randomOffset(50), y + randomOffset(50), Math.PI / 2 + randomOffset(0.5));

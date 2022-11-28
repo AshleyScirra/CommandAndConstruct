@@ -59,8 +59,8 @@ export class ViewManager {
 		// Update minimap to use this size
 		this.#gameClient.GetMinimap().SetLayoutSize(layoutWidth, layoutHeight);
 		
-		// Start zoomed out all the way and center the scroll position
-		this.#SetActualZoom(this.#GetMinZoom(), true /* force */);
+		// Start at 18% zoom and scroll centered on the layout
+		this.#SetActualZoom(Math.max(this.#GetMinZoom(), 0.18), true /* force */);
 		this.ScrollTo(layoutWidth / 2, layoutHeight / 2);
 	}
 	
