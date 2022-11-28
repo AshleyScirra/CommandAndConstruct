@@ -1,7 +1,14 @@
 
-// The maximum width or height of the displayed minimap, while keeping
-// the aspect ratio of the layout.
-const MAX_MINIMAP_SIZE = 200;
+// A basic way to detect mobile devices: check user agent string for
+// strings indicating iOS or Android. Note this doesn't detect modern iPads,
+// because they pretend to be macOS in their user agent string!
+const isMobile = /ipod|ipad|iphone|android/i.test(navigator.userAgent);
+
+// The minimap size is determined by a maximum area. This allows the minimap to
+// expand wider if the layout is much wider than it is tall, for example.
+// On mobile the minimap area is based on 300x300 to make it larger on a small
+// screen; on desktop it uses 200x200 since it's easier to see there.
+const MINIMAP_AREA = isMobile ? 300 * 300 : 200 * 200;
 
 // The Minimap class manages rendering the game state to a minimap via a DrawingCanvas
 // object (MinimapCanvas) on the UI layer.
@@ -20,25 +27,13 @@ export class Minimap {
 		this.#inst = runtime.objects.MinimapCanvas.getFirstInstance();
 	}
 	
-	// On startup, when the layout size is set, adjust the minimap size to match
-	// the aspect ratio of the level.
+	// On startup, when the layout size is set, adjust the minimap size according to
+	// the aspect ratio of the level and the allowed minimap area.
 	SetLayoutSize(layoutWidth, layoutHeight)
 	{
-		// Resize the minimap to use the aspect ratio of the layout,
-		// up to a maximum width or height of MAX_MINIMAP_SIZE.
-		let minimapWidth = MAX_MINIMAP_SIZE;
-		let minimapHeight = MAX_MINIMAP_SIZE;
-		
-		if (layoutWidth >= layoutHeight)
-		{
-			// Width is larger: reduce minimap height according to aspect ratio
-			minimapHeight = Math.round(MAX_MINIMAP_SIZE * layoutHeight / layoutWidth);
-		}
-		else
-		{
-			// Height is larger: reduce minimap width according to aspect ratio
-			minimapWidth = Math.round(MAX_MINIMAP_SIZE * layoutWidth / layoutHeight);
-		}
+		const aspectRatio = layoutWidth / layoutHeight;
+		const minimapWidth = Math.sqrt(aspectRatio * MINIMAP_AREA);
+		const minimapHeight = minimapWidth / aspectRatio;
 		
 		this.#inst.width = minimapWidth;
 		this.#inst.height = minimapHeight;
