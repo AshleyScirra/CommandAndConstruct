@@ -31,6 +31,7 @@ export class PointerManager {
 			[runtime,		"pointerdown",		e => this.#OnPointerDown(e)],
 			[runtime,		"pointermove",		e => this.#OnPointerMove(e)],
 			[runtime,		"pointerup",		e => this.#OnPointerUp(e)],
+			[runtime,		"pointercancel",	e => this.#OnPointerCancel(e)],
 			[runtime,		"wheel",			e => this.#OnMouseWheel(e)]
 		]);
 	}
@@ -108,6 +109,20 @@ export class PointerManager {
 		// due to the old mid-point being somewhere else, restart the pan.
 		if (pointerInfo.GetActionType() === "pinch-zoom")
 			this.GetViewManager().StartPan();
+	}
+	
+	// The pointercancel event means a pointer ended, but should not apply its action,
+	// such as if a pointer is lost because a different app was switched in to focus.
+	// As with pointerup the pointer must be removed, but it doesn't do anything else.
+	#OnPointerCancel(e)
+	{
+		const pointerInfo = this.#pointerInfos.get(e.pointerId);
+		if (!pointerInfo)
+			return;
+		
+		pointerInfo.Cancel();		// abandon any current action, e.g. selection box
+		
+		this.#pointerInfos.delete(e.pointerId);
 	}
 	
 	// Calls Update() on every active PointerInfo to adapt to any changes.
