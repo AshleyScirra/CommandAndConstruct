@@ -4,7 +4,7 @@ This is an open-development multiplayer real-time strategy (RTS) game project co
 
 Try it in your browser right now at [CommandAndConstruct.com](https://www.commandandconstruct.com)!
 
-Read more about it and follow along the development process on [Ashley's blog](https://www.construct.net/en/blogs/ashleys-blog-2) or on Twitter at [@AshleyGullen](https://www.twitter.com/AshleyGullen)!
+Read more about it and follow along the development process on [Ashley's blog](https://www.construct.net/en/blogs/ashleys-blog-2), on Twitter at [@AshleyGullen](https://www.twitter.com/AshleyGullen), or on Mastodon at [@AshleyGullen@mastodon.gamedev.place](https://mastodon.gamedev.place/@AshleyGullen)!
 
 ## Blog posts
 
