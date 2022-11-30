@@ -17,6 +17,7 @@ Here's a list of blog posts so far about this project.
 - [RTS devlog #4: Collision detection and combat](https://www.construct.net/en/blogs/ashleys-blog-2/rts-devlog-collision-1601)
 - [RTS devlog #5: Input and gestures](https://www.construct.net/en/blogs/ashleys-blog-2/rts-devlog-input-gestures-1602)
 - [RTS devlog #6: 1000 units bandwidth](https://www.construct.net/en/blogs/ashleys-blog-2/rts-devlog-units-bandwidth-1603)
+- [RTS devlog #7: Optimizing performance for 1000 units](https://www.construct.net/en/blogs/ashleys-blog-2/rts-devlog-optimizing-1604)
 
 ## Try the project
 
