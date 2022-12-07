@@ -35,7 +35,7 @@ export class ClientProjectile {
 	
 	GetPosition()
 	{
-		return [this.#inst.x, this.#inst.y];
+		return this.#inst.getPosition();
 	}
 	
 	Tick(dt)

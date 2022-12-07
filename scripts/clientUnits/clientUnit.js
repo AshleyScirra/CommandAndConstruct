@@ -110,8 +110,7 @@ export class ClientUnit {
 		const [x, y] = this.#platform.GetPosition();
 		const angle = this.#platform.GetAngle();
 		
-		this.#selectionBoxInst.x = x;
-		this.#selectionBoxInst.y = y;
+		this.#selectionBoxInst.setPosition(x, y);
 		this.#selectionBoxInst.angle = angle;
 	}
 	
@@ -138,8 +137,7 @@ export class ClientUnit {
 			const angle = this.#platform.GetAngle();
 
 			this.#selectionBoxInst = runtime.objects.UnitSelectionBox.createInstance("SelectionBoxes", x, y);
-			this.#selectionBoxInst.width = w + 8;
-			this.#selectionBoxInst.height = h + 8;
+			this.#selectionBoxInst.setSize(w + 8, h + 8);
 			this.#selectionBoxInst.angle = angle;
 		}
 		else				// marking not selected

@@ -32,13 +32,12 @@ export class ClientPlatform {
 	// Position, size, angle and collisions use the corresponding Construct instance.
 	GetPosition()
 	{
-		return [this.#inst.x, this.#inst.y];
+		return this.#inst.getPosition();
 	}
 	
 	SetPosition(x, y)
 	{
-		this.#inst.x = x;
-		this.#inst.y = y;
+		this.#inst.setPosition(x, y);
 	}
 	
 	// The platform's image point locates where the turret is placed.
@@ -49,7 +48,7 @@ export class ClientPlatform {
 	
 	GetSize()
 	{
-		return [this.#inst.width, this.#inst.height];
+		return this.#inst.getSize();
 	}
 	
 	SetSpeed(speed)
