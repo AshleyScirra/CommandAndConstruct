@@ -40,6 +40,11 @@ export class ClientPlatform {
 		this.#inst.setPosition(x, y);
 	}
 	
+	OffsetPosition(dx, dy)
+	{
+		this.#inst.offsetPosition(dx, dy);
+	}
+	
 	// The platform's image point locates where the turret is placed.
 	GetTurretPosition()
 	{
@@ -77,9 +82,8 @@ export class ClientPlatform {
 		if (this.#speed !== 0)
 		{
 			const moveDist = this.#speed * dt;
-			const [x, y] = this.GetPosition();
 			const angle = this.GetAngle();
-			this.SetPosition(x + Math.cos(angle) * moveDist, y + Math.sin(angle) * moveDist);
+			this.OffsetPosition(Math.cos(angle) * moveDist, Math.sin(angle) * moveDist);
 			
 			// Update turret and selection box to follow platform movement
 			this.#unit.GetTurret().Update();
