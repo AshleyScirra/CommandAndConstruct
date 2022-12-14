@@ -1,7 +1,7 @@
 
-import { MultiEventHandler } from "../utils/multiEventHandler.js";
+import { MultiEventHandler } from "../../utils/multiEventHandler.js";
 import { PointerInfo } from "./pointerInfo.js";
-import * as MathUtils from "../utils/clientMathUtils.js";
+import * as MathUtils from "../../utils/clientMathUtils.js";
 
 // PointerManager tracks pointers and decides how to interpret actions based on them.
 // A pointer is any kind of mouse, touch or pen input.

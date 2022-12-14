@@ -2,12 +2,12 @@
 import { MultiEventHandler } from "../utils/multiEventHandler.js";
 import { ClientUnit } from "../clientUnits/clientUnit.js";
 import { ClientProjectile } from "../clientUnits/clientProjectile.js";
-import { GameClientMessageHandler } from "./messageHandler.js";
-import { PingManager } from "./pingManager.js";
-import { PointerManager } from "./pointerManager.js";
-import { ViewManager } from "./viewManager.js";
-import { SelectionManager } from "./selectionManager.js";
-import { Minimap } from "./minimap.js";
+import { GameClientMessageHandler } from "./net/messageHandler.js";
+import { PingManager } from "./net/pingManager.js";
+import { PointerManager } from "./ui/pointerManager.js";
+import { ViewManager } from "./ui/viewManager.js";
+import { SelectionManager } from "./ui/selectionManager.js";
+import { Minimap } from "./ui/minimap.js";
 import * as MathUtils from "../utils/clientMathUtils.js";
 
 const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII

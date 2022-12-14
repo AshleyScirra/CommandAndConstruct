@@ -1,5 +1,5 @@
 
-import * as MathUtils from "../utils/clientMathUtils.js";
+import * as MathUtils from "../../utils/clientMathUtils.js";
 
 // ViewManager handles the game view, including the scroll position and zoom level.
 export class ViewManager {

@@ -1,6 +1,6 @@
 
-import Globals from "../globals.js";
-import * as MathUtils from "../utils/clientMathUtils.js";
+import Globals from "../../globals.js";
+import * as MathUtils from "../../utils/clientMathUtils.js";
 
 // The binary message types
 const MESSAGE_TYPE_UNIT_UPDATES = 0;	// full and delta unit updates

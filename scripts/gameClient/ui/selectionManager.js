@@ -1,5 +1,5 @@
 
-import * as MathUtils from "../utils/clientMathUtils.js";
+import * as MathUtils from "../../utils/clientMathUtils.js";
 
 // The SelectionManager class manages selecting units.
 // It has its own class to avoid cluttering GameClient and organise

@@ -1,5 +1,5 @@
 
-import * as MathUtils from "../utils/clientMathUtils.js";
+import * as MathUtils from "../../utils/clientMathUtils.js";
 
 // If a pointerup comes within this distance of the corresponding pointerdown,
 // it will be counted as a tap. Otherwise it will be counted as a drag.
