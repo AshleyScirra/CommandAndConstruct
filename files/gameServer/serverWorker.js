@@ -21,6 +21,7 @@ self.addEventListener("message", e =>
 // and the function to call to handle them.
 const MESSAGE_MAP = new Map([
 	["init", OnInit],
+	["ping", OnPing],
 	["release", OnRelease],
 	["move-units", OnMoveUnits]
 ]);
@@ -60,6 +61,25 @@ function OnInit(e)
 	gameServer = new GameServer(SendMessageToRuntime, e["constructObjectData"]);
 }
 
+// Called when receiving a ping from a specific player. The server sends a "pong" message back
+// with the game time, which allows clients to synchronize to the server time.
+function OnPing(e)
+{
+	if (!gameServer)
+		return;		// ignore if GameServer was released
+	
+	const id = e["id"];
+	const player = e["player"];
+	
+	// Send a pong back to the same player with the same ID and
+	// the current game time on the server.
+	SendMessageToRuntime({
+		"type": "pong",
+		"id": id,
+		"time": gameServer.GetGameTime()
+	}, "u", player);
+}
+
 // Called when the runtime is ending the game.
 function OnRelease(e)
 {
@@ -73,7 +93,7 @@ function OnRelease(e)
 }
 
 // Post a message to the runtime, possibly with latency simulation.
-async function SendMessageToRuntime(message, transmissionMode, transferList)
+async function SendMessageToRuntime(message, transmissionMode, forPlayer, transferList)
 {
 	const isSent = await WaitForSimulatedLatency(transmissionMode, "send");
 	
@@ -83,7 +103,8 @@ async function SendMessageToRuntime(message, transmissionMode, transferList)
 	
 	messagePort.postMessage({
 		"message": message,
-		"transmissionMode": transmissionMode
+		"transmissionMode": transmissionMode,
+		"forPlayer": forPlayer		// null to broadcast, else player number to send to
 	}, transferList);
 }
 

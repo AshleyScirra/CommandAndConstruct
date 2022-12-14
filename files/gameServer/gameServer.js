@@ -86,7 +86,7 @@
 	// or unreliable) for the host to retransmit as, defaulting to reliable ordered.
 	SendToRuntime(message, transmissionMode, transferList)
 	{
-		this.#sendMessageFunc(message, transmissionMode || "o", transferList);
+		this.#sendMessageFunc(message, transmissionMode || "o", null /* forPlayer */, transferList);
 	}
 	
 	Init()

@@ -28,6 +28,7 @@ export class GameClientMessageHandler {
 		// and the function to call to handle each of them.
 		this.#messageMap = new Map([
 			["create-initial-state", m => this.#OnCreateInitialState(m)],
+			["pong", m => this.#OnPong(m)],
 			["game-over", m => this.#OnGameOver(m)],
 			["stats", m => this.#OnStats(m)]
 		]);
@@ -89,6 +90,15 @@ export class GameClientMessageHandler {
 		{
 			console.error("Error reading binary message: ", err);
 		}
+	}
+	
+	// Pong messages are responses to pings. Forward them to PingManager.
+	#OnPong(m)
+	{
+		const id = m["id"];
+		const time = m["time"];
+		
+		this.#gameClient.GetPingManager().OnPong(id, time);
 	}
 	
 	// Receiving full and delta data updates about some units.

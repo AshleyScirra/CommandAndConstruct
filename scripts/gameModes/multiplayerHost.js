@@ -12,6 +12,7 @@ export class GameModeMultiplayerHost {
 	#gameServerMessagePort;		// The MessagePort for communicating with the local GameServer
 	#eventHandlers;				// MultiEventHandler
 	
+	#otherPeerId;				// Peer ID of the other player (TODO: support for more players)
 	#peerReadyResolve;			// for a promise that resolves when peer sends "ready" message
 	
 	constructor(runtime)
@@ -93,6 +94,8 @@ export class GameModeMultiplayerHost {
 	// This makes sure both the host and peer are loaded and ready to proceed.
 	#OnPeerReady(fromId)
 	{
+		this.#otherPeerId = fromId;				// save ID of other player (TODO: more players)
+		
 		if (this.#peerReadyResolve)				// handle this once only
 		{
 			this.#peerReadyResolve();
@@ -127,12 +130,31 @@ export class GameModeMultiplayerHost {
 		const data = e.data;
 		const message = data["message"];
 		const transmissionMode = data["transmissionMode"];
+		const forPlayer = data["forPlayer"];
 		
-		// Handle this message with the local game client.
-		this.#gameClient.HandleGameServerMessage(message);
-		
-		// Relay this message over the network to connected peers.
-		// Use the transmission mode specified by GameServer.
-		this.#runtime.objects.Multiplayer.hostBroadcastMessage(null, message, transmissionMode);
+		if (forPlayer === null)		// message for all players
+		{
+			// Handle this message with the local game client.
+			this.#gameClient.HandleGameServerMessage(message);
+
+			// Relay this message over the network to connected peers.
+			// Use the transmission mode specified by GameServer.
+			this.#runtime.objects.Multiplayer.hostBroadcastMessage(null, message, transmissionMode);
+		}
+		else if (forPlayer === 0)
+		{
+			// Message for host only: handle with own GameClient
+			this.#gameClient.HandleGameServerMessage(message);
+		}
+		else if (forPlayer === 1)
+		{
+			// Message for remote player only: send over network
+			this.#runtime.objects.Multiplayer.sendPeerMessage(this.#otherPeerId, message, transmissionMode);
+		}
+		else
+		{
+			// TODO: support for more than 2 players.
+			console.error(`Unexpected forPlayer value '${forPlayer}'`);
+		}
 	}
 }

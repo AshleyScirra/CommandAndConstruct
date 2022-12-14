@@ -294,6 +294,14 @@
 							"script-info": {
 								"purpose": "none"
 							}
+						},
+						{
+							"name": "pingManager.js",
+							"type": "application/javascript",
+							"sid": 810001244852276,
+							"script-info": {
+								"purpose": "none"
+							}
 						}
 					],
 					"subfolders": [],

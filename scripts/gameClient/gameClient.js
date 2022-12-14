@@ -3,6 +3,7 @@ import { MultiEventHandler } from "../utils/multiEventHandler.js";
 import { ClientUnit } from "../clientUnits/clientUnit.js";
 import { ClientProjectile } from "../clientUnits/clientProjectile.js";
 import { GameClientMessageHandler } from "./messageHandler.js";
+import { PingManager } from "./pingManager.js";
 import { PointerManager } from "./pointerManager.js";
 import { ViewManager } from "./viewManager.js";
 import { SelectionManager } from "./selectionManager.js";
@@ -25,6 +26,7 @@ export class GameClient {
 	
 	#eventHandlers;					// MultiEventHandler for runtime events
 	#messageHandler;				// MessageHandler class
+	#pingManager;					// PingManager class
 	#pointerManager;				// PointerManager class
 	#viewManager;					// ViewManager class
 	#selectionManager;				// SelectionManager class
@@ -43,8 +45,10 @@ export class GameClient {
 		]);
 		
 		// Create GameClientMessageHandler which handles messages from GameServer
-		// and calls the appropriate methods on this class.
+		// and calls the appropriate methods on this class. Also create the PingManager
+		// which handles pings and also synchronizing the client clock.
 		this.#messageHandler = new GameClientMessageHandler(this);
+		this.#pingManager = new PingManager(this);
 		
 		// Create PointerManager which handles pointer inputs (mouse, touch and pen).
 		this.#pointerManager = new PointerManager(this);
@@ -62,6 +66,7 @@ export class GameClient {
 	Release()
 	{
 		this.#eventHandlers.Release();
+		this.#pingManager.Release();
 		this.#pointerManager.Release();
 		this.#selectionManager.Release();
 	}
@@ -74,6 +79,11 @@ export class GameClient {
 	GetPlayer()
 	{
 		return this.#player;
+	}
+	
+	GetPingManager()
+	{
+		return this.#pingManager;
 	}
 	
 	GetViewManager()
@@ -149,6 +159,10 @@ export class GameClient {
 			const clientUnit = ClientUnit.CreateFromInitialData(this, unitData);
 			this.#allUnitsById.set(clientUnit.GetId(), clientUnit);
 		}
+		
+		// Start up PingManager now that we know the GameServer is up and running
+		// and ready to respond to pings
+		this.#pingManager.Start();
 	}
 	
 	// Iterates all units in the game.
