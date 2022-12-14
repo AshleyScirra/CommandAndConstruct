@@ -83,6 +83,7 @@ export class GameModeMultiplayerHost {
 			// Tag the message as having come from player 1, i.e. the only other peer,
 			// and forward on to GameServer in the worker. (TODO: support for more players)
 			msg["player"] = 1;
+			msg["transmissionMode"] = e.transmissionMode;
 
 			this.#SendMessageToGameServer(msg);
 		}
