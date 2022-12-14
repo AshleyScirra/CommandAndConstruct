@@ -33,6 +33,7 @@
 	#lastTickTimeMs = 0;			// clock time at last tick in ms
 	#nextTickScheduledTimeMs = 0;	// time next tick ought to run at in ms
 	#gameTime = new KahanSum();		// serves as the clock for the game in seconds
+	#serverTime = 0;				// server clock in seconds, updated every tick
 	
 	#objectData = new Map();		// name -> ObjectData
 	
@@ -291,6 +292,9 @@
 		const dt = (tickStartTimeMs - this.#lastTickTimeMs) / 1000;
 		this.#lastTickTimeMs = tickStartTimeMs;
 		
+		// Calculate the server time for this tick in seconds.
+		this.#serverTime = tickStartTimeMs / 1000;
+		
 		// Update all projectiles.
 		for (const [id, projectile] of this.#allProjectilesById)
 		{
@@ -451,9 +455,9 @@
 		dataView.setUint8(pos, MESSAGE_TYPE_UNIT_UPDATES);
 		pos += 1;
 		
-		// Write the game time at the tick this message was sent.
-		dataView.setFloat32(pos, this.GetGameTime());
-		pos += 4;
+		// Write the server time at the tick this message was sent.
+		dataView.setFloat64(pos, this.#serverTime);
+		pos += 8;
 		
 		// Write the total number of full updates to be sent in this update.
 		dataView.setUint16(pos, sendUnits.length);
@@ -523,9 +527,9 @@
 		dataView.setUint8(pos, MESSAGE_TYPE_EVENTS);
 		pos += 1;
 		
-		// Write the game time at the tick these events happened.
-		dataView.setFloat32(pos, this.GetGameTime());
-		pos += 4;
+		// Write the server time at the tick these events happened.
+		dataView.setFloat64(pos, this.#serverTime);
+		pos += 8;
 		
 		// Write the number of events.
 		dataView.setUint16(pos, this.#networkEvents.length);

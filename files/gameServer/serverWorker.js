@@ -72,11 +72,11 @@ function OnPing(e)
 	const player = e["player"];
 	
 	// Send a pong back to the same player with the same ID and
-	// the current game time on the server.
+	// the current time on the server.
 	SendMessageToRuntime({
 		"type": "pong",
 		"id": id,
-		"time": gameServer.GetGameTime()
+		"time": (performance.now() / 1000)
 	}, "u", player);
 }
 

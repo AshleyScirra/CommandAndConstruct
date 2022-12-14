@@ -308,7 +308,10 @@ export class GameClient {
 	{
 		const dt = this.#runtime.dt;
 		
-		// Tick PointerManager for handling pinch-to-zoom;
+		// Tick PingManager so it can track clocks
+		this.#pingManager.Tick(dt);
+		
+		// Tick PointerManager for handling pinch-to-zoom
 		this.#pointerManager.Tick(dt);
 		
 		// Tick ViewManager for handling smooth zoom.

@@ -104,9 +104,9 @@ export class GameClientMessageHandler {
 	// Receiving full and delta data updates about some units.
 	#OnUnitUpdates(dataView, pos)
 	{
-		// Read the game time. TODO: use this to help smooth game state.
-		const gameTime = dataView.getFloat32(pos);
-		pos += 4;
+		// Read the server time. TODO: use this to help smooth game state.
+		const serverTime = dataView.getFloat64(pos);
+		pos += 8;
 		
 		// Read the full unit updates that come first.
 		pos = this.#ReadFullUnitUpdates(dataView, pos);
@@ -237,9 +237,9 @@ export class GameClientMessageHandler {
 	
 	#OnNetworkEvents(dataView, pos)
 	{
-		// Read the game time. TODO: use this to help smooth game state.
-		const gameTime = dataView.getFloat32(pos);
-		pos += 4;
+		// Read the server time. TODO: use this to help smooth game state.
+		const serverTime = dataView.getFloat64(pos);
+		pos += 8;
 		
 		// Read the number of events.
 		const eventCount = dataView.getUint16(pos);
@@ -383,7 +383,8 @@ export class GameClientMessageHandler {
 	{
 		const runtime = this.#gameClient.GetRuntime();
 		const inst = runtime.objects.StatsText.getFirstInstance();
-		inst.text = `Unit count: ${m["num-units"]}
+		inst.text = `Latency: ${Math.round(this.#gameClient.GetPingManager().GetLatency() * 1000)} ms
+Unit count: ${m["num-units"]}
 Projectile count: ${m["num-projectiles"]}
 Server state: ${Math.round(m["sent-state-bytes"] / 1024)} kb/s
 Server deltas: ${Math.round(m["sent-delta-bytes"] / 1024)} kb/s
