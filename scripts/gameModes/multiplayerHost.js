@@ -42,7 +42,7 @@ export class GameModeMultiplayerHost {
 		// Create the game client which manages the local game state.
 		// Also pass it the SendMessageToGameServer function for messaging.
 		// Note that the multiplayer host is always player 0.
-		this.#gameClient = new GameClient(this.#runtime, (m => this.#LocalSendMessageToGameServer(m)), 0);
+		this.#gameClient = new GameClient(this.#runtime, ((m, t) => this.#LocalSendMessageToGameServer(m, t)), 0);
 		
 		// Post an init message to the worker to tell it to initialize, and provide data
 		// about the game units such as their size and collision polygons.
@@ -105,10 +105,12 @@ export class GameModeMultiplayerHost {
 	}
 	
 	// Called when the local GameClient wants to send a message to GameServer.
-	// Tag it with the local player number and post to the worker.
-	#LocalSendMessageToGameServer(msg)
+	// Tag it with the local player number and transmission mode and post to the worker.
+	#LocalSendMessageToGameServer(msg, transmissionMode)
 	{
 		msg["player"] = this.#gameClient.GetPlayer();
+		msg["transmissionMode"] = transmissionMode;
+		
 		this.#SendMessageToGameServer(msg);
 	}
 	

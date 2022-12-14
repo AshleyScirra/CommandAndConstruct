@@ -125,9 +125,9 @@ export class GameClient {
 	}
 	
 	// Provide a GameClient method to send a message to GameServer.
-	SendToServer(msg)
+	SendToServer(msg, transmissionMode = "o")
 	{
-		this.#sendMessageFunc(msg);
+		this.#sendMessageFunc(msg, transmissionMode);
 	}
 	
 	HandleGameServerMessage(msg)

@@ -82,14 +82,11 @@
 	}
 	
 	// Provide a GameServer method to send a message to the runtime for convenience.
-	// This also attaches a transmission mode (reliable ordered, reliable unordered,
+	// This also specifies a transmission mode (reliable ordered, reliable unordered,
 	// or unreliable) for the host to retransmit as, defaulting to reliable ordered.
-	SendToRuntime(msg, transmissionMode, transferList)
+	SendToRuntime(message, transmissionMode, transferList)
 	{
-		this.#sendMessageFunc({
-			"message": msg,
-			"transmissionMode": transmissionMode || "o"
-		}, transferList);
+		this.#sendMessageFunc(message, transmissionMode || "o", transferList);
 	}
 	
 	Init()
@@ -503,8 +500,14 @@
 		
 		// Send the binary data with the game state update to the runtime.
 		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
-		// This also uses unreliable transmission as this is essentially streaming data.
-		this.SendToRuntime(arrayBuffer, "u", [arrayBuffer])
+		// This also uses reliable unordered transmission. Unreliable transmission is tempting
+		// but many of the updates are important enough to be worth retransmitting: both full
+		// unit updates, and delta updates for details like speed which have on-going movement
+		// on the client, should be retransmitted if lost to try to minimuse the error before
+		// the next full update arrives. However by allowing unordered transmission we still
+		// allow for newer updates to arrive sooner, which will allow the client to update
+		// the state of units even more promptly.
+		this.SendToRuntime(arrayBuffer, "r", [arrayBuffer])
 	}
 	
 	#SendNetworkEvents()

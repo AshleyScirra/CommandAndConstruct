@@ -1,5 +1,6 @@
 
 // Web Worker script to run the game server in a separate thread.
+import { WaitForSimulatedLatency } from "./utils/latencySimulation.js";
 import { GameServer } from "./gameServer.js";
 
 let messagePort = null;		// for communicating with runtime
@@ -24,16 +25,23 @@ const MESSAGE_MAP = new Map([
 	["move-units", OnMoveUnits]
 ]);
 
-// Called when a message is received from the runtime.
-function OnMessageFromRuntime(e)
+// Called when a message is received from the runtime, possibly with latency simulation.
+async function OnMessageFromRuntime(e)
 {
 	// Look up the function to call for this message type in the message map.
 	const data = e.data;
 	const messageType = data["type"];
+	const transmissionMode = data["transmissionMode"];
 	const handlerFunc = MESSAGE_MAP.get(messageType);
 	
 	if (handlerFunc)
 	{
+		const isReceived = await WaitForSimulatedLatency(transmissionMode, "receive");
+	
+		// If isReceived is false then the packet is simulated as dropped, so skip handling.
+		if (!isReceived)
+			return;
+			
 		// Call the message handler function with the provided data.
 		handlerFunc(data);
 	}
@@ -64,10 +72,19 @@ function OnRelease(e)
 	self.close();
 }
 
-// Helper function for posting a message.
-function SendMessageToRuntime(msg, transferList)
+// Post a message to the runtime, possibly with latency simulation.
+async function SendMessageToRuntime(message, transmissionMode, transferList)
 {
-	messagePort.postMessage(msg, transferList);
+	const isSent = await WaitForSimulatedLatency(transmissionMode, "send");
+	
+	// If isSent is false then the packet is simulated as dropped, so skip sending.
+	if (!isSent)
+		return;
+	
+	messagePort.postMessage({
+		"message": message,
+		"transmissionMode": transmissionMode
+	}, transferList);
 }
 
 function OnMoveUnits(data)
