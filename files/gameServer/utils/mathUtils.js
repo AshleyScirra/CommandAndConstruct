@@ -130,3 +130,26 @@ export function AngleToUint16(a)
 	a = (a * 65535) / _2pi;
 	return Math.round(a);
 }
+
+// Calculate the angle to aim at taking in to account the target's movement.
+// Aiming directly at a moving target often means projectiles miss, since by the time the
+// projectile reaches the target, it's moved away. This calculation takes in to account
+// the projectile speed and target's speed and angle, aiming at where the target will be
+// by the time the projectile arrives - but all assuming the target stays at the same
+// speed and angle.
+export function PredictiveAim(fromX, fromY, projectileSpeed, targetX, targetY, targetSpeed, targetAngle)
+{
+	const dx = targetX - fromX;
+	const dy = targetY - fromY;
+	const h = targetAngle + Math.PI;
+	const w = (targetSpeed * Math.sin(h) * (fromX - targetX) - targetSpeed * Math.cos(h) * (fromY - targetY)) / projectileSpeed;
+	const a = (Math.asin(w / Math.hypot(dy, dx)) - Math.atan2(dy, -dx)) + Math.PI;
+
+	// If the calculation produced a valid angle, return it. Otherwise if there
+	// is not a finite result (including NaN), perhaps there is no valid solution,
+	// so resort to direct aim instead.
+	if (isFinite(a))
+		return a;
+	else
+		return AngleTo(fromX, fromY, targetX, targetY);
+}

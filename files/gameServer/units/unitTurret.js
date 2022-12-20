@@ -25,7 +25,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 	
 	// The accuracy is a random adjustment to the projectile angle when firing.
 	// A value of 0 means perfect accuracy, and higher values mean less accurate firing.
-	#accuracy = MathUtils.ToRadians(8);
+	#accuracy = MathUtils.ToRadians(10);
 	
 	#lastFireTime = 0;		// game time when last shot was fired
 	#rateOfFire = 2;		// number of seconds between shots
@@ -233,7 +233,8 @@ export class UnitTurret extends PositionedAndAngledObject {
 		
 		// Check the target is still in range.
 		const [platformX, platformY] = this.GetPlatform().GetPosition();
-		const [targetX, targetY] = unit.GetPlatform().GetPosition();
+		const targetPlatform = unit.GetPlatform();
+		const [targetX, targetY] = targetPlatform.GetPosition();
 		const dx = targetX - platformX;
 		const dy = targetY - platformY;
 		if (dx * dx + dy * dy > this.#range * this.#range)
@@ -242,9 +243,13 @@ export class UnitTurret extends PositionedAndAngledObject {
 			return;
 		}
 		
-		// Get the angle to the target
+		// Get the angle to the target. Use predictive aim to find the angle to aim at,
+		// which takes in to account the projectile speed and target speed and angle, to make
+		// sure the turret aims at where its projectile will hit rather than where it is now.
+		// This avoids the problem of fired projectiles constantly missing moving targets.
 		const [turretX, turretY] = this.GetPlatform().GetTurretPosition();
-		const targetAngle = MathUtils.AngleTo(turretX, turretY, targetX, targetY);
+		const targetAngle = MathUtils.PredictiveAim(turretX, turretY, this.GetProjectileSpeed(),
+													targetX, targetY, targetPlatform.GetSpeed(), targetPlatform.GetAngle());
 		
 		// Rotate towards the target. Note that the angle rotation is done in terms
 		// of the overall angle, but the turret angle is set to an angle relative
