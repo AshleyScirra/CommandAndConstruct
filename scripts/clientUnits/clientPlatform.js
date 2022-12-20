@@ -10,14 +10,19 @@ export class ClientPlatform {
 	#unit;				// ClientUnit this platform belongs to
 	#inst;				// Construct instance representing this platform
 	
-	// Timelines for position, angle and speed updates from the network.
+	// Timelines for upcoming position updates from the network, and a short history
+	// of the past position for handling late updates.
 	#timelinePos = new SteppedValueTimeline();
+	#timelinePosHistory = new InterpolatedValueTimeline("linear");
+	
+	// If the client realises the position is wrong, the error is spread out over
+	// time to make the correction less noticable. These are the correction still to apply.
+	#xCorrection = 0;
+	#yCorrection = 0;
+	
+	// Interpolated timelines for angle and speed.
 	#timelineAngle = new InterpolatedValueTimeline("angular");
 	#timelineSpeed = new InterpolatedValueTimeline("none");
-	
-	// Keep another timeline which is a short history of the position.
-	// This is used to correct the position with late updates.
-	#timelinePosHistory = new InterpolatedValueTimeline("linear");
 	
 	constructor(unit, x, y)
 	{
@@ -122,8 +127,7 @@ export class ClientPlatform {
 		// If a position update is received late (behind the current simulation time),
 		// we want to still use it if possible, as position updates are fairly infrequent.
 		// Look in the position history timeline to see where the client had this unit
-		// at the server time, and find what the offset was at that time. Then that offset
-		// can be applied to the unit now.
+		// at the server time, and find what the offset was at that time.
 		if (serverTime <= this.GetGameClient().GetPingManager().GetSimulationTime())
 		{
 			// However if a message is so late it's older than even the last entry in
@@ -131,9 +135,13 @@ export class ClientPlatform {
 			if (serverTime < this.#timelinePosHistory.GetOldestTimestamp())
 				return;
 			
-			// Get platform position at timestamp of the message, and apply offset.
+			// Get platform position at timestamp of the message and find the offset.
 			const [oldX, oldY] = this.#timelinePosHistory.Get(serverTime, false /* deleteOldEntries */);
-			this.OffsetPosition(x - oldX, y - oldY);
+			
+			// Store the offset to the position in the X/Y correction values.
+			// These will apply the offset over time making the update less noticable.
+			this.#xCorrection = x - oldX;
+			this.#yCorrection = y - oldY;
 		}
 		else
 		{
@@ -155,10 +163,6 @@ export class ClientPlatform {
 	// Called every tick to update the platform over time.
 	Tick(dt, simulationTime)
 	{
-		// The amount to move defaults to dt, but could be different if a position update
-		// is used this tick.
-		let movementDt = dt;
-		
 		// Position updates arrive irregularly (every couple of seconds). This is too
 		// infrequent to usefully interpolate between. Therefore position updates use a
 		// "stepped" timeline, which either returns nothing, or the new value at the
@@ -168,13 +172,56 @@ export class ClientPlatform {
 		{
 			// Set the platform position to the new position.
 			const [x, y] = posEntry.value;
-			this.SetPosition(x, y);
 			
-			// The position has a timestamp that may be a little in the past, as client
-			// ticks won't line up perfectly with server ticks. In order to improve the
-			// accuracy of the movement, adjust dt to be the time since this position
-			// update, so the platform moves to where it should be by now on the server.
-			movementDt = simulationTime - posEntry.timestamp;
+			// Rather than just updating immediately to the new position, store the offset
+			// in the X/Y correction values to be applied over time.
+			const [curX, curY] = this.GetPosition();
+			this.#xCorrection = x - curX;
+			this.#yCorrection = y - curY;
+		}
+		
+		// If the client position is wrong, the offset is stored in the X/Y correction values.
+		// Apply some correction every tick, and subtract off the correction applied, so by the
+		// time the correction values reach 0 the full correction has been applied.
+		if (this.#xCorrection !== 0 || this.#yCorrection !== 0)
+		{
+			// Offset to apply
+			let dx = 0;
+			let dy = 0;
+			
+			// On each axis, the maximum correction per tick is whichever is largest of:
+			// 1) 20 pixels per second (for small corrections)
+			// 2) 95% of the remaining correction per second (for larger corrections)
+			const maxChangeX = Math.max(20 * dt, Math.abs(this.#xCorrection * (1 - Math.pow(0.05, dt))));
+			const maxChangeY = Math.max(20 * dt, Math.abs(this.#yCorrection * (1 - Math.pow(0.05, dt))));
+			
+			// On each axis, if the remaining correction is below the maximum allowed
+			// correction this tick, then apply the full remaining correction. Otherwise
+			// apply up to the maximum correction, and subtract off the correction applied.
+			if (Math.abs(this.#xCorrection) <= maxChangeX)
+			{
+				dx = this.#xCorrection;
+				this.#xCorrection = 0;
+			}
+			else
+			{
+				dx = Math.sign(this.#xCorrection) * maxChangeX;
+				this.#xCorrection -= dx;
+			}
+			
+			if (Math.abs(this.#yCorrection) <= maxChangeY)
+			{
+				dy = this.#yCorrection;
+				this.#yCorrection = 0;
+			}
+			else
+			{
+				dy = Math.sign(this.#yCorrection) * maxChangeY;
+				this.#yCorrection -= dy;
+			}
+			
+			// Apply the correction for this tick.
+			this.OffsetPosition(dx, dy);
 		}
 		
 		// Set the unit angle to the current interpolated value from the angle timeline.
@@ -187,11 +234,9 @@ export class ClientPlatform {
 		const speed = this.#timelineSpeed.Get(simulationTime);
 		
 		// If the speed is nonzero, move the unit forwards at the current speed and angle.
-		// Note that this uses 'movementDt', which may be the time since the position
-		// update if this tick updated the position.
 		if (speed !== 0)
 		{
-			const moveDist = speed * movementDt;
+			const moveDist = speed * dt;
 			const angle = this.GetAngle();
 			this.OffsetPosition(Math.cos(angle) * moveDist, Math.sin(angle) * moveDist);
 		}
