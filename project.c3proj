@@ -1,6 +1,6 @@
 {
 	"projectFormatVersion": 1,
-	"savedWithRelease": 32200,
+	"savedWithRelease": 32300,
 	"name": "Command & Construct",
 	"runtime": "c3",
 	"useWorker": "worker",
@@ -266,6 +266,30 @@
 									"script-info": {
 										"purpose": "none"
 									}
+								},
+								{
+									"name": "valueTimeline.js",
+									"type": "application/javascript",
+									"sid": 176801406673691,
+									"script-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "interpolatedValueTimeline.js",
+									"type": "application/javascript",
+									"sid": 245167409152623,
+									"script-info": {
+										"purpose": "none"
+									}
+								},
+								{
+									"name": "steppedValueTimeline.js",
+									"type": "application/javascript",
+									"sid": 257463117919509,
+									"script-info": {
+										"purpose": "none"
+									}
 								}
 							],
 							"subfolders": [],
@@ -372,6 +396,14 @@
 							"name": "clientMathUtils.js",
 							"type": "application/javascript",
 							"sid": 521760629692845,
+							"script-info": {
+								"purpose": "none"
+							}
+						},
+						{
+							"name": "clientKahanSum.js",
+							"type": "application/javascript",
+							"sid": 237541289652919,
 							"script-info": {
 								"purpose": "none"
 							}

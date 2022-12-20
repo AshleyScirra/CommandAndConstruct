@@ -32,3 +32,45 @@ export function lerp(a, b, x)
 {
 	return a + (b - a) * x;
 }
+
+// Calculate the difference between angles in the shortest direction.
+export function AngleDifference(a1, a2)
+{
+	if (a1 === a2)
+		return 0;		// angles identical
+
+	const s1 = Math.sin(a1);
+	const c1 = Math.cos(a1);
+	const s2 = Math.sin(a2);
+	const c2 = Math.cos(a2);
+	const n = s1 * s2 + c1 * c2;
+	
+	if (n >= 1)			// prevent NaN results
+		return 0;
+	if (n <= -1)
+		return Math.PI;
+		
+	return Math.acos(n);
+}
+
+// Test if a1 is clockwise of a2 in the shortest direction.
+export function AngleClockwise(a1, a2)
+{
+	const s1 = Math.sin(a1);
+	const c1 = Math.cos(a1);
+	const s2 = Math.sin(a2);
+	const c2 = Math.cos(a2);
+	return c1 * s2 - s1 * c2 <= 0;
+};
+
+// Angular interpolation from angle a to b in the shortest direction.
+export function angleLerp(a, b, x)
+{
+	const diff = AngleDifference(a, b);
+	
+	// b clockwise from a
+	if (AngleClockwise(b, a))
+		return a + diff * x;
+	else
+		return a - diff * x;
+};

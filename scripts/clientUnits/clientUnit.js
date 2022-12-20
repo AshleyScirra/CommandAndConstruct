@@ -14,7 +14,6 @@ export class ClientUnit {
 	#platform;					// ClientPlatform for this unit's platform
 	#turret;					// ClientTurret for this unit's turret
 	#selectionBoxInst;			// Construct instance representing selection box
-	#hadFullUpdate = false;		// true for one tick after full update from network
 	
 	constructor(gameClient, id, player)
 	{
@@ -48,6 +47,11 @@ export class ClientUnit {
 		this.#platform.Release();
 	}
 	
+	GetGameClient()
+	{
+		return this.#gameClient;
+	}
+	
 	GetRuntime()
 	{
 		return this.#gameClient.GetRuntime();
@@ -73,32 +77,10 @@ export class ClientUnit {
 		return this.#turret;
 	}
 	
-	// Called after the unit was updated with a full update from the network.
-	OnFullUpdate()
+	Tick(dt, simulationTime)
 	{
-		// Update the turret to follow the platform.
-		this.#turret.Update();
-		
-		// If this unit has a selection box, update that too.
-		this.UpdateSelectionBox();
-		
-		// Flag unit as having updated state. This means it's already up-to-date so the next tick
-		// shouldn't try to advance it any further.
-		this.#hadFullUpdate = true;
-	}
-	
-	Tick(dt)
-	{
-		// If the unit received state from the network this tick, then it should already be up-to-date.
-		// So in that case skip ticking it since that might move it further forwards than it is meant to be this tick.
-		// It will only tick it to move it forwards if no updates are available from the network.
-		if (this.#hadFullUpdate)
-		{
-			this.#hadFullUpdate = false;
-			return;
-		}
-		
-		this.#platform.Tick(dt);
+		this.#platform.Tick(dt, simulationTime);
+		this.#turret.Tick(dt, simulationTime);
 	}
 	
 	// Update the selection box position and angle to match the unit platform.

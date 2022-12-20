@@ -104,18 +104,18 @@ export class GameClientMessageHandler {
 	// Receiving full and delta data updates about some units.
 	#OnUnitUpdates(dataView, pos)
 	{
-		// Read the server time. TODO: use this to help smooth game state.
+		// Read the server time when the message was sent.
 		const serverTime = dataView.getFloat64(pos);
 		pos += 8;
 		
 		// Read the full unit updates that come first.
-		pos = this.#ReadFullUnitUpdates(dataView, pos);
+		pos = this.#ReadFullUnitUpdates(dataView, pos, serverTime);
 		
 		// Read the delta updates that follow.
-		this.#ReadDeltaUnitUpdates(dataView, pos);
+		this.#ReadDeltaUnitUpdates(dataView, pos, serverTime);
 	}
 	
-	#ReadFullUnitUpdates(dataView, pos)
+	#ReadFullUnitUpdates(dataView, pos, serverTime)
 	{
 		// Read the total number of full updates in this update.
 		const unitCount = dataView.getUint16(pos);
@@ -153,25 +153,21 @@ export class GameClientMessageHandler {
 			const unit = this.#gameClient.GetUnitById(unitId);
 			if (unit)
 			{
-				// Update platform position, speed and angle.
+				// Add all values to the platform and turret timelines.
 				const platform = unit.GetPlatform();
-				platform.SetPosition(x, y);
-				platform.SetSpeed(speed);
-				platform.SetAngle(platformAngle);
+				platform.OnNetworkUpdatePosition(serverTime, x, y);
+				platform.OnNetworkUpdateSpeed(serverTime, speed);
+				platform.OnNetworkUpdateAngle(serverTime, platformAngle);
 				
-				// Update turret offset angle.
 				const turret = unit.GetTurret();
-				turret.SetOffsetAngle(turretOffsetAngle);
-				
-				// Tell unit it received a full update.
-				unit.OnFullUpdate();
+				turret.OnNetworkUpdateOffsetAngle(serverTime, turretOffsetAngle);
 			}
 		}
 		
 		return pos;
 	}
 	
-	#ReadDeltaUnitUpdates(dataView, pos)
+	#ReadDeltaUnitUpdates(dataView, pos, serverTime)
 	{
 		// Read the total number of delta updates in this message.
 		const updateCount = dataView.getUint16(pos);
@@ -201,7 +197,9 @@ export class GameClientMessageHandler {
 				pos += 2;
 				
 				if (unit)
-					unit.GetPlatform().SetSpeed(speed);
+				{
+					unit.GetPlatform().OnNetworkUpdateSpeed(serverTime, speed);
+				}
 			}
 			
 			if ((deltaChangeFlags & FLAG_CHANGED_PLATFORM_ANGLE) !== 0)
@@ -211,13 +209,7 @@ export class GameClientMessageHandler {
 				
 				if (unit)
 				{
-					unit.GetPlatform().SetAngle(platformAngle);
-					
-					// Update the turret to follow the platform.
-					unit.GetTurret().Update();
-
-					// If this unit has a selection box, update that too.
-					unit.UpdateSelectionBox();
+					unit.GetPlatform().OnNetworkUpdateAngle(serverTime, platformAngle);
 				}
 			}
 			
@@ -228,8 +220,7 @@ export class GameClientMessageHandler {
 				
 				if (unit)
 				{
-					unit.GetTurret().SetOffsetAngle(offsetAngle);
-					unit.GetTurret().Update();
+					unit.GetTurret().OnNetworkUpdateOffsetAngle(serverTime, offsetAngle);
 				}
 			}
 		}
