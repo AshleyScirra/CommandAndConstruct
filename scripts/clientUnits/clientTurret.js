@@ -69,5 +69,8 @@ export class ClientTurret {
 		// Update the turret offset angle to the current interpolated value from the
 		// angle timeline.
 		this.SetOffsetAngle(this.#timelineOffsetAngle.Get(simulationTime));
+		
+		// Delete timeline entries older than 1 second.
+		this.#timelineOffsetAngle.DeleteEntriesOlderThan(simulationTime - 1);
 	}
 }

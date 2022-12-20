@@ -15,6 +15,10 @@ export class ClientPlatform {
 	#timelineAngle = new InterpolatedValueTimeline("angular");
 	#timelineSpeed = new InterpolatedValueTimeline("none");
 	
+	// Keep another timeline which is a short history of the position.
+	// This is used to correct the position with late updates.
+	#timelinePosHistory = new InterpolatedValueTimeline("linear");
+	
 	constructor(unit, x, y)
 	{
 		this.#unit = unit;
@@ -24,9 +28,11 @@ export class ClientPlatform {
 		this.#inst = runtime.objects.TankPlatform.createInstance("UnitPlatforms", x, y);
 		
 		// Add initial values to the timelines at a timestamp of 0.
-		this.#timelinePos.Add(0, [x, y]);;
+		this.#timelinePos.Add(0, [x, y]);
 		this.#timelineAngle.Add(0, 0);
 		this.#timelineSpeed.Add(0, 0);
+		
+		this.#timelinePosHistory.Add(0, [x, y]);
 		
 		// Use a tint on the instance to indicate the player: blue for player 0, and red for player 1.
 		// TODO: come up with a better visualisation that can also extend to more players.
@@ -113,14 +119,27 @@ export class ClientPlatform {
 	// received values in to the timelines at the given timestamp.
 	OnNetworkUpdatePosition(serverTime, x, y)
 	{
-		// Disregard position updates that come too late (after the last used time).
-		// TODO: try to use late updates anyway, as they don't come very often.
+		// If a position update is received late (behind the current simulation time),
+		// we want to still use it if possible, as position updates are fairly infrequent.
+		// Look in the position history timeline to see where the client had this unit
+		// at the server time, and find what the offset was at that time. Then that offset
+		// can be applied to the unit now.
 		if (serverTime <= this.GetGameClient().GetPingManager().GetSimulationTime())
 		{
-			return;
+			// However if a message is so late it's older than even the last entry in
+			// the position history, it can't be used, so discard it.
+			if (serverTime < this.#timelinePosHistory.GetOldestTimestamp())
+				return;
+			
+			// Get platform position at timestamp of the message, and apply offset.
+			const [oldX, oldY] = this.#timelinePosHistory.Get(serverTime, false /* deleteOldEntries */);
+			this.OffsetPosition(x - oldX, y - oldY);
 		}
-		
-		this.#timelinePos.Add(serverTime, [x, y]);
+		else
+		{
+			// Position message is on time: add it to the timeline so it's used on schedule.
+			this.#timelinePos.Add(serverTime, [x, y]);
+		}
 	}
 	
 	OnNetworkUpdateSpeed(serverTime, speed)
@@ -176,6 +195,18 @@ export class ClientPlatform {
 			const angle = this.GetAngle();
 			this.OffsetPosition(Math.cos(angle) * moveDist, Math.sin(angle) * moveDist);
 		}
+		
+		// Add the current position of the platform on the client to the position history
+		// timeline. This is used to look up past positions if a network update arrives late.
+		this.#timelinePosHistory.Add(simulationTime, this.GetPosition());
+		
+		// Delete interpolated timeline entries older than 1 second (and 2 seconds for
+		// the position history). This saves memory as old entries aren't needed any more.
+		// Some old entries are kept for interpolated timelines as entries added late
+		// could affect where the current interpolated position is.
+		this.#timelineAngle.DeleteEntriesOlderThan(simulationTime - 1);
+		this.#timelineSpeed.DeleteEntriesOlderThan(simulationTime - 1);
+		this.#timelinePosHistory.DeleteEntriesOlderThan(simulationTime - 2);
 	}
 	
 	ContainsPoint(x, y)

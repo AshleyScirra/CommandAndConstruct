@@ -48,13 +48,7 @@ export class InterpolatedValueTimeline extends ValueTimeline {
 					const factor = (simulationTime - prevEntry.timestamp) / (entry.timestamp - prevEntry.timestamp);
 					
 					// Interpolate between the values using this timeline's interpolation mode.
-					const ret = this.#Interpolate(prevEntry.value, entry.value, factor);
-					
-					// To avoid wasting memory, delete all timeline entries older than the previous entry,
-					// as they are no longer needed.
-					this.timeline.splice(0, i - 1);
-					
-					return ret;
+					return this.#Interpolate(prevEntry.value, entry.value, factor);
 				}
 			}
 		}
@@ -67,18 +61,51 @@ export class InterpolatedValueTimeline extends ValueTimeline {
 		// if the network failed to deliver the next updates. In the prior case, forwards interpolation
 		// is wrong, as it means overshooting the last value. Therefore forwards interpolation is
 		// not currently attempted.
-		// Since all timeline entries other than the last one are no longer useful, also delete them
-		// to save memory. Note an interpolated timeline must always have at least one entry.
-		if (this.timeline.length > 1)
-		{
-			this.timeline.splice(0, this.timeline.length - 1);
-		}
 
-		return this.timeline[0].value;
+		return this.timeline.at(-1).value;
+	}
+	
+	DeleteEntriesOlderThan(timestamp)
+	{
+		// Find the first entry newer than the given timestamp.
+		for (let i = 0, len = this.timeline.length; i < len; ++i)
+		{
+			const entry = this.timeline[i];
+			
+			if (entry.timestamp > timestamp)
+			{
+				// All prior entries are older than the timestamp, so delete them.
+				this.timeline.splice(0, i);
+				return;
+			}
+		}
+		
+		// All entries are older than the timestamp, so delete all but the last (newest) entry.
+		this.timeline.splice(0, this.timeline.length - 1);
+	}
+	
+	GetOldestTimestamp()
+	{
+		// Timelines are ordered by time, so the first entry is always oldest.
+		return this.timeline[0].timestamp;
 	}
 	
 	// Interpolate between two values using this timeline's interpolation mode.
 	#Interpolate(a, b, x)
+	{
+		// If 'a' is an array, interpolate each element in the array.
+		// This allows interpolating positions as [x, y].
+		if (Array.isArray(a))
+		{
+			return a.map((v, index) => this.#InterpolateSingleValue(v, b[index], x));
+		}
+		else
+		{
+			return this.#InterpolateSingleValue(a, b, x);
+		}
+	}
+	
+	#InterpolateSingleValue(a, b, x)
 	{
 		if (this.#interpolationType === "none")
 		{
