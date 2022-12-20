@@ -12,6 +12,11 @@ const PING_FREQUENCY = 2000;
 // Number of latency measurements to average out.
 const LATENCY_AVERAGE_COUNT = 10;
 
+// The "simulation delay" is a deliberate extra delay added to the latency to ensure the
+// client can see upcoming messages and interpolate between them, even when there is
+// some degree of packet delay variation (PDV).
+const SIMULATION_DELAY = 0.08;
+
 export class PingManager {
 
 	#gameClient;				// Reference to GameClient
@@ -22,6 +27,8 @@ export class PingManager {
 	
 	#latencyMeasurements = [];	// array of last latencies measured
 	#latency = 0;				// measured latency
+	#targetSimulationDelay = 0;	// raw intended client-side delay from server time
+	#curSimulationDelay = 0;	// client-side delay with smoothing
 	
 	#targetServerTimeDiff = 0;	// raw estimated time difference to server
 	#curServerTimeDiff = 0;		// server time difference with smoothing
@@ -84,8 +91,7 @@ export class PingManager {
 		this.#pingId = -1;
 		
 		// Measure the round-trip time for the ping to arrive at the server, and the pong to be returned.
-		const currentLocalTime = performance.now() / 1000;
-		const roundTripTime = currentLocalTime - this.#pingSendTime;
+		const roundTripTime = (performance.now() / 1000) - this.#pingSendTime;
 		
 		// The latency, i.e. the one-way time, is estimated as half the round trip time.
 		const latency = roundTripTime / 2;
@@ -108,21 +114,29 @@ export class PingManager {
 		// Estimate the current server time right now based on the received timestamp plus the latency.
 		// Calculate the estimated time difference between the client time and the server time.
 		const currentServerTime = time + latency;
+		const currentLocalTime = this.#gameClient.GetGameTime() + this.#gameClient.GetTimeSinceLastTick();
 		this.#targetServerTimeDiff = currentServerTime - currentLocalTime;
 		
-		// The current server time difference is smoothed so there are no sudden changes if the
-		// measured time difference changes. However initialise it on the first measurement so it's
-		// in the right ballpark.
+		// The current server time difference and simulation delay are smoothed so there are no
+		// sudden changes if the measurements change. However initialise it on the first measurement
+		// so it starts in the right ballpark.
 		if (isFirst)
+		{
 			this.#curServerTimeDiff = this.#targetServerTimeDiff;
+			
+			this.#targetSimulationDelay = this.#latency + SIMULATION_DELAY;
+			this.#curSimulationDelay = this.#targetSimulationDelay;
+		}
 	}
 	
 	Tick(dt)
 	{
-		// Our time measurements aren't perfect and will have some variance. On top of that it's possible
-		// the server and client clocks could slowly drift apart over time. Therefore the current server
-		// time difference is smoothed so there are no sudden changes even if the target server time difference
-		// changes. It is allowed to catch up at a rate of 1%, i.e. up to 10ms change every 1 second.
+		// In theory, the server time difference never changes - there is one true value that ought to stay
+		// the same throughout the game. However our time measurements aren't perfect and will have some variance.
+		// On top of that it's possible the server and client clocks could slowly drift apart over time.
+		// Therefore the current server time difference is smoothed so there are no sudden changes even if the
+		// target server time difference changes. It is allowed to catch up at a rate of 1%, i.e. changing
+		// up to 10ms every 1 second.
 		if (this.#curServerTimeDiff < this.#targetServerTimeDiff)
 		{
 			this.#curServerTimeDiff = Math.min(this.#curServerTimeDiff + 0.01 * dt, this.#targetServerTimeDiff);
@@ -132,17 +146,38 @@ export class PingManager {
 			this.#curServerTimeDiff = Math.max(this.#curServerTimeDiff - 0.01 * dt, this.#targetServerTimeDiff);
 		}
 		
-		// Update current estimated server time based on local clock plus the server time difference.
-		this.#curServerTime = performance.now() + this.#curServerTimeDiff;
+		// Similarly the client-side delay will vary depending on latency measurements. This could change more
+		// substantially as changing network conditions could cause hundreds of milliseconds change to the latency,
+		// and therefore the client-side delay. Therefore it is also smoothed out, but with a faster catch-up
+		// rate of 3%, i.e. changing up to 30ms every 1 second.
+		if (this.#curSimulationDelay < this.#targetSimulationDelay)
+		{
+			this.#curSimulationDelay = Math.min(this.#curSimulationDelay + 0.03 * dt, this.#targetSimulationDelay);
+		}
+		else if (this.#curSimulationDelay > this.#targetSimulationDelay)
+		{
+			this.#curSimulationDelay = Math.max(this.#curSimulationDelay - 0.03 * dt, this.#targetSimulationDelay);
+		}
+		
+		// Update current estimated server time based on the client game time plus the server time difference.
+		this.#curServerTime = this.#gameClient.GetGameTime() + this.#curServerTimeDiff;
 	}
 	
+	// Get the estimated latency (aka ping time) in seconds. This value will vary over time, especially
+	// if network conditions change.
 	GetLatency()
 	{
 		return this.#latency;
 	}
 	
-	GetServerTime()
+	// Get the simulation time, i.e. the server time at which the client side should represent the game.
+	// This is one of the most important values for the client. This time is what is read from all the value
+	// timelines to show a smoothed version of the data coming in from the network. If it is too far behind
+	// the server time then there will be unnecessary lag; if it is too close to the server time then messages
+	// will arrive late and the game will start to look choppy. The value used is the server time, minus the
+	// measured latency to the server, minus an extra fixed delay of SIMULATION_DELAY.
+	GetSimulationTime()
 	{
-		return this.#curServerTime;
+		return this.#curServerTime - this.#curSimulationDelay;
 	}
 }

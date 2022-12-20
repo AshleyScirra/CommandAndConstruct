@@ -33,7 +33,6 @@
 	#lastTickTimeMs = 0;			// clock time at last tick in ms
 	#nextTickScheduledTimeMs = 0;	// time next tick ought to run at in ms
 	#gameTime = new KahanSum();		// serves as the clock for the game in seconds
-	#serverTime = 0;				// server clock in seconds, updated every tick
 	
 	#objectData = new Map();		// name -> ObjectData
 	
@@ -178,9 +177,17 @@
 		return this.#objectData.get(name);
 	}
 	
+	// Get the server-side game time in seconds.
 	GetGameTime()
 	{
 		return this.#gameTime.Get();
+	}
+	
+	// The time since the last tick can be added to the game time for a more accurate
+	// reading of the current time. This is used for ping messages.
+	GetTimeSinceLastTick()
+	{
+		return (performance.now() - this.#lastTickTimeMs) / 1000;
 	}
 	
 	GetCollisionGrid()
@@ -291,9 +298,6 @@
 		const tickStartTimeMs = performance.now();
 		const dt = (tickStartTimeMs - this.#lastTickTimeMs) / 1000;
 		this.#lastTickTimeMs = tickStartTimeMs;
-		
-		// Calculate the server time for this tick in seconds.
-		this.#serverTime = tickStartTimeMs / 1000;
 		
 		// Update all projectiles.
 		for (const [id, projectile] of this.#allProjectilesById)
@@ -456,7 +460,7 @@
 		pos += 1;
 		
 		// Write the server time at the tick this message was sent.
-		dataView.setFloat64(pos, this.#serverTime);
+		dataView.setFloat64(pos, this.GetGameTime());
 		pos += 8;
 		
 		// Write the total number of full updates to be sent in this update.
@@ -528,7 +532,7 @@
 		pos += 1;
 		
 		// Write the server time at the tick these events happened.
-		dataView.setFloat64(pos, this.#serverTime);
+		dataView.setFloat64(pos, this.GetGameTime());
 		pos += 8;
 		
 		// Write the number of events.

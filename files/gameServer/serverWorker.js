@@ -71,12 +71,14 @@ function OnPing(e)
 	const id = e["id"];
 	const player = e["player"];
 	
-	// Send a pong back to the same player with the same ID and
-	// the current time on the server.
+	// Send a pong back to the same player with the same ID and the current time on the server.
+	// Note the server game time only increments every tick. In order to take a more accurate
+	// measurement, include the time since the last tick in the transmitted time. This allows
+	// ping times to properly count time passing in between ticks.
 	SendMessageToRuntime({
 		"type": "pong",
 		"id": id,
-		"time": (performance.now() / 1000)
+		"time": gameServer.GetGameTime() + gameServer.GetTimeSinceLastTick()
 	}, "u", player);
 }
 

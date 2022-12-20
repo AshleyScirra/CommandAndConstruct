@@ -1,5 +1,6 @@
 
 import { MultiEventHandler } from "../utils/multiEventHandler.js";
+import { KahanSum } from "../utils/clientKahanSum.js";
 import { ClientUnit } from "../clientUnits/clientUnit.js";
 import { ClientProjectile } from "../clientUnits/clientProjectile.js";
 import { GameClientMessageHandler } from "./net/messageHandler.js";
@@ -25,6 +26,8 @@ export class GameClient {
 	#allProjectilesById = new Map();// map of all projectiles by id -> ClientProjectile
 	
 	#eventHandlers;					// MultiEventHandler for runtime events
+	#gameTime = new KahanSum();		// serves as the clock for the game in seconds
+	#lastTickTimeMs = 0;			// time at start of last tick in ms
 	#messageHandler;				// MessageHandler class
 	#pingManager;					// PingManager class
 	#pointerManager;				// PointerManager class
@@ -306,10 +309,8 @@ export class GameClient {
 	// Tick the client to advance the game state by one step.
 	#OnTick()
 	{
+		this.#lastTickTimeMs = performance.now();
 		const dt = this.#runtime.dt;
-		
-		// Tick PingManager so it can track clocks
-		this.#pingManager.Tick(dt);
 		
 		// Tick PointerManager for handling pinch-to-zoom
 		this.#pointerManager.Tick(dt);
@@ -317,11 +318,13 @@ export class GameClient {
 		// Tick ViewManager for handling smooth zoom.
 		this.#viewManager.Tick(dt);
 		
-		// Tick all units for client-side interpolation.
-		// TODO: only tick units that need it.
+		// Tick all units for client-side interpolation using the current simulation
+		// time calculated by PingManager. TODO: only tick units that need it.
+		const simulationTime = this.#pingManager.GetSimulationTime();
+		
 		for (const unit of this.allUnits())
 		{
-			unit.Tick(dt);
+			unit.Tick(dt, simulationTime);
 		}
 		
 		// Advance all projectiles. These are moved by the client as their movement
@@ -340,6 +343,28 @@ export class GameClient {
 		
 		// Redraw the minimap to reflect changes.
 		this.#minimap.Update();
+		
+		// Advance the game time by this tick's delta-time value.
+		// Note the game time uses kahan summation to improve precision. Normal floating
+		// point summation is not precise enough to keep an accurate clock time.
+		this.#gameTime.Add(dt);
+		
+		// Tick PingManager which updates the estimated server time based on the time difference
+		// to the game time, which was just incremented.
+		this.#pingManager.Tick(dt);
+	}
+	
+	// Get the client-side game time in seconds.
+	GetGameTime()
+	{
+		return this.#gameTime.Get();
+	}
+	
+	// The time since the last tick can be added to the game time for a more accurate
+	// reading of the current time. This is used for ping messages.
+	GetTimeSinceLastTick()
+	{
+		return (performance.now() - this.#lastTickTimeMs) / 1000;
 	}
 	
 	// Called when GameServer sends a "game-over" message
