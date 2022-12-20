@@ -2,25 +2,11 @@
 import { ValueTimeline } from "./valueTimeline.js";
 
 // SteppedValueTimeline is derived from ValueTimeline as a "stepped" variant.
-// This is used for position values. Since these arrive only occasionally (usually
-// a couple of seconds apart), it's not worth trying to interpolate between them.
-// Instead the values are used to update to the correct position when the simulation
-// time reaches a value.
+// This is used for position values and events. Since these arrive only occasionally
+// as one-off updates, it's not appropriate to interpolate between them.
+// Instead the values are handled as updates when the simulation time reaches them.
 export class SteppedValueTimeline extends ValueTimeline {
 
-	// Track the last simulation time, so very late messages that have an even
-	// older timestamp aren't added to the timeline.
-	#lastSimulationTime = -Infinity;
-	
-	// Override the Add() method to discard updates that are late.
-	Add(timestamp, value)
-	{
-		if (timestamp <= this.#lastSimulationTime)
-			return;
-		
-		super.Add(timestamp, value);
-	}
-	
 	// Return a timeline entry of { timestamp, value } if there is one older than
 	// the given simulation time, and remove it from the timeline. Otherwise if
 	// there is no update for this time, return null.
@@ -41,9 +27,6 @@ export class SteppedValueTimeline extends ValueTimeline {
 				ret = firstEntry;
 			}
 		}
-		
-		// Update the last simulation time so late messages are discarded.
-		this.#lastSimulationTime = simulationTime;
 		
 		return ret;
 	}

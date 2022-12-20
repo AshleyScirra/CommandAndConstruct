@@ -251,15 +251,21 @@ export class GameClient {
 	
 	// When a network event is received indicating a projectile was fired,
 	// create a ClientProjectile to represent it.
-	OnProjectileFired(id, x, y, angle, speed, range, distanceTravelled)
+	OnProjectileFired(lateness, id, x, y, angle, speed, range, distanceTravelled)
 	{
 		const projectile = new ClientProjectile(this, id, x, y, angle, speed, range, distanceTravelled);
 		this.#allProjectilesById.set(id, projectile);
+		
+		// Immediately tick the projectile by its lateness. This should catch up its position to where
+		// it is meant to be. This applies both for on-time events, since client ticks don't perfectly
+		// line up with server ticks, and for late events, where the lateness value could be large
+		// (e.g. hundreds of milliseconds) and so the projectile will jump ahead to compensate.
+		projectile.Tick(lateness);
 	}
 	
 	// When a network event is received indicating a projectile hit a target,
 	// destroy the projectile (if it can be found), and create an explosion at the reported location.
-	OnProjectileHit(id, x, y)
+	OnProjectileHit(lateness, id, x, y)
 	{
 		// If the client is not properly synchronised, it might not be able to find a
 		// projectile with the reported ID. In that case, just skip destroying it.
@@ -272,8 +278,13 @@ export class GameClient {
 		// Create an explosion at the server reported position as visual feedback for the player.
 		// The explosion is also rotated to a random angle to create visual variation, and it
 		// also has the Fade behavior to fade it out and automatically destroy it.
-		const explosionInst = this.#runtime.objects.Explosion.createInstance("Explosions", x, y);
-		explosionInst.angle = Math.random() * 2 * Math.PI;
+		// Note if the event happens more than 1 second late, don't create an explosion, as it
+		// is too late for the visual to obviously correlate to the impact.
+		if (lateness < 1)
+		{
+			const explosionInst = this.#runtime.objects.Explosion.createInstance("Explosions", x, y);
+			explosionInst.angle = Math.random() * 2 * Math.PI;
+		}
 	}
 	
 	// Iterate all projectiles currently in the game.
@@ -284,7 +295,7 @@ export class GameClient {
 	
 	// When a network event is received indicating a unit was destroyed, remove its corresponding
 	// unit and also create an explosion to represent its destruction.
-	OnUnitDestroyed(unitId)
+	OnUnitDestroyed(lateness, unitId)
 	{
 		const unit = this.#allUnitsById.get(unitId);
 		
@@ -294,12 +305,17 @@ export class GameClient {
 			return;
 		
 		// Create an explosion at the unit for visual feedback of its destruction, similar to
-		// in OnProjectileHit (but also make it a bit bigger to cover the unit).
-		const [x, y] = unit.GetPlatform().GetPosition();
-		const explosionInst = this.#runtime.objects.Explosion.createInstance("Explosions", x, y);
-		explosionInst.angle = Math.random() * 2 * Math.PI;
-		explosionInst.width *= 1.4;
-		explosionInst.height *= 1.4;
+		// in OnProjectileHit (but also make it a bit bigger to cover the unit). However similarly
+		// only create the explosion if the event is not more than 2 seconds late (a longer time is
+		// allowed for units as the destruction of a unit is a potentially significant event).
+		if (lateness < 2)
+		{
+			const [x, y] = unit.GetPlatform().GetPosition();
+			const explosionInst = this.#runtime.objects.Explosion.createInstance("Explosions", x, y);
+			explosionInst.angle = Math.random() * 2 * Math.PI;
+			explosionInst.width *= 1.4;
+			explosionInst.height *= 1.4;
+		}
 		
 		// Remove unit from client and destroy it
 		this.#allUnitsById.delete(unitId);
@@ -318,10 +334,14 @@ export class GameClient {
 		// Tick ViewManager for handling smooth zoom.
 		this.#viewManager.Tick(dt);
 		
-		// Tick all units for client-side interpolation using the current simulation
-		// time calculated by PingManager. TODO: only tick units that need it.
+		// Get the current simulation time as calculated by PingManager.
+		// Then tick the message handler, which will fire any network events
+		// scheduled for this time.
 		const simulationTime = this.#pingManager.GetSimulationTime();
+		this.#messageHandler.Tick(simulationTime);
 		
+		// Tick all units to update them to the current simulation time.
+		// TODO: only tick units that need it.
 		for (const unit of this.allUnits())
 		{
 			unit.Tick(dt, simulationTime);

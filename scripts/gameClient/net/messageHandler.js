@@ -2,6 +2,8 @@
 import Globals from "../../globals.js";
 import * as MathUtils from "../../utils/clientMathUtils.js";
 
+import { SteppedValueTimeline } from "./steppedValueTimeline.js";
+
 // The binary message types
 const MESSAGE_TYPE_UNIT_UPDATES = 0;	// full and delta unit updates
 const MESSAGE_TYPE_EVENTS = 1;			// list of events that have happened
@@ -19,6 +21,10 @@ export class GameClientMessageHandler {
 	// Private fields
 	#gameClient;					// reference to GameClient
 	#messageMap;					// Map of message type -> handler function
+	
+	// Network events are queued until the simulation time catches up with the event time.
+	// This is done with a stepped timeline.
+	#networkEventTimeline = new SteppedValueTimeline();
 	
 	constructor(gameClient)
 	{
@@ -228,7 +234,7 @@ export class GameClientMessageHandler {
 	
 	#OnNetworkEvents(dataView, pos)
 	{
-		// Read the server time. TODO: use this to help smooth game state.
+		// Read the server time.
 		const serverTime = dataView.getFloat64(pos);
 		pos += 8;
 		
@@ -236,7 +242,9 @@ export class GameClientMessageHandler {
 		const eventCount = dataView.getUint16(pos);
 		pos += 2;
 		
-		// Read each individual event.
+		// Read each individual event, collecting the resulting data in to an array.
+		const eventList = [];
+		
 		for (let i = 0; i < eventCount; ++i)
 		{
 			// Get event type
@@ -246,17 +254,22 @@ export class GameClientMessageHandler {
 			// Read each type of message with a separate method.
 			// Note the types correspond to those listed in NetworkEvent on the server.
 			if (eventType === 0)
-				pos = this.#ReadProjectileFiredEvent(dataView, pos);
+				pos = this.#ReadProjectileFiredEvent(dataView, pos, eventList);
 			else if (eventType === 1)
-				pos = this.#ReadProjectileHitEvent(dataView, pos);
+				pos = this.#ReadProjectileHitEvent(dataView, pos, eventList);
 			else if (eventType === 2)
-				pos = this.#ReadUnitDestroyedEvent(dataView, pos);
+				pos = this.#ReadUnitDestroyedEvent(dataView, pos, eventList);
 			else
 				throw new Error(`unknown event type '${eventType}'`);
 		}
+		
+		// Now we have a list of events that are meant to happen at a time.
+		// Queue them up for the right time using the stepped timeline, using the event
+		// list as the timeline value.
+		this.#networkEventTimeline.Add(serverTime, eventList)
 	}
 	
-	#ReadProjectileFiredEvent(dataView, pos)
+	#ReadProjectileFiredEvent(dataView, pos, eventList)
 	{
 		// Projectile ID
 		const id = dataView.getUint16(pos);
@@ -276,11 +289,13 @@ export class GameClientMessageHandler {
 		const distanceTravelled = dataView.getUint16(pos);
 		pos += 2;
 		
-		this.#gameClient.OnProjectileFired(id, x, y, angle, speed, range, distanceTravelled);
+		// Add a function to perform this event to the event list.
+		eventList.push(lateness => this.#gameClient.OnProjectileFired(lateness, id, x, y, angle, speed, range, distanceTravelled));
+		
 		return pos;
 	}
 	
-	#ReadProjectileHitEvent(dataView, pos)
+	#ReadProjectileHitEvent(dataView, pos, eventList)
 	{
 		// Projectile ID
 		const id = dataView.getUint16(pos);
@@ -292,18 +307,46 @@ export class GameClientMessageHandler {
 		const y = dataView.getUint16(pos);
 		pos += 2;
 		
-		this.#gameClient.OnProjectileHit(id, x, y);
+		// Add a function to perform this event to the event list.
+		eventList.push(lateness => this.#gameClient.OnProjectileHit(lateness, id, x, y));
+		
 		return pos;
 	}
 	
-	#ReadUnitDestroyedEvent(dataView, pos)
+	#ReadUnitDestroyedEvent(dataView, pos, eventList)
 	{
 		// Unit ID
 		const id = dataView.getUint16(pos);
 		pos += 2;
 		
-		this.#gameClient.OnUnitDestroyed(id);
+		// Add a function to perform this event to the event list.
+		eventList.push(lateness => this.#gameClient.OnUnitDestroyed(lateness, id));
+		
 		return pos;
+	}
+	
+	Tick(simulationTime)
+	{
+		// Check the stepped value timeline with network events for anything that is now
+		// scheduled to happen. Note it is checked repeatedly: GetSteppedValue() will only
+		// return one value, but there could be multiple entries behind the simulation time,
+		// in which case we want to apply them all ASAP.
+		let entry;
+		while (entry = this.#networkEventTimeline.GetSteppedValue(simulationTime))
+		{
+			const eventList = entry.value;
+			
+			// Calculate how late this event is in seconds. For messages received on time,
+			// this will be a small value (just due to the fact client ticks don't line
+			// up exactly with server ticks). However if network delays cause an event to
+			// be delayed significantly, the lateness can also allow the client to try to
+			// catch up, such as by advancing a projectile to where it's meant to be.
+			const lateness = simulationTime - entry.timestamp;
+			
+			// Call every function in the event list with the lateness value.
+			for (const func of eventList)
+				func(lateness);
+		}
 	}
 	
 	// Get information about units, such as their size and image point locations,

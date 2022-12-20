@@ -113,6 +113,13 @@ export class ClientPlatform {
 	// received values in to the timelines at the given timestamp.
 	OnNetworkUpdatePosition(serverTime, x, y)
 	{
+		// Disregard position updates that come too late (after the last used time).
+		// TODO: try to use late updates anyway, as they don't come very often.
+		if (serverTime <= this.GetGameClient().GetPingManager().GetSimulationTime())
+		{
+			return;
+		}
+		
 		this.#timelinePos.Add(serverTime, [x, y]);
 	}
 	
