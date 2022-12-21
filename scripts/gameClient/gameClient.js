@@ -387,10 +387,9 @@ export class GameClient {
 		return (performance.now() - this.#lastTickTimeMs) / 1000;
 	}
 	
-	// Called when GameServer sends a "game-over" message
-	OnGameOver(didWin)
+	#ShowGameOverMessage(text)
 	{
-		// Create an instance of GameOverText to display the result.
+		// Create an instance of GameOverText to display the text.
 		// Do this on the top UI layer and position it in the middle of the viewport.
 		const uiLayer = this.#runtime.layout.getLayer("UI");
 		const viewport = uiLayer.getViewport();
@@ -398,8 +397,26 @@ export class GameClient {
 		const midY = (viewport.top + viewport.bottom) / 2;
 		const textInst = this.#runtime.objects.GameOverText.createInstance("UI", midX, midY);
 		
-		// Set the text depending on if this player won.
-		textInst.text = (didWin ? "Victory!" : "Defeat...");
+		// Set the text to the given string, and return the text instance.
+		textInst.text = text;
+		
+		return textInst;
+	}
+	
+	// Called when GameServer sends a "game-over" message
+	OnGameOver(didWin)
+	{
+		// Display the result on-screen
+		this.#ShowGameOverMessage(didWin ? "Victory!" : "Defeat...");
+		
+		// Wait 5 seconds then go back to the title screen.
+		self.setTimeout(() => this.#runtime.goToLayout("Title screen"), 5000);
+	}
+	
+	OnDisconnected()
+	{
+		// Show a disconnected message in the same style as a game over message.
+		this.#ShowGameOverMessage("Disconnected");
 		
 		// Wait 5 seconds then go back to the title screen.
 		self.setTimeout(() => this.#runtime.goToLayout("Title screen"), 5000);

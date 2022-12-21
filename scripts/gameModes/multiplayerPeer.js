@@ -20,7 +20,8 @@ export class GameModeMultiplayerPeer {
 		
 		this.#eventHandlers = new MultiEventHandler([
 			// Listen for incoming messages from the host over the network.
-			[this.#runtime.objects.Multiplayer, "message", e => this.#HandleHostMessage(e)]
+			[this.#runtime.objects.Multiplayer, "message", e => this.#HandleHostMessage(e)],
+			[this.#runtime.objects.Multiplayer, "peerdisconnect", e => this.#OnPeerDisconnect(e)]
 		]);
 	}
 	
@@ -88,5 +89,12 @@ export class GameModeMultiplayerPeer {
 			this.#startResolve();
 			this.#startResolve = null;
 		}
+	}
+	
+	#OnPeerDisconnect(e)
+	{
+		// Show a disconnected message. TODO: this should probably be handled differently
+		// if supporting more than 2 players
+		this.#gameClient.OnDisconnected();
 	}
 }

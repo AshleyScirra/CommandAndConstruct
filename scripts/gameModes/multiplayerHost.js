@@ -21,7 +21,8 @@ export class GameModeMultiplayerHost {
 		
 		this.#eventHandlers = new MultiEventHandler([
 			// Listen for incoming messages from peers over the network.
-			[this.#runtime.objects.Multiplayer, "message", e => this.#HandlePeerMessage(e)]
+			[this.#runtime.objects.Multiplayer, "message", e => this.#HandlePeerMessage(e)],
+			[this.#runtime.objects.Multiplayer, "peerdisconnect", e => this.#OnPeerDisconnect(e)]
 		]);
 	}
 	
@@ -156,5 +157,12 @@ export class GameModeMultiplayerHost {
 			// TODO: support for more than 2 players.
 			console.error(`Unexpected forPlayer value '${forPlayer}'`);
 		}
+	}
+	
+	#OnPeerDisconnect(e)
+	{
+		// Show a disconnected message. TODO: this should probably be handled differently
+		// if supporting more than 2 players
+		this.#gameClient.OnDisconnected();
 	}
 }
