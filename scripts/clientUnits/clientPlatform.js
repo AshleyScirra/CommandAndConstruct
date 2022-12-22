@@ -70,6 +70,14 @@ export class ClientPlatform {
 		return this.#inst.getPosition();
 	}
 	
+	GetPositionWithCorrectionApplied()
+	{
+		// Return the current platform position but with any remaining correction already applied.
+		// This returns where the client knows it ought to be as opposed to where it is shown.
+		const [x, y] = this.GetPosition();
+		return [x + this.#xCorrection, y + this.#yCorrection];
+	}
+	
 	SetPosition(x, y)
 	{
 		const [curX, curY] = this.GetPosition();

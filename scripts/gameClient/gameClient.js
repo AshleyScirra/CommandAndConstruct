@@ -246,7 +246,11 @@ export class GameClient {
 		let boxBottom = -Infinity;
 		for (const unit of unitsArray)
 		{
-			const [x, y] = unit.GetPlatform().GetPosition();
+			// Note that unit positions are taken with any pending correction applied.
+			// This ensures formations are preserved based on where the client knows units should
+			// be, rather than where it's showing them, since it could be showing them with a
+			// partial offset as it applies a correction over time.
+			const [x, y] = unit.GetPlatform().GetPositionWithCorrectionApplied();
 			boxLeft = Math.min(boxLeft, x);
 			boxTop = Math.min(boxTop, y);
 			boxRight = Math.max(boxRight, x);
@@ -272,7 +276,7 @@ export class GameClient {
 			"type": "move-units",
 			"units": unitsArray.map(unit =>
 			{
-				const [x, y] = unit.GetPlatform().GetPosition();
+				const [x, y] = unit.GetPlatform().GetPositionWithCorrectionApplied();
 				return {
 					"id": unit.GetId(),
 					// Note the position is rounded to the nearest pixel, mainly to make sure long
