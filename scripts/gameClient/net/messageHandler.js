@@ -417,14 +417,12 @@ export class GameClientMessageHandler {
 	{
 		const runtime = this.#gameClient.GetRuntime();
 		const inst = runtime.objects.StatsText.getFirstInstance();
-		inst.text = `Latency: ${Math.round(this.#gameClient.GetPingManager().GetLatency() * 1000)} ms
-Unit count: ${m["num-units"]}
-Projectile count: ${m["num-projectiles"]}
-Server state: ${Math.round(m["sent-state-bytes"] / 1024)} kb/s
-Server deltas: ${Math.round(m["sent-delta-bytes"] / 1024)} kb/s
-Server events: ${Math.round(m["sent-event-bytes"] / 1024)} kb/s
+		const pingManager = this.#gameClient.GetPingManager();
+		inst.text = `${m["num-units"]} units, ${m["num-projectiles"]} projectiles
 Net bandwidth: ${Math.round(runtime.objects.Multiplayer.stats.outboundBandwidth / 1024)} kb/s up, ${Math.round(runtime.objects.Multiplayer.stats.inboundBandwidth / 1024)} kb/s down
-Server compression: ${Math.max(100 - Math.round(runtime.objects.Multiplayer.stats.outboundBandwidth * 100 / (m["sent-state-bytes"] + m["sent-delta-bytes"] + m["sent-event-bytes"])), 0)}%
-Server performance: ${m["server-fps"]} FPS, ${Math.round(m["server-thread-usage"] * 100)}% CPU`;
+Server performance: ${m["server-fps"]} FPS, ${Math.round(m["server-thread-usage"] * 100)}% CPU
+Client performance: ${runtime.fps} FPS, ${Math.round(runtime.cpuUtilisation * 100)}% CPU
+Latency: [b]${Math.round(pingManager.GetLatency() * 1000)} ms[/b] (pdv ${Math.round(pingManager.GetPdv() * 1000)} ms)
+Server data: state ${Math.round(m["sent-state-bytes"] / 1024)} kb/s, deltas ${Math.round(m["sent-delta-bytes"] / 1024)} kb/s, events ${Math.round(m["sent-event-bytes"] / 1024)} kb/s, total [b]${Math.round((m["sent-state-bytes"] + m["sent-delta-bytes"] + m["sent-event-bytes"]) / 1024)} kb/s[/b]`;
 	}
 }

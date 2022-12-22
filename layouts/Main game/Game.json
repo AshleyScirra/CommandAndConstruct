@@ -502,16 +502,17 @@
 								"vertical-alignment": "bottom",
 								"wrapping": "word",
 								"initially-visible": true,
-								"origin": "top-left"
+								"origin": "top-left",
+								"read-aloud": false
 							},
 							"uid": 33,
 							"instanceVariables": {},
 							"behaviors": {},
 							"world": {
 								"x": 3,
-								"y": 811,
-								"width": 434,
-								"height": 265,
+								"y": 855,
+								"width": 845,
+								"height": 221,
 								"originX": 0,
 								"originY": 0,
 								"color": [

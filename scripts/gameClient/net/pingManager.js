@@ -170,6 +170,21 @@ export class PingManager {
 		return this.#latency;
 	}
 	
+	// Get the estimated packet delay variance (aka PDV) in seconds, which is the difference between the minimum
+	// and maximum measured latencies.
+	GetPdv()
+	{
+		let minLatency = Infinity;
+		let maxLatency = -Infinity;
+		for (const l of this.#latencyMeasurements)
+		{
+			minLatency = Math.min(minLatency, l);
+			maxLatency = Math.max(maxLatency, l);
+		}
+		
+		return maxLatency - minLatency;
+	}
+	
 	// Get the simulation time, i.e. the server time at which the client side should represent the game.
 	// This is one of the most important values for the client. This time is what is read from all the value
 	// timelines to show a smoothed version of the data coming in from the network. If it is too far behind
