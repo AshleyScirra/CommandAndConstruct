@@ -13,9 +13,10 @@ export class ClientTurret {
 	// Timeline for offset angle updates from the network.
 	#timelineOffsetAngle = new InterpolatedValueTimeline("angular");
 	
-	constructor(unit)
+	constructor(unit, offsetAngle)
 	{
 		this.#unit = unit;
+		this.#offsetAngle = offsetAngle;
 		
 		// For now this is hard-coded to create a TankTurret instance.
 		const runtime = this.#unit.GetRuntime();
@@ -23,7 +24,7 @@ export class ClientTurret {
 		this.#inst = runtime.objects.TankTurret.createInstance("UnitTurrets", x, y);
 		
 		// Add the initial offset angle to the timeline at a timestamp of 0.
-		this.#timelineOffsetAngle.Add(0, 0);
+		this.#timelineOffsetAngle.Add(0, offsetAngle);
 		
 		// Use a tint on the instance to indicate the player: blue for player 0, and red for player 1.
 		// TODO: come up with a better visualisation that can also extend to more players.

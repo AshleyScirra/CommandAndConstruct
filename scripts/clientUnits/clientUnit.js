@@ -25,17 +25,13 @@ export class ClientUnit {
 		this.#gameClient.UnitCreated(this);
 	}
 	
-	// Create a single client unit for the "create-initial-state" message
-	static CreateFromInitialData(gameClient, unitData)
+	// Create a client unit with initial state specified in 'info' object
+	static Create(gameClient, info)
 	{
-		const id = unitData["id"];
-		const player = unitData["player"];
-		const x = unitData["x"];
-		const y = unitData["y"];
-		
-		const unit = new ClientUnit(gameClient, id, player);
-		unit.#platform = new ClientPlatform(unit, x, y);
-		unit.#turret = new ClientTurret(unit);
+		const unit = new ClientUnit(gameClient, info.id, info.player);
+		unit.#platform = new ClientPlatform(unit, info.x, info.y, info.platformAngle, info.speed);
+		unit.#turret = new ClientTurret(unit, info.turretOffsetAngle);
+		unit.#turret.Update();
 		return unit;
 	}
 	

@@ -26,18 +26,20 @@ export class ClientPlatform {
 	
 	#speed = 0;			// current speed in px/s
 	
-	constructor(unit, x, y)
+	constructor(unit, x, y, angle, speed)
 	{
 		this.#unit = unit;
 		
 		// For now this is hard-coded to create a TankPlatform instance.
 		const runtime = this.#unit.GetRuntime();
 		this.#inst = runtime.objects.TankPlatform.createInstance("UnitPlatforms", x, y);
+		this.#inst.angle = angle;
+		this.#speed = speed;
 		
 		// Add initial values to the timelines at a timestamp of 0.
 		this.#timelinePos.Add(0, [x, y]);
-		this.#timelineAngle.Add(0, 0);
-		this.#timelineSpeed.Add(0, 0);
+		this.#timelineAngle.Add(0, angle);
+		this.#timelineSpeed.Add(0, speed);
 		
 		this.#timelinePosHistory.Add(0, [x, y]);
 		

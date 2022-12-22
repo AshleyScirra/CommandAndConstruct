@@ -112,8 +112,7 @@
 		
 		this.SendToRuntime({
 			"type": "create-initial-state",
-			"layoutSize": [this.#layoutWidth, this.#layoutHeight],
-			"units": [...this.allUnits()].map(u => u.GetInitData())
+			"layoutSize": [this.#layoutWidth, this.#layoutHeight]
 		});
 		
 		// Initialise the number of full unit updates to be sending out every tick,

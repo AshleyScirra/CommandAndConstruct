@@ -71,19 +71,6 @@ export class Unit {
 		this.#turret.Release();
 	}
 	
-	// Get data for the "create-initial-state" message
-	GetInitData()
-	{
-		const [x, y] = this.#platform.GetPosition();
-		
-		return {
-			"id": this.#id,
-			"player": this.#player,
-			"x": x,
-			"y": y
-		};
-	}
-	
 	GetGameServer()
 	{
 		return this.#gameServer;
@@ -131,6 +118,10 @@ export class Unit {
 		// Write the unit ID
 		dataView.setUint16(pos, this.GetId());
 		pos += 2;
+		
+		// Write the player number as a byte.
+		dataView.setUint8(pos, this.GetPlayer());
+		pos += 1;
 
 		// Write the X and Y position as uint16s
 		const platform = this.GetPlatform();

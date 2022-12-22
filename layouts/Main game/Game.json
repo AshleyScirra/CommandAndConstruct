@@ -199,7 +199,18 @@
 							},
 							"uid": 25,
 							"instanceVariables": {},
-							"behaviors": {},
+							"behaviors": {
+								"Fade": {
+									"properties": {
+										"fade-in-time": 0.3,
+										"wait-time": 0,
+										"fade-out-time": 0,
+										"destroy": false,
+										"enabled": true,
+										"live-preview": false
+									}
+								}
+							},
 							"world": {
 								"x": 139,
 								"y": -91,
@@ -228,7 +239,18 @@
 							},
 							"uid": 27,
 							"instanceVariables": {},
-							"behaviors": {},
+							"behaviors": {
+								"Fade": {
+									"properties": {
+										"fade-in-time": 0.3,
+										"wait-time": 0,
+										"fade-out-time": 0,
+										"destroy": false,
+										"enabled": true,
+										"live-preview": false
+									}
+								}
+							},
 							"world": {
 								"x": 123,
 								"y": -88,

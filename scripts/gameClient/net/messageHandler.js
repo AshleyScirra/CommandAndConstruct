@@ -2,6 +2,7 @@
 import Globals from "../../globals.js";
 import * as MathUtils from "../../utils/clientMathUtils.js";
 
+import { ClientUnit } from "../../clientUnits/clientUnit.js";
 import { SteppedValueTimeline } from "./steppedValueTimeline.js";
 
 // The binary message types
@@ -131,10 +132,12 @@ export class GameClientMessageHandler {
 		for (let i = 0; i < unitCount; ++i)
 		{
 			// Read unit ID.
-			// NOTE: if the unit ID is not found, read the rest of the values
-			// anyway, since the read position still has to be advanced.
-			const unitId = dataView.getUint16(pos);
+			const id = dataView.getUint16(pos);
 			pos += 2;
+			
+			// Read player number unit belongs to.
+			const player = dataView.getUint8(pos);
+			pos += 1;
 
 			// Read the X and Y position.
 			const x = dataView.getUint16(pos);
@@ -154,12 +157,11 @@ export class GameClientMessageHandler {
 			const turretOffsetAngle = MathUtils.Uint16ToAngle(dataView.getUint16(pos));
 			pos += 2;
 
-			// Now all the data has been read, look up the unit by its ID,
-			// and if found update it with these details.
-			const unit = this.#gameClient.GetUnitById(unitId);
+			// Look up to see if there is an existing client unit with the given ID.
+			const unit = this.#gameClient.GetUnitById(id);
 			if (unit)
 			{
-				// Add all values to the platform and turret timelines.
+				// Found existing unit. Add all values to the platform and turret timelines.
 				const platform = unit.GetPlatform();
 				platform.OnNetworkUpdatePosition(serverTime, x, y);
 				platform.OnNetworkUpdateSpeed(serverTime, speed);
@@ -167,6 +169,16 @@ export class GameClientMessageHandler {
 				
 				const turret = unit.GetTurret();
 				turret.OnNetworkUpdateOffsetAngle(serverTime, turretOffsetAngle);
+			}
+			else
+			{
+				// There is not yet any client unit with the given ID.
+				// Create a new one from the details in the full update.
+				ClientUnit.Create(this.#gameClient, {
+					id, player,
+					x, y, platformAngle, speed,
+					turretOffsetAngle
+				});
 			}
 		}
 		

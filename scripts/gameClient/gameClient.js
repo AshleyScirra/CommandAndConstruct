@@ -157,12 +157,6 @@ export class GameClient {
 		const [layoutWidth, layoutHeight] = data["layoutSize"];
 		this.#viewManager.SetLayoutSize(layoutWidth, layoutHeight);
 		
-		for (const unitData of data["units"])
-		{
-			// Create a ClientUnit from each unit data.
-			ClientUnit.CreateFromInitialData(this, unitData);
-		}
-		
 		// Start up PingManager now that we know the GameServer is up and running
 		// and ready to respond to pings
 		this.#pingManager.Start();
