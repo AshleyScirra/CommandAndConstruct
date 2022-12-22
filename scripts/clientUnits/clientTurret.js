@@ -61,6 +61,10 @@ export class ClientTurret {
 	OnNetworkUpdateOffsetAngle(serverTime, angle)
 	{
 		this.#timelineOffsetAngle.Add(serverTime, angle);
+		
+		// As soon as any update comes in from the network for this platform, start the
+		// unit ticking again so it updates accordingly.
+		this.#unit.SetTicking(true);
 	}
 	
 	// Called every tick to update the platform over time.
@@ -72,5 +76,15 @@ export class ClientTurret {
 		
 		// Delete timeline entries older than 1 second.
 		this.#timelineOffsetAngle.DeleteEntriesOlderThan(simulationTime - 1);
+		
+		// Return a boolean indicating if the turret still needs ticking.
+		return this.NeedsTicking(simulationTime);
+	}
+	
+	// This logic works similarly to the platform, but the only requirement for ticking the
+	// turret is if there is any upcoming entry in its offset angle timeline.
+	NeedsTicking(simulationTime)
+	{
+		return this.#timelineOffsetAngle.GetNewestTimestamp() >= simulationTime;
 	}
 }

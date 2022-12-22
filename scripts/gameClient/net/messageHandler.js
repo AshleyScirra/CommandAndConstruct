@@ -418,7 +418,7 @@ export class GameClientMessageHandler {
 		const runtime = this.#gameClient.GetRuntime();
 		const inst = runtime.objects.StatsText.getFirstInstance();
 		const pingManager = this.#gameClient.GetPingManager();
-		inst.text = `${m["num-units"]} units, ${m["num-projectiles"]} projectiles
+		inst.text = `${m["num-units"]} units (${this.#gameClient.GetNumberOfUnitsTicking()} ticking), ${m["num-projectiles"]} projectiles
 Net bandwidth: ${Math.round(runtime.objects.Multiplayer.stats.outboundBandwidth / 1024)} kb/s up, ${Math.round(runtime.objects.Multiplayer.stats.inboundBandwidth / 1024)} kb/s down
 Server performance: ${m["server-fps"]} FPS, ${Math.round(m["server-thread-usage"] * 100)}% CPU
 Client performance: ${runtime.fps} FPS, ${Math.round(runtime.cpuUtilisation * 100)}% CPU

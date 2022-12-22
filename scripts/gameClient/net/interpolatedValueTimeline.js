@@ -84,12 +84,6 @@ export class InterpolatedValueTimeline extends ValueTimeline {
 		this.timeline.splice(0, this.timeline.length - 1);
 	}
 	
-	GetOldestTimestamp()
-	{
-		// Timelines are ordered by time, so the first entry is always oldest.
-		return this.timeline[0].timestamp;
-	}
-	
 	// Interpolate between two values using this timeline's interpolation mode.
 	#Interpolate(a, b, x)
 	{

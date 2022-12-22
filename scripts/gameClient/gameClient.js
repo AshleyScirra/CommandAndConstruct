@@ -24,6 +24,7 @@ export class GameClient {
 	#sendMessageFunc;				// SendMessageToGameServer function
 	#allUnitsById = new Map();		// map of all units by id -> ClientUnit
 	#allProjectilesById = new Map();// map of all projectiles by id -> ClientProjectile
+	#unitsToTick = new Set();		// set of all units to call Tick() on
 	
 	#eventHandlers;					// MultiEventHandler for runtime events
 	#gameTime = new KahanSum();		// serves as the clock for the game in seconds
@@ -159,13 +160,47 @@ export class GameClient {
 		for (const unitData of data["units"])
 		{
 			// Create a ClientUnit from each unit data.
-			const clientUnit = ClientUnit.CreateFromInitialData(this, unitData);
-			this.#allUnitsById.set(clientUnit.GetId(), clientUnit);
+			ClientUnit.CreateFromInitialData(this, unitData);
 		}
 		
 		// Start up PingManager now that we know the GameServer is up and running
 		// and ready to respond to pings
 		this.#pingManager.Start();
+	}
+	
+	// Called in the ClientUnit constructor
+	UnitCreated(unit)
+	{
+		// Add to map of all units.
+		this.#allUnitsById.set(unit.GetId(), unit);
+		
+		// Start all newly created units opted in to ticking.
+		this.SetUnitTicking(unit, true);
+	}
+	
+	UnitDestroyed(unit)
+	{
+		// Set unselected so any selection box is destroyed and also so
+		// it's removed from SelectionManager's list of selected units.
+		this.GetSelectionManager().SetSelected(unit, false);
+		
+		// Remove from set of units to tick.
+		this.SetUnitTicking(unit, false);
+	}
+	
+	// Units get Tick() called every tick by default, but can opt out
+	// if they are not doing anything to save CPU time.
+	SetUnitTicking(unit, shouldTick)
+	{
+		if (shouldTick)
+			this.#unitsToTick.add(unit);
+		else
+			this.#unitsToTick.delete(unit);
+	}
+	
+	GetNumberOfUnitsTicking()
+	{
+		return this.#unitsToTick.size;
 	}
 	
 	// Iterates all units in the game.
@@ -340,9 +375,10 @@ export class GameClient {
 		const simulationTime = this.#pingManager.GetSimulationTime();
 		this.#messageHandler.Tick(simulationTime);
 		
-		// Tick all units to update them to the current simulation time.
-		// TODO: only tick units that need it.
-		for (const unit of this.allUnits())
+		// Tick units to update them to the current simulation time.
+		// Only units that have requested ticking are iterated, which saves wasting CPU
+		// time ticking units that aren't doing anything.
+		for (const unit of this.#unitsToTick)
 		{
 			unit.Tick(dt, simulationTime);
 		}

@@ -20,6 +20,9 @@ export class ClientUnit {
 		this.#gameClient = gameClient;
 		this.#id = id;
 		this.#player = player;
+		
+		// Add GameClient state for this unit
+		this.#gameClient.UnitCreated(this);
 	}
 	
 	// Create a single client unit for the "create-initial-state" message
@@ -38,9 +41,8 @@ export class ClientUnit {
 	
 	Release()
 	{
-		// Set unselected so any selection box is also destroyed and it's removed
-		// from SelectionManager's list of selected units
-		this.#gameClient.GetSelectionManager().SetSelected(this, false);
+		// Clean up GameClient state for this unit
+		this.#gameClient.UnitDestroyed(this);
 		
 		// Destroy turret and platform
 		this.#turret.Release();
@@ -77,10 +79,26 @@ export class ClientUnit {
 		return this.#turret;
 	}
 	
+	// Set whether this unit will have Tick() called every tick.
+	SetTicking(shouldTick)
+	{
+		this.#gameClient.SetUnitTicking(this, shouldTick);
+	}
+	
+	// Called every tick (if the unit is opted in to ticking).
 	Tick(dt, simulationTime)
 	{
-		this.#platform.Tick(dt, simulationTime);
-		this.#turret.Tick(dt, simulationTime);
+		// Tick the platform and turret. Both return a boolean indicating if they
+		// still need ticking.
+		const keepTickingPlatform = this.#platform.Tick(dt, simulationTime);
+		const keepTickingTurret = this.#turret.Tick(dt, simulationTime);
+		
+		// If neither the platform nor turret needs ticking any more,
+		// opt out of ticking to save CPU time.
+		if (!keepTickingPlatform && !keepTickingTurret)
+		{
+			this.SetTicking(false);
+		}
 	}
 	
 	// Update the selection box position and angle to match the unit platform.

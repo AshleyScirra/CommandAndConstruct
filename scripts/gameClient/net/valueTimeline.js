@@ -38,4 +38,22 @@ export class ValueTimeline {
 		// If no existing entry has a higher timestamp, append the new entry at the end.
 		this.timeline.push(toInsert);
 	}
+	
+	// Timelines are ordered by time, so the first entry is always oldest, and the
+	// last entry is always newest.
+	GetOldestTimestamp()
+	{
+		if (this.timeline.length === 0)
+			return -Infinity;
+		else
+			return this.timeline[0].timestamp;
+	}
+	
+	GetNewestTimestamp()
+	{
+		if (this.timeline.length === 0)
+			return -Infinity;
+		else
+			return this.timeline.at(-1).timestamp;
+	}
 }
