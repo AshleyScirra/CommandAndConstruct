@@ -130,6 +130,9 @@ export class ClientPlatform {
 		// we want to still use it if possible, as position updates are fairly infrequent.
 		// Look in the position history timeline to see where the client had this unit
 		// at the server time, and find what the offset was at that time.
+		// Note that if the unit isn't ticking, the position history won't have updated
+		// and could be very old, but it doesn't matter - the unit won't have moved since
+		// then if it wasn't ticking.
 		if (serverTime <= this.GetGameClient().GetPingManager().GetSimulationTime())
 		{
 			// However if a message is so late it's older than even the last entry in

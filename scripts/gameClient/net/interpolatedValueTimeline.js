@@ -61,7 +61,6 @@ export class InterpolatedValueTimeline extends ValueTimeline {
 		// if the network failed to deliver the next updates. In the prior case, forwards interpolation
 		// is wrong, as it means overshooting the last value. Therefore forwards interpolation is
 		// not currently attempted.
-
 		return this.timeline.at(-1).value;
 	}
 	
