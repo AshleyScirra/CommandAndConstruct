@@ -103,10 +103,10 @@ export class Minimap {
 		}
 		
 		// Draw the mouse as a white dot on the minimap too.
-		// Note if the player is only using touch input, the mouse position will remain at
-		// (0, 0), so only draw the mouse position if it has moved from there.
+		// Note if the player is only using touch input, the mouse position will be returned as
+		// NaN, so don't draw the mouse on the minimap in that case.
 		let [mouseX, mouseY] = this.#gameClient.GetPointerManager().GetMousePositionInLayout();
-		if (mouseX !== 0 || mouseY !== 0)
+		if (!Number.isNaN(mouseX) && !Number.isNaN(mouseY))
 		{
 			[mouseX, mouseY] = this.#GameToMinimap(mouseX, mouseY);
 			this.#FillRect(mouseX - 1.5, mouseY - 1.5, 3, 3, [1, 1, 1, 1]);

@@ -12,9 +12,9 @@ export class PointerManager {
 	#eventHandlers;						// MultiEventHandler for selection events
 	#pointerInfos = new Map();			// map of pointer id -> PointerInfo
 	
-	// For tracking the last mouse position
-	#lastMouseX = 0;
-	#lastMouseY = 0;
+	// For tracking the last mouse position. Left at NaN if no mouse pointer is in use.
+	#lastMouseX = NaN;
+	#lastMouseY = NaN;
 	
 	// For pinch-to-zoom
 	#didPinchZoomChange = false;		// set to true when any pinch-to-zoom pointer moves
@@ -137,6 +137,10 @@ export class PointerManager {
 	// Use the mouse wheel to zoom.
 	#OnMouseWheel(e)
 	{
+		// Ignore if the mouse position isn't known yet (e.g. mouse wheel before moving mouse).
+		if (Number.isNaN(this.#lastMouseX) || Number.isNaN(this.#lastMouseY))
+			return;
+		
 		// Use the wheel deltaY amount in the zoom factor calculation. On one system deltaY
 		// was +/- 200, so this calculation gives a zoom factor of 1.2 per step which feels
 		// about right, and that should scale according to the device/system settings.
@@ -162,6 +166,12 @@ export class PointerManager {
 	// Get the current mouse position in game layer co-ordinates.
 	GetMousePositionInLayout()
 	{
+		// If the mouse position isn't known - for example only touch input is
+		// in use and so there won't be a pointermove event for the mouse - then
+		// keep returning [NaN, NaN] to indicate there is no mouse position.
+		if (Number.isNaN(this.#lastMouseX) || Number.isNaN(this.#lastMouseY))
+			return [NaN, NaN];
+		
 		const backgroundLayer = this.GetRuntime().layout.getLayer("Background");
 		return backgroundLayer.cssPxToLayer(this.#lastMouseX, this.#lastMouseY);
 	}
