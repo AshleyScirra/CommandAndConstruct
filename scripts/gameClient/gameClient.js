@@ -11,8 +11,6 @@ import { SelectionManager } from "./ui/selectionManager.js";
 import { Minimap } from "./ui/minimap.js";
 import * as MathUtils from "../utils/clientMathUtils.js";
 
-const MAGIC_NUMBER = 0x63266321;		// "c&c!" in ASCII
-
 // The GameClient class is created while on a game layout, and handles representing the
 // state of the game for the runtime. Note that the authoritative state of the game lives
 // on GameServer, so the GameClient is mostly responsible for updating the state of the
@@ -25,6 +23,11 @@ export class GameClient {
 	#allUnitsById = new Map();		// map of all units by id -> ClientUnit
 	#allProjectilesById = new Map();// map of all projectiles by id -> ClientProjectile
 	#unitsToTick = new Set();		// set of all units to call Tick() on
+	
+	// For checking if units time out. If a unit is not heard from for too long,
+	// assume it was destroyed but the network event went missing.
+	#unitsToCheckTimeout = new Set();	// set of units to call CheckTimeout() on
+	#timeoutCheckCount = 0;			// total number of units to check for timeout
 	
 	#eventHandlers;					// MultiEventHandler for runtime events
 	#gameTime = new KahanSum();		// serves as the clock for the game in seconds
@@ -163,7 +166,7 @@ export class GameClient {
 	}
 	
 	// Called in the ClientUnit constructor
-	UnitCreated(unit)
+	UnitWasCreated(unit)
 	{
 		// Add to map of all units.
 		this.#allUnitsById.set(unit.GetId(), unit);
@@ -172,7 +175,8 @@ export class GameClient {
 		this.SetUnitTicking(unit, true);
 	}
 	
-	UnitDestroyed(unit)
+	// Called in the ClientUnit Release() method
+	UnitWasDestroyed(unit)
 	{
 		// Set unselected so any selection box is destroyed and also so
 		// it's removed from SelectionManager's list of selected units.
@@ -180,6 +184,12 @@ export class GameClient {
 		
 		// Remove from set of units to tick.
 		this.SetUnitTicking(unit, false);
+		
+		// Remove from set of units to check if timed out.
+		this.#unitsToCheckTimeout.delete(unit);
+		
+		// Remove unit from the map of all units.
+		this.#allUnitsById.delete(unit.GetId());
 	}
 	
 	// Units get Tick() called every tick by default, but can opt out
@@ -328,7 +338,8 @@ export class GameClient {
 	
 	// When a network event is received indicating a unit was destroyed, remove its corresponding
 	// unit and also create an explosion to represent its destruction.
-	OnUnitDestroyed(lateness, unitId)
+	// isQuiet can also be set to not create an explosion, which is used when units time out.
+	OnUnitDestroyedEvent(lateness, unitId)
 	{
 		const unit = this.#allUnitsById.get(unitId);
 		
@@ -350,8 +361,7 @@ export class GameClient {
 			explosionInst.height *= 1.4;
 		}
 		
-		// Remove unit from client and destroy it
-		this.#allUnitsById.delete(unitId);
+		// Release the unit, which destroys it and cleans up all its state.
 		unit.Release();
 	}
 	
@@ -361,16 +371,21 @@ export class GameClient {
 		this.#lastTickTimeMs = performance.now();
 		const dt = this.#runtime.dt;
 		
+		// Get the current simulation time as calculated by PingManager.
+		const simulationTime = this.#pingManager.GetSimulationTime();
+		
+		// Check for units that may have timed out if they haven't been heard
+		// from for too long.
+		this.#CheckForTimedOutUnits(dt, simulationTime);
+		
 		// Tick PointerManager for handling pinch-to-zoom
 		this.#pointerManager.Tick(dt);
 		
 		// Tick ViewManager for handling smooth zoom.
 		this.#viewManager.Tick(dt);
 		
-		// Get the current simulation time as calculated by PingManager.
-		// Then tick the message handler, which will fire any network events
+		// Tick the message handler, which will fire any network events
 		// scheduled for this time.
-		const simulationTime = this.#pingManager.GetSimulationTime();
 		this.#messageHandler.Tick(simulationTime);
 		
 		// Tick units to update them to the current simulation time.
@@ -419,6 +434,54 @@ export class GameClient {
 	GetTimeSinceLastTick()
 	{
 		return (performance.now() - this.#lastTickTimeMs) / 1000;
+	}
+	
+	// The server should send full updates for units every couple of seconds, ensuring the full
+	// state of the game is synced regularly. However if a unit does not receive any update from
+	// the server for several seconds, it may be that it was destroyed but the network event
+	// indicating it should be destroyed was lost. To make sure the game state eventually updates
+	// in this situation, all units are checked to see when they last had an update, and if it
+	// has been too long, they are destroyed.
+	#CheckForTimedOutUnits(dt, simulationTime)
+	{
+		// Checking every unit every tick would be performance intensive and defeat the optimisation
+		// where units can opt-out of being ticked. Therefore units are checked incrementally over
+		// 1 second, a bit like the way the server sends full updates incrementally. This will ensure
+		// any timed out units are still removed relatively promptly, and avoids a major performance
+		// overhead if there is a large number of units.
+		if (this.#unitsToCheckTimeout.size === 0)
+		{
+			// When there are no more units to check if timed out, restart the process: copy all
+			// units back in to the set of units to check for a timeout.
+			for (const unit of this.allUnits())
+				this.#unitsToCheckTimeout.add(unit);
+			
+			// Store the total number of units being checked, as it's used for the rate calculation.
+			this.#timeoutCheckCount = this.#unitsToCheckTimeout.size;
+		}
+		
+		// The number of units to check this tick is based on the total number multiplied by dt,
+		// which means they will all be checked roughly every 1 second. The count is rounded up
+		// to make sure it's always at least 1.
+		let checkCount = Math.ceil(this.#timeoutCheckCount * dt);
+		
+		// Iterate through the units to check, but break when the check count is reached.
+		for (const unit of this.#unitsToCheckTimeout)
+		{
+			// Remove this unit from the set as it is now being checked.
+			this.#unitsToCheckTimeout.delete(unit);
+			
+			// If the unit has timed out, destroy it. Note this does not create an explosion
+			// as in OnUnitDestroyedEvent(); this is just being done to try to update the client
+			// when things have gotten out of sync, and we don't want to draw attention to it.
+			if (unit.IsTimedOut(simulationTime))
+				unit.Release();
+
+			// Once reached the number of units to check, stop iterating.
+			checkCount--;
+			if (checkCount === 0)
+				break;
+		}
 	}
 	
 	#ShowGameOverMessage(text)

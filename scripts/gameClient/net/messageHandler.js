@@ -158,7 +158,7 @@ export class GameClientMessageHandler {
 			pos += 2;
 
 			// Look up to see if there is an existing client unit with the given ID.
-			const unit = this.#gameClient.GetUnitById(id);
+			let unit = this.#gameClient.GetUnitById(id);
 			if (unit)
 			{
 				// Found existing unit. Add all values to the platform and turret timelines.
@@ -174,12 +174,15 @@ export class GameClientMessageHandler {
 			{
 				// There is not yet any client unit with the given ID.
 				// Create a new one from the details in the full update.
-				ClientUnit.Create(this.#gameClient, {
+				unit = ClientUnit.Create(this.#gameClient, {
 					id, player,
 					x, y, platformAngle, speed,
 					turretOffsetAngle
 				});
 			}
+			
+			// Set the last update time for the unit (used for timeout).
+			unit.SetLastUpdateTime(serverTime);
 		}
 		
 		return pos;
@@ -241,6 +244,10 @@ export class GameClientMessageHandler {
 					unit.GetTurret().OnNetworkUpdateOffsetAngle(serverTime, offsetAngle);
 				}
 			}
+			
+			// If the unit was found, set the last update time for the unit (used for timeout).
+			if (unit)
+				unit.SetLastUpdateTime(serverTime);
 		}
 	}
 	
@@ -332,7 +339,7 @@ export class GameClientMessageHandler {
 		pos += 2;
 		
 		// Add a function to perform this event to the event list.
-		eventList.push(lateness => this.#gameClient.OnUnitDestroyed(lateness, id));
+		eventList.push(lateness => this.#gameClient.OnUnitDestroyedEvent(lateness, id));
 		
 		return pos;
 	}

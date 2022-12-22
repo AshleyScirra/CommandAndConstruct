@@ -2,6 +2,12 @@
 import { ClientPlatform } from "./clientPlatform.js";
 import { ClientTurret } from "./clientTurret.js";
 
+// If a unit is not updated by the server for this long, it will be destroyed on the
+// assumption something got out of sync. This is currently set to 7 seconds as the
+// server sends full updates every 2 seconds, and so this time means the unit likely
+// missed 3 opportunities in a row for a full update.
+const CLIENT_UNIT_TIMEOUT = 7;
+
 // The ClientUnit class represents a unit in GameClient.
 // Its main job is to synchronise state to match what is happening on GameServer,
 // which holds the real Unit class that represents the authoritative state of the game.
@@ -14,6 +20,7 @@ export class ClientUnit {
 	#platform;					// ClientPlatform for this unit's platform
 	#turret;					// ClientTurret for this unit's turret
 	#selectionBoxInst;			// Construct instance representing selection box
+	#lastUpdateTime = 0;		// last time received any update from server
 	
 	constructor(gameClient, id, player)
 	{
@@ -22,7 +29,7 @@ export class ClientUnit {
 		this.#player = player;
 		
 		// Add GameClient state for this unit
-		this.#gameClient.UnitCreated(this);
+		this.#gameClient.UnitWasCreated(this);
 	}
 	
 	// Create a client unit with initial state specified in 'info' object
@@ -38,7 +45,7 @@ export class ClientUnit {
 	Release()
 	{
 		// Clean up GameClient state for this unit
-		this.#gameClient.UnitDestroyed(this);
+		this.#gameClient.UnitWasDestroyed(this);
 		
 		// Destroy turret and platform
 		this.#turret.Release();
@@ -73,6 +80,19 @@ export class ClientUnit {
 	GetTurret()
 	{
 		return this.#turret;
+	}
+	
+	// Called when any update about this unit is received over the network.
+	SetLastUpdateTime(serverTime)
+	{
+		this.#lastUpdateTime = Math.max(this.#lastUpdateTime, serverTime);
+	}
+	
+	// Check if the unit has timed out, which is when it last got any update
+	// longer than CLIENT_UNIT_TIMEOUT ago from the current time.
+	IsTimedOut(simulationTime)
+	{
+		return this.#lastUpdateTime < simulationTime - CLIENT_UNIT_TIMEOUT;
 	}
 	
 	// Set whether this unit will have Tick() called every tick.
