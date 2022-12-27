@@ -411,7 +411,7 @@ export class GameClient {
 		}
 		
 		// Redraw the minimap to reflect changes.
-		this.#minimap.Update();
+		this.#minimap.Update(this.GetGameTime());
 		
 		// Advance the game time by this tick's delta-time value.
 		// Note the game time uses kahan summation to improve precision. Normal floating

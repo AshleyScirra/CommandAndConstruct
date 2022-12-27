@@ -112,9 +112,10 @@
 					"GameOverText",
 					"DirtTerrainBackground",
 					"DragSelectionBox",
-					"MinimapCanvas",
+					"MinimapCanvasSlow",
 					"StatsText",
-					"CollisionGridMarker"
+					"CollisionGridMarker",
+					"MinimapCanvasFast"
 				],
 				"subfolders": [],
 				"name": "Main game"

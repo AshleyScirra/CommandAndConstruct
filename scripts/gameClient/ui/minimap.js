@@ -10,21 +10,32 @@ const isMobile = /ipod|ipad|iphone|android/i.test(navigator.userAgent);
 // screen; on desktop it uses 200x200 since it's easier to see there.
 const MINIMAP_AREA = isMobile ? 300 * 300 : 200 * 200;
 
+// The minimap is drawn using two DrawingCanvas instances for two "layers" of the minimap.
+// Since drawing units is relatively expensive in CPU time, but they don't move quickly on
+// the minimap, units are drawn on to a DrawingCanvas that updates at just 20 FPS instead
+// of every frame. The difference is hardly noticable and it only uses 1/3 the drawing time.
+// Other content, like projectiles and the viewport area, update every frame as they take
+// less CPU time to draw and they benefit more from being displayed smoothly.
+const SLOW_UPDATE_FPS = 20;
+
 // The Minimap class manages rendering the game state to a minimap via a DrawingCanvas
 // object (MinimapCanvas) on the UI layer.
 export class Minimap {
 
 	#gameClient;				// reference to GameClient
-	#inst;						// the MinimapCanvas instance
+	#slowInst;					// the MinimapCanvasSlow instance (draws at a lower FPS)
+	#fastInst;					// the MinimapCanvasFast instance (draws at full FPS)
 	#deviceScale = 1;			// the DrawingCanvas scale of device pixels per object pixel
+	#lastDrawTime = 0;
 	
 	constructor(gameClient)
 	{
 		this.#gameClient = gameClient;
 		
-		// Get the MinimapCanvas instance
+		// Get the two minimap DrawingCanvas instances
 		const runtime = this.#gameClient.GetRuntime();
-		this.#inst = runtime.objects.MinimapCanvas.getFirstInstance();
+		this.#slowInst = runtime.objects.MinimapCanvasSlow.getFirstInstance();
+		this.#fastInst = runtime.objects.MinimapCanvasFast.getFirstInstance();
 	}
 	
 	// On startup, when the layout size is set, adjust the minimap size according to
@@ -35,19 +46,37 @@ export class Minimap {
 		const minimapWidth = Math.sqrt(aspectRatio * MINIMAP_AREA);
 		const minimapHeight = minimapWidth / aspectRatio;
 		
-		this.#inst.width = minimapWidth;
-		this.#inst.height = minimapHeight;
+		this.#slowInst.width = minimapWidth;
+		this.#slowInst.height = minimapHeight;
+		this.#fastInst.width = minimapWidth;
+		this.#fastInst.height = minimapHeight;
 	}
 	
 	// Called every tick to redraw the minimap.
-	Update()
+	Update(gameTime)
 	{
 		// Save the device scale, i.e. the number of device pixels per object pixel.
 		// This is used for snapping co-ordinates to device pixels for precise drawing.
-		this.#deviceScale = this.#inst.surfaceDeviceWidth / this.#inst.width;
+		// (Note both canvas instances are the same size so we only need to use one.)
+		this.#deviceScale = this.#slowInst.surfaceDeviceWidth / this.#slowInst.width;
 		
+		// Draw the slow-update canvas at a lower framerate to reduce its CPU overhead.
+		const slowUpdateInterval = 1 / SLOW_UPDATE_FPS;
+		if (this.#lastDrawTime <= gameTime - slowUpdateInterval)
+		{
+			this.#DrawSlowUpdateCanvas();
+			this.#lastDrawTime += slowUpdateInterval;
+		}
+		
+		// Draw the fast-update canvas at the full framerate (every tick).
+		this.#DrawFastUpdateCanvas();
+	}
+	
+	// Draw the bottom DrawingCanvas of the minimap, updating at a lower framerate to save CPU time.
+	#DrawSlowUpdateCanvas()
+	{	
 		// Clear the minimap to a grey color.
-		this.#inst.clearCanvas([0.2, 0.2, 0.2]);
+		this.#slowInst.clearCanvas([0.2, 0.2, 0.2]);
 		
 		// Draw small colored rectangles for each player's units.
 		// TODO: have some centralized way to store players and their colors
@@ -73,9 +102,16 @@ export class Minimap {
 				const size = Math.max(Math.min(w, h), 2);
 				
 				// Fill a small rectangle for this unit.
-				this.#FillRect(x - size / 2, y - size / 2, size, size, playerColor);
+				this.#FillRect(this.#slowInst, x - size / 2, y - size / 2, size, size, playerColor);
 			}
 		}
+	}
+	
+	// Draw the top DrawingCanvas of the minimap, updating at a full framerate for smoothness.
+	#DrawFastUpdateCanvas()
+	{
+		// Clear to fully transparent.
+		this.#fastInst.clearCanvas([0, 0, 0, 0]);
 		
 		// Draw small dots for all projectiles in the game, so combat action is visible
 		// on the minimap. Projectiles are drawn yellow, and are sized to 1px on the minimap.
@@ -85,7 +121,7 @@ export class Minimap {
 		{
 			let [x, y] = projectile.GetPosition();
 			[x, y] = this.#GameToMinimap(x, y);
-			this.#FillRect(x - 0.5, y - 0.5, 1, 1, projectileColor);
+			this.#FillRect(this.#fastInst, x - 0.5, y - 0.5, 1, 1, projectileColor);
 		}
 		
 		// Draw selection boxes on the minimap too. Iterate any active pointers being used
@@ -98,8 +134,8 @@ export class Minimap {
 			
 			// Fill a faint green color and then use a reduced-opacity green outline
 			// to reduce the contrast.
-			this.#FillRect(left, top, width, height, [0, 1, 0, 0.05]);
-			this.#OutlineRect(left, top, width, height, [0, 1, 0, 0.5], 1);
+			this.#FillRect(this.#fastInst, left, top, width, height, [0, 1, 0, 0.05]);
+			this.#OutlineRect(this.#fastInst, left, top, width, height, [0, 1, 0, 0.5], 1);
 		}
 		
 		// Draw the mouse as a white dot on the minimap too.
@@ -109,7 +145,7 @@ export class Minimap {
 		if (!Number.isNaN(mouseX) && !Number.isNaN(mouseY))
 		{
 			[mouseX, mouseY] = this.#GameToMinimap(mouseX, mouseY);
-			this.#FillRect(mouseX - 1.5, mouseY - 1.5, 3, 3, [1, 1, 1, 1]);
+			this.#FillRect(this.#fastInst, mouseX - 1.5, mouseY - 1.5, 3, 3, [1, 1, 1, 1]);
 		}
 		
 		// Finally, draw the current viewport area as a yellow box.
@@ -121,9 +157,9 @@ export class Minimap {
 		[viewWidth, viewHeight] = this.#GameToMinimap(viewWidth, viewHeight);
 		
 		// Then draw the viewport area as a faint yellow fill with a yellow outline.
-		this.#FillRect(scrollX - viewWidth / 2, scrollY - viewHeight / 2,
+		this.#FillRect(this.#fastInst, scrollX - viewWidth / 2, scrollY - viewHeight / 2,
 						viewWidth, viewHeight, [1, 1, 0, 0.05]);
-		this.#OutlineRect(scrollX - viewWidth / 2, scrollY - viewHeight / 2,
+		this.#OutlineRect(this.#fastInst, scrollX - viewWidth / 2, scrollY - viewHeight / 2,
 						viewWidth, viewHeight, [1, 1, 0, 1], 1);
 	}
 	
@@ -132,7 +168,7 @@ export class Minimap {
 	#GameToMinimap(x, y)
 	{
 		const [layoutWidth, layoutHeight] = this.#gameClient.GetViewManager().GetLayoutSize();
-		return [x * this.#inst.width / layoutWidth, y * this.#inst.height / layoutHeight];
+		return [x * this.#slowInst.width / layoutWidth, y * this.#slowInst.height / layoutHeight];
 	}
 	
 	// Due to window scaling and high-density displays, the minimap canvas may have more (or less)
@@ -161,21 +197,21 @@ export class Minimap {
 	
 	// Fill a rectangle with a color, but snap the given position to device co-ordinates
 	// for better rendering.
-	#FillRect(left, top, width, height, color)
+	#FillRect(inst, left, top, width, height, color)
 	{
 		[left, top, width, height] = this.#SnapRectangleToDevicePixels(left, top, width, height);
 		
-		this.#inst.fillRect(left, top, left + width, top + height, color);
+		inst.fillRect(left, top, left + width, top + height, color);
 	}
 	
 	// Implement an outline as a series of filled rectangles instead.
 	// Drawing Canvas has an outlineRect method, but this way we can use the device pixel
 	// snapping on all four sides of the rectangle, which looks better.
-	#OutlineRect(left, top, width, height, color, thickness)
+	#OutlineRect(inst, left, top, width, height, color, thickness)
 	{
-		this.#FillRect(left, top, width, thickness, color);
-		this.#FillRect(left, top, thickness, height, color);
-		this.#FillRect(left + width - thickness, top, thickness, height, color);
-		this.#FillRect(left, top + height - thickness, width, thickness, color);
+		this.#FillRect(inst, left, top, width, thickness, color);
+		this.#FillRect(inst, left, top, thickness, height, color);
+		this.#FillRect(inst, left + width - thickness, top, thickness, height, color);
+		this.#FillRect(inst, left, top + height - thickness, width, thickness, color);
 	}
 }
