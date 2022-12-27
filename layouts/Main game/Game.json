@@ -112,7 +112,7 @@
 					"forceOwnTexture": false,
 					"renderingMode": "3d",
 					"drawOrder": "z-order",
-					"useRenderCells": false,
+					"useRenderCells": true,
 					"blendMode": "normal",
 					"zElevation": 0,
 					"global": false
@@ -145,7 +145,7 @@
 					"forceOwnTexture": false,
 					"renderingMode": "3d",
 					"drawOrder": "z-order",
-					"useRenderCells": false,
+					"useRenderCells": true,
 					"blendMode": "normal",
 					"zElevation": 0,
 					"global": false
@@ -178,7 +178,7 @@
 					"forceOwnTexture": false,
 					"renderingMode": "3d",
 					"drawOrder": "z-order",
-					"useRenderCells": false,
+					"useRenderCells": true,
 					"blendMode": "normal",
 					"zElevation": 0,
 					"global": false
@@ -292,7 +292,7 @@
 					"forceOwnTexture": false,
 					"renderingMode": "3d",
 					"drawOrder": "z-order",
-					"useRenderCells": false,
+					"useRenderCells": true,
 					"blendMode": "normal",
 					"zElevation": 0,
 					"global": false
@@ -367,7 +367,7 @@
 					"forceOwnTexture": false,
 					"renderingMode": "3d",
 					"drawOrder": "z-order",
-					"useRenderCells": false,
+					"useRenderCells": true,
 					"blendMode": "normal",
 					"zElevation": 0,
 					"global": false
@@ -400,7 +400,7 @@
 					"forceOwnTexture": false,
 					"renderingMode": "3d",
 					"drawOrder": "z-order",
-					"useRenderCells": false,
+					"useRenderCells": true,
 					"blendMode": "normal",
 					"zElevation": 0,
 					"global": false
@@ -430,7 +430,7 @@
 			"forceOwnTexture": false,
 			"renderingMode": "3d",
 			"drawOrder": "z-order",
-			"useRenderCells": false,
+			"useRenderCells": true,
 			"blendMode": "normal",
 			"zElevation": 0,
 			"global": false
