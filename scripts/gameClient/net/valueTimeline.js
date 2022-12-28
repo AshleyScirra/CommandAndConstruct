@@ -23,20 +23,24 @@ export class ValueTimeline {
 		// Insert to the timeline as an object with two properties.
 		const toInsert = { timestamp, value };
 		
-		// Search the timeline for the first existing entry with a higher timestamp.
-		for (let i = 0, len = this.timeline.length; i < len; ++i)
+		// Search the timeline backwards to find the last existing entry with an older timestamp.
+		// Note this is more efficient than iterating forwards, since most of the time entries
+		// are new and so get appended to the end.
+		for (let i = this.timeline.length - 1; i >= 0; --i)
 		{
-			if (this.timeline[i].timestamp > timestamp)
+			if (this.timeline[i].timestamp < timestamp)
 			{
-				// Found the first existing entry with a higher timestamp: insert the new
-				// entry just before the existing one. This maintains the sort order.
-				this.timeline.splice(i, 0, toInsert);
+				// Found an existing existing entry with a lower timestamp: insert the new
+				// entry just after the existing one. This maintains the sort order.
+				this.timeline.splice(i + 1, 0, toInsert);
 				return;
 			}
 		}
 		
-		// If no existing entry has a higher timestamp, append the new entry at the end.
-		this.timeline.push(toInsert);
+		// No existing entry in the timeline is older than the entry being inserted.
+		// Therefore the entry being inserted is the oldest of them all, so insert it
+		// at the beginning of the timeline.
+		this.timeline.unshift(toInsert);
 	}
 	
 	// Timelines are ordered by time, so the first entry is always oldest, and the
