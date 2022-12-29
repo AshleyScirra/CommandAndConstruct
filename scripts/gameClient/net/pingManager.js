@@ -115,6 +115,7 @@ export class PingManager {
 		// Calculate the estimated time difference between the client time and the server time.
 		const currentServerTime = time + latency;
 		const currentLocalTime = this.#gameClient.GetGameTime() + this.#gameClient.GetTimeSinceLastTick();
+		const prevTargetServerTimeDiff = this.#targetServerTimeDiff;
 		this.#targetServerTimeDiff = currentServerTime - currentLocalTime;
 		
 		// The current server time difference and simulation delay are smoothed so there are no
@@ -126,6 +127,18 @@ export class PingManager {
 			
 			this.#targetSimulationDelay = this.#latency + SIMULATION_DELAY;
 			this.#curSimulationDelay = this.#targetSimulationDelay;
+		}
+		else
+		{
+			// If during the game the calculated server time difference is more than 1 second,
+			// assume the client was suspended for some period of time and just jump to the correct
+			// time difference so the game can re-sync in the correct state. Otherwise the gradual
+			// correction (10ms per 1 second) is too slow to catch up and the game will be frozen
+			// or unplayable in the interim.
+			if (Math.abs(prevTargetServerTimeDiff - this.#targetServerTimeDiff) > 1)
+			{
+				this.#curServerTimeDiff = this.#targetServerTimeDiff;
+			}
 		}
 	}
 	
