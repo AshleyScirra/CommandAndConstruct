@@ -27,9 +27,11 @@ function GetNewUnitId(gameServer)
 
 // For delta updates, a byte is sent with a series of bits set to indicate
 // which values have changed. These flags are defined here.
-const FLAG_CHANGED_SPEED =				 (1 << 0);
-const FLAG_CHANGED_PLATFORM_ANGLE =		 (1 << 1);
-const FLAG_CHANGED_TURRET_OFFSET_ANGLE = (1 << 2);
+const FLAG_CHANGED_POSITION =			 (1 << 0);
+const FLAG_CHANGED_SPEED =				 (1 << 1);
+const FLAG_CHANGED_ACCELERATION =		 (1 << 2);
+const FLAG_CHANGED_PLATFORM_ANGLE =		 (1 << 3);
+const FLAG_CHANGED_TURRET_OFFSET_ANGLE = (1 << 4);
 
 // A Unit represents any static or movable unit in the game
 export class Unit {
@@ -131,8 +133,12 @@ export class Unit {
 		dataView.setUint16(pos, y);
 		pos += 2;
 
-		// Write the speed as a uint16,
-		dataView.setUint16(pos, platform.GetSpeed());
+		// Write the speed as int16 (can go negative)
+		dataView.setInt16(pos, platform.GetSpeed());
+		pos += 2;
+		
+		// Write the acceleration as int16 (can go negative)
+		dataView.setInt16(pos, platform.GetAcceleration());
 		pos += 2;
 
 		// Write the platform angle as a uint16.
@@ -153,9 +159,21 @@ export class Unit {
 	// For sending delta updates, the unit keeps track of which values have changed over the
 	// past tick, accumulating flags to indicate which kinds of value changed. Any time a
 	// value changes it also adds this unit to the GameServer list of units pending a delta update.
+	MarkPositionDelta()
+	{
+		this.#deltaChangeFlags |= FLAG_CHANGED_POSITION;
+		this.#AddForDeltaUpdate();
+	}
+	
 	MarkPlatformSpeedChanged()
 	{
 		this.#deltaChangeFlags |= FLAG_CHANGED_SPEED;
+		this.#AddForDeltaUpdate();
+	}
+	
+	MarkPlatformAccelerationChanged()
+	{
+		this.#deltaChangeFlags |= FLAG_CHANGED_ACCELERATION;
 		this.#AddForDeltaUpdate();
 	}
 	
@@ -190,9 +208,26 @@ export class Unit {
 		
 		// Write each value that has changed. Note the order used here must match
 		// on both the server and the client.
+		if ((this.#deltaChangeFlags & FLAG_CHANGED_POSITION) !== 0)
+		{
+			// Write the X and Y position as uint16s
+			const platform = this.GetPlatform();
+			const [x, y] = platform.GetPosition();
+			dataView.setUint16(pos, x);
+			pos += 2;
+			dataView.setUint16(pos, y);
+			pos += 2;
+		}
+		
 		if ((this.#deltaChangeFlags & FLAG_CHANGED_SPEED) !== 0)
 		{
-			dataView.setUint16(pos, this.GetPlatform().GetSpeed());
+			dataView.setInt16(pos, this.GetPlatform().GetSpeed());
+			pos += 2;
+		}
+		
+		if ((this.#deltaChangeFlags & FLAG_CHANGED_ACCELERATION) !== 0)
+		{
+			dataView.setInt16(pos, this.GetPlatform().GetAcceleration());
 			pos += 2;
 		}
 		

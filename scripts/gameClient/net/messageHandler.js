@@ -10,9 +10,11 @@ const MESSAGE_TYPE_UNIT_UPDATES = 0;	// full and delta unit updates
 const MESSAGE_TYPE_EVENTS = 1;			// list of events that have happened
 
 // Flags delta updates, which must match those on the server side.
-const FLAG_CHANGED_SPEED =				 (1 << 0);
-const FLAG_CHANGED_PLATFORM_ANGLE =		 (1 << 1);
-const FLAG_CHANGED_TURRET_OFFSET_ANGLE = (1 << 2);
+const FLAG_CHANGED_POSITION =			 (1 << 0);
+const FLAG_CHANGED_SPEED =				 (1 << 1);
+const FLAG_CHANGED_ACCELERATION =		 (1 << 2);
+const FLAG_CHANGED_PLATFORM_ANGLE =		 (1 << 3);
+const FLAG_CHANGED_TURRET_OFFSET_ANGLE = (1 << 4);
 
 // This class handles receiving messages from the GameServer (whether it's hosted locally or receiving
 // messages over the network). It calls the appropriate GameClient methods for each message.
@@ -146,7 +148,11 @@ export class GameClientMessageHandler {
 			pos += 2;
 			
 			// Read the speed
-			const speed = dataView.getUint16(pos);
+			const speed = dataView.getInt16(pos);
+			pos += 2;
+			
+			// Read the acceleration
+			const acceleration = dataView.getInt16(pos);
 			pos += 2;
 
 			// Read the platform angle
@@ -165,6 +171,7 @@ export class GameClientMessageHandler {
 				const platform = unit.GetPlatform();
 				platform.OnNetworkUpdatePosition(serverTime, x, y);
 				platform.OnNetworkUpdateSpeed(serverTime, speed);
+				platform.OnNetworkUpdateAcceleration(serverTime, acceleration);
 				platform.OnNetworkUpdateAngle(serverTime, platformAngle);
 				
 				const turret = unit.GetTurret();
@@ -212,14 +219,38 @@ export class GameClientMessageHandler {
 			
 			// Check which delta change flags are set and read values accordingly,
 			// in exactly the same way (notably also in the same order) as the server writes them.
+			if ((deltaChangeFlags & FLAG_CHANGED_POSITION) !== 0)
+			{
+				const x = dataView.getUint16(pos);
+				pos += 2;
+				const y = dataView.getUint16(pos);
+				pos += 2;
+				
+				if (unit)
+				{
+					unit.GetPlatform().OnNetworkUpdatePosition(serverTime, x, y);
+				}
+			}
+			
 			if ((deltaChangeFlags & FLAG_CHANGED_SPEED) !== 0)
 			{
-				const speed = dataView.getUint16(pos);
+				const speed = dataView.getInt16(pos);
 				pos += 2;
 				
 				if (unit)
 				{
 					unit.GetPlatform().OnNetworkUpdateSpeed(serverTime, speed);
+				}
+			}
+			
+			if ((deltaChangeFlags & FLAG_CHANGED_ACCELERATION) !== 0)
+			{
+				const acceleration = dataView.getInt16(pos);
+				pos += 2;
+				
+				if (unit)
+				{
+					unit.GetPlatform().OnNetworkUpdateAcceleration(serverTime, acceleration);
 				}
 			}
 			

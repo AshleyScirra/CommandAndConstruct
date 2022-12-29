@@ -1,6 +1,7 @@
 
 import { SteppedValueTimeline } from "../gameClient/net/steppedValueTimeline.js";
 import { InterpolatedValueTimeline } from "../gameClient/net/interpolatedValueTimeline.js";
+import * as MathUtils from "../utils/clientMathUtils.js";
 
 // The ClientPlatform class represents the platform part of a ClientUnit,
 // as a counterpart to a UnitPlatform class on GameServer.
@@ -22,9 +23,12 @@ export class ClientPlatform {
 	
 	// Interpolated timelines for angle and speed.
 	#timelineAngle = new InterpolatedValueTimeline("angular");
-	#timelineSpeed = new InterpolatedValueTimeline("none");
+	#timelineSpeed = new SteppedValueTimeline();
+	#timelineAcceleration = new SteppedValueTimeline();
 	
 	#speed = 0;			// current speed in px/s
+	#maxSpeed = 250;	// maximum speed - TODO: sync with server-side value
+	#acceleration = 0;	// current acceleration in px/s/s
 	
 	constructor(unit, x, y, angle, speed)
 	{
@@ -40,6 +44,7 @@ export class ClientPlatform {
 		this.#timelinePos.Add(0, [x, y]);
 		this.#timelineAngle.Add(0, angle);
 		this.#timelineSpeed.Add(0, speed);
+		this.#timelineAcceleration.Add(0, 0);
 		
 		this.#timelinePosHistory.Add(0, [x, y]);
 		
@@ -176,6 +181,13 @@ export class ClientPlatform {
 		this.#unit.SetTicking(true);
 	}
 	
+	OnNetworkUpdateAcceleration(serverTime, acceleration)
+	{
+		this.#timelineAcceleration.Add(serverTime, acceleration);
+		
+		this.#unit.SetTicking(true);
+	}
+	
 	OnNetworkUpdateAngle(serverTime, angle)
 	{
 		this.#timelineAngle.Add(serverTime, angle);
@@ -186,6 +198,65 @@ export class ClientPlatform {
 	// Called every tick to update the platform over time.
 	Tick(dt, simulationTime)
 	{
+		// Apply acceleration and movement at the current speed.
+		this.#TickMovement(dt, simulationTime);
+		
+		// Update the position and apply correction over time.
+		this.#TickPosition(dt, simulationTime);
+		
+		// Clean up old entries from the timelines.
+		this.#TickTimelines(simulationTime);
+		
+		// Return a boolean indicating if the platform still needs ticking.
+		return this.#NeedsTicking(simulationTime);
+	}
+	
+	// Apply acceleration and movement at the current speed.
+	#TickMovement(dt, simulationTime)
+	{
+		// Acceleration changes are stepped values, as they are one-off changes
+		// with no interpolation. Apply any acceleration change for this tick.
+		// TODO: compensate for acceleration change lateness.
+		const accEntry = this.#timelineAcceleration.GetSteppedValue(simulationTime);
+		if (accEntry !== null)
+		{
+			this.#acceleration = accEntry.value;
+		}
+		
+		// Adjust the speed according to the current acceleration.
+		if (this.#acceleration !== 0)
+		{
+			this.#speed = MathUtils.Clamp(this.#speed + this.#acceleration * dt, 0, this.#maxSpeed);
+		}
+		
+		// To minimize bandwidth, speed changes are also only sent as one-off changes,
+		// such as sending a speed of 0 when stopped. If such an update is available, allow it
+		// to override the speed set previously, as it reflects the true value on the server.
+		// TODO: compensate for speed change lateness.
+		const speedEntry = this.#timelineSpeed.GetSteppedValue(simulationTime);
+		if (speedEntry !== null)
+		{
+			this.#speed = speedEntry.value;
+		}
+		
+		// Set the unit angle to the current interpolated value from the angle timeline.
+		this.SetAngle(this.#timelineAngle.Get(simulationTime));
+		
+		// If the speed is nonzero, move the unit forwards at the current speed and angle.
+		if (this.#speed !== 0)
+		{
+			// Note the current acceleration is also applied to the move distance as it is
+			// on the server.
+			const moveDist = MathUtils.Clamp(this.#speed * dt + 0.5 * this.#acceleration * dt * dt,
+											 0, this.#maxSpeed * dt);
+			
+			const angle = this.GetAngle();
+			this.OffsetPosition(Math.cos(angle) * moveDist, Math.sin(angle) * moveDist);
+		}
+	}
+	
+	#TickPosition(dt, simulationTime)
+	{
 		// Position updates arrive irregularly (every couple of seconds). This is too
 		// infrequent to usefully interpolate between. Therefore position updates use a
 		// "stepped" timeline, which either returns nothing, or the new value at the
@@ -193,7 +264,7 @@ export class ClientPlatform {
 		const posEntry = this.#timelinePos.GetSteppedValue(simulationTime);
 		if (posEntry !== null)
 		{
-			// Set the platform position to the new position.
+			// Get the new position.
 			const [x, y] = posEntry.value;
 			
 			// Rather than just updating immediately to the new position, store the offset
@@ -246,24 +317,10 @@ export class ClientPlatform {
 			// Apply the correction for this tick.
 			this.OffsetPosition(dx, dy);
 		}
-		
-		// Set the unit angle to the current interpolated value from the angle timeline.
-		this.SetAngle(this.#timelineAngle.Get(simulationTime));
-		
-		// Get the current speed.
-		// TODO: at the moment there is no acceleration so speeds just change instantly
-		// between 0 and the maximum speed. Therefore the speed timeline currently does
-		// not use any interpolation, but it likely will in future.
-		this.#speed = this.#timelineSpeed.Get(simulationTime);
-		
-		// If the speed is nonzero, move the unit forwards at the current speed and angle.
-		if (this.#speed !== 0)
-		{
-			const moveDist = this.#speed * dt;
-			const angle = this.GetAngle();
-			this.OffsetPosition(Math.cos(angle) * moveDist, Math.sin(angle) * moveDist);
-		}
-		
+	}
+	
+	#TickTimelines(simulationTime)
+	{
 		// Add the current position of the platform on the client to the position history
 		// timeline. This is used to look up past positions if a network update arrives late.
 		this.#timelinePosHistory.Add(simulationTime, this.GetPosition());
@@ -273,11 +330,7 @@ export class ClientPlatform {
 		// Some old entries are kept for interpolated timelines as entries added late
 		// could affect where the current interpolated position is.
 		this.#timelineAngle.DeleteEntriesOlderThan(simulationTime - 1);
-		this.#timelineSpeed.DeleteEntriesOlderThan(simulationTime - 1);
 		this.#timelinePosHistory.DeleteEntriesOlderThan(simulationTime - 2);
-		
-		// Return a boolean indicating if the platform still needs ticking.
-		return this.NeedsTicking(simulationTime);
 	}
 	
 	// Return true if the platform still needs ticking. Returning false allows the unit
@@ -292,13 +345,14 @@ export class ClientPlatform {
 	// the main goal of removing the vast majority of static units from needing ticking.
 	// Also note that timelines don't do forwards prediction. If they do, then platforms
 	// could still need ticking even when there is no entry past the current time.
-	NeedsTicking(simulationTime)
+	#NeedsTicking(simulationTime)
 	{
 		return this.#xCorrection !== 0 ||
 				this.#yCorrection !== 0 ||
 				this.#speed !== 0 ||
 				this.#timelinePos.GetNewestTimestamp() >= simulationTime ||
 				this.#timelineSpeed.GetNewestTimestamp() >= simulationTime ||
+				this.#timelineAcceleration.GetNewestTimestamp() >= simulationTime ||
 				this.#timelineAngle.GetNewestTimestamp() >= simulationTime;
 	}
 	
