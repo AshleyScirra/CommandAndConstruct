@@ -96,6 +96,13 @@
 			"name": "Fade",
 			"author": "Scirra",
 			"bundled": false
+		},
+		{
+			"type": "behavior",
+			"id": "solid",
+			"name": "Solid",
+			"author": "Scirra",
+			"bundled": false
 		}
 	],
 	"uniqueId": "nrrpzelemnm",
@@ -115,7 +122,8 @@
 					"MinimapCanvasSlow",
 					"StatsText",
 					"CollisionGridMarker",
-					"MinimapCanvasFast"
+					"MinimapCanvasFast",
+					"Rock"
 				],
 				"subfolders": [],
 				"name": "Main game"
