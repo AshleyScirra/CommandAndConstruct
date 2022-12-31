@@ -44,9 +44,9 @@ export class ServerMessageHandler {
 		]);
 	}
 	
-	SendToRuntime(msg, transmissionMode, transferList)
+	SendToRuntime(msg, transmissionMode, forPlayer, transferList)
 	{
-		this.#gameServer.SendToRuntime(msg, transmissionMode, transferList);
+		this.#gameServer.SendToRuntime(msg, transmissionMode, forPlayer, transferList);
 	}
 	
 	// Main method for handling a message from a client.
