@@ -17,81 +17,37 @@ self.addEventListener("message", e =>
 	}
 });
 
-// Map of message types that can be received from the client
-// and the function to call to handle them.
-const MESSAGE_MAP = new Map([
-	["init", OnInit],
-	["ping", OnPing],
-	["release", OnRelease],
-	["move-units", OnMoveUnits]
-]);
-
 // Called when a message is received from the runtime, possibly with latency simulation.
 async function OnMessageFromRuntime(e)
 {
 	// Look up the function to call for this message type in the message map.
 	const data = e.data;
-	const messageType = data["type"];
 	const transmissionMode = data["transmissionMode"];
-	const handlerFunc = MESSAGE_MAP.get(messageType);
 	
-	if (handlerFunc)
+	// Handle the init message separately, as it is responsible for creating GameServer.
+	if (data["type"] === "init")
 	{
-		const isReceived = await WaitForSimulatedLatency(transmissionMode, "receive");
-	
-		// If isReceived is false then the packet is simulated as dropped, so skip handling.
-		if (!isReceived)
-			return;
-			
-		// Call the message handler function with the provided data.
-		handlerFunc(data);
+		OnInit(data);
 	}
 	else
 	{
-		// Messages should always have a handler, so log an error if it's not found.
-		console.error(`[GameServer] No message handler for type '${messageType}'`);
+		const isReceived = await WaitForSimulatedLatency(transmissionMode, "receive");
+
+		// If isReceived is false then the packet is simulated as dropped, so skip handling.
+		// Also ignore if GameServer was released.
+		if (!isReceived || !gameServer)
+			return;
+
+		gameServer.GetMessageHandler().HandleMessage(data);
 	}
 }
 
 // Called when the runtime wants to initialise the GameServer.
-function OnInit(e)
+function OnInit(data)
 {
 	// Initialise GameServer, passing it the function that can send a message to the runtime
 	// and the Construct object data collected from the runtime.
-	gameServer = new GameServer(SendMessageToRuntime, e["constructObjectData"]);
-}
-
-// Called when receiving a ping from a specific player. The server sends a "pong" message back
-// with the game time, which allows clients to synchronize to the server time.
-function OnPing(e)
-{
-	if (!gameServer)
-		return;		// ignore if GameServer was released
-	
-	const id = e["id"];
-	const player = e["player"];
-	
-	// Send a pong back to the same player with the same ID and the current time on the server.
-	// Note the server game time only increments every tick. In order to take a more accurate
-	// measurement, include the time since the last tick in the transmitted time. This allows
-	// ping times to properly count time passing in between ticks.
-	SendMessageToRuntime({
-		"type": "pong",
-		"id": id,
-		"time": gameServer.GetGameTime() + gameServer.GetTimeSinceLastTick()
-	}, "u", player);
-}
-
-// Called when the runtime is ending the game.
-function OnRelease(e)
-{
-	// Only player 0 - the single player or multiplayer host - can terminate GameServer.
-	if (e["player"] !== 0)
-		return;
-	
-	// Just terminate this entire worker. We could write code that releases everything in
-	// GameServer, but there isn't really any point if the whole worker is terminated anyway.
-	self.close();
+	gameServer = new GameServer(SendMessageToRuntime, data["constructObjectData"]);
 }
 
 // Post a message to the runtime, possibly with latency simulation.
@@ -110,10 +66,3 @@ async function SendMessageToRuntime(message, transmissionMode, forPlayer, transf
 	}, transferList);
 }
 
-function OnMoveUnits(data)
-{
-	const player = data["player"];
-	const units = data["units"];
-	
-	gameServer.MoveUnits(player, units);
-}
