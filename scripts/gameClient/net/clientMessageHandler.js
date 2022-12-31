@@ -468,11 +468,26 @@ export class ClientMessageHandler {
 		const runtime = this.#gameClient.GetRuntime();
 		const inst = runtime.objects.StatsText.getFirstInstance();
 		const pingManager = this.#gameClient.GetPingManager();
-		inst.text = `${m["num-units"]} units (${this.#gameClient.GetNumberOfUnitsTicking()} ticking), ${m["num-projectiles"]} projectiles
-Net bandwidth: ${Math.round(runtime.objects.Multiplayer.stats.outboundBandwidth / 1024)} kb/s up, ${Math.round(runtime.objects.Multiplayer.stats.inboundBandwidth / 1024)} kb/s down
+		
+		let statsStr = "";
+		
+		// Don't show network stats in single player mode as they are not applicable
+		if (this.#gameClient.GetGameMode() !== "single-player")
+		{
+			const mpStats = runtime.objects.Multiplayer.stats;
+			
+			statsStr += `Net bandwidth: ${Math.round(mpStats.outboundBandwidth / 1024)} kb/s up, ${Math.round(mpStats.inboundBandwidth / 1024)} kb/s down
+Net compression: ${MathUtils.Clamp(Math.round(100 - (100 * mpStats.outboundBandwidth / mpStats.outboundDecompressedBandwidth)), 0, 100)}% up, ${MathUtils.Clamp(Math.round(100 - (100 * mpStats.inboundBandwidth / mpStats.inboundDecompressedBandwidth)), 0, 100)}% down
+`;
+		}
+		
+		// Show general stats applicable to all game modes
+		statsStr += `${m["num-units"]} units (${this.#gameClient.GetNumberOfUnitsTicking()} ticking), ${m["num-projectiles"]} projectiles
 Server performance: ${m["server-fps"]} FPS, ${Math.round(m["server-thread-usage"] * 100)}% CPU
 Client performance: ${runtime.fps} FPS, ${Math.round(runtime.cpuUtilisation * 100)}% CPU
 Latency: [b]${Math.round(pingManager.GetLatency() * 1000)} ms[/b] (pdv ${Math.round(pingManager.GetPdv() * 1000)} ms)
 Server data: state ${Math.round(m["sent-state-bytes"] / 1024)} kb/s, deltas ${Math.round(m["sent-delta-bytes"] / 1024)} kb/s, events ${Math.round(m["sent-event-bytes"] / 1024)} kb/s, total [b]${Math.round((m["sent-state-bytes"] + m["sent-delta-bytes"] + m["sent-event-bytes"]) / 1024)} kb/s[/b]`;
+
+		inst.text = statsStr;
 	}
 }

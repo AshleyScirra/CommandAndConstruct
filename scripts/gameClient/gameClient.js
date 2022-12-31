@@ -21,6 +21,7 @@ export class GameClient {
 	// Private fields
 	#runtime;						// Construct runtime
 	#sendMessageFunc;				// SendMessageToGameServer function
+	#gameMode = "";					// current game mode
 	#allUnitsById = new Map();		// map of all units by id -> ClientUnit
 	#allProjectilesById = new Map();// map of all projectiles by id -> ClientProjectile
 	#unitsToTick = new Set();		// set of all units to call Tick() on
@@ -43,11 +44,12 @@ export class GameClient {
 	
 	#player = 0;					// Player number this client controls
 	
-	constructor(runtime, sendMessageFunc, player)
+	constructor(runtime, sendMessageFunc, player, gameMode)
 	{
 		this.#runtime = runtime;
 		this.#sendMessageFunc = sendMessageFunc;
 		this.#player = player;
+		this.#gameMode = gameMode;
 		
 		this.#eventHandlers = new MultiEventHandler([
 			[runtime,		"tick",		() => this.#OnTick()]
@@ -90,6 +92,11 @@ export class GameClient {
 	GetPlayer()
 	{
 		return this.#player;
+	}
+	
+	GetGameMode()
+	{
+		return this.#gameMode;
 	}
 	
 	GetPingManager()

@@ -29,7 +29,7 @@ export class GameModeSinglePlayer {
 		// Create the game client which manages the local game state.
 		// Also pass it the SendMessageToGameServer function for messaging.
 		// Note in single player mode, the player is always player 0.
-		this.#gameClient = new GameClient(this.#runtime, ((m, t) => this.#SendMessageToGameServer(m, t)), 0);
+		this.#gameClient = new GameClient(this.#runtime, ((m, t) => this.#SendMessageToGameServer(m, t)), 0, "single-player");
 
 		// Post an init message to the worker to tell it to initialize, and provide data
 		// about the game units such as their size and collision polygons.
