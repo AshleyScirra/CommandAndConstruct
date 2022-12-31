@@ -74,7 +74,9 @@ export class InterpolatedValueTimeline extends ValueTimeline {
 			if (entry.timestamp > timestamp)
 			{
 				// All prior entries are older than the timestamp, so delete them.
-				this.timeline.splice(0, i);
+				if (i > 0)
+					this.timeline.splice(0, i);
+				
 				return;
 			}
 		}

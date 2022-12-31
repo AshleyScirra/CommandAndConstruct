@@ -43,6 +43,11 @@ export class ValueTimeline {
 		this.timeline.unshift(toInsert);
 	}
 	
+	Release()
+	{
+		this.timeline.length = 0;
+	}
+	
 	// Timelines are ordered by time, so the first entry is always oldest, and the
 	// last entry is always newest.
 	GetOldestTimestamp()

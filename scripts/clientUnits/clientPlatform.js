@@ -58,6 +58,12 @@ export class ClientPlatform {
 	
 	Release()
 	{
+		this.#timelinePos.Release();
+		this.#timelinePosHistory.Release();
+		this.#timelineAngle.Release();
+		this.#timelineSpeed.Release();
+		this.#timelineAcceleration.Release();
+		
 		this.#inst.destroy();
 	}
 	

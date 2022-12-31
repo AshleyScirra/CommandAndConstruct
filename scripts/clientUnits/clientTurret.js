@@ -36,6 +36,8 @@ export class ClientTurret {
 	
 	Release()
 	{
+		this.#timelineOffsetAngle.Release();
+		
 		this.#inst.destroy();
 	}
 	
