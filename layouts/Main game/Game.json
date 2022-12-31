@@ -548,9 +548,136 @@
 					"blendMode": "normal",
 					"zElevation": 0,
 					"global": false
+				},
+				{
+					"name": "DebugOverlay",
+					"overriden": 0,
+					"subLayers": [],
+					"instances": [
+						{
+							"type": "PFDebugTilemap",
+							"properties": {
+								"initially-visible": true,
+								"tile-width": 50,
+								"tile-height": 50,
+								"tile-x-offset": 0,
+								"tile-y-offset": 0,
+								"tile-x-spacing": 0,
+								"tile-y-spacing": 0,
+								"tile-x-drawing-offset": 0,
+								"tile-y-drawing-offset": 0,
+								"drawing-mode": "top-to-right"
+							},
+							"uid": 43,
+							"instanceVariables": {},
+							"behaviors": {},
+							"ownData": {
+								"tilemapData": {
+									"width": 76,
+									"height": 43,
+									"max-width": 120,
+									"max-height": 67,
+									"data": "8040x0"
+								},
+								"tile-width": 50,
+								"tile-height": 50,
+								"tile-x-offset": 0,
+								"tile-y-offset": 0,
+								"tile-x-spacing": 0,
+								"tile-y-spacing": 0
+							},
+							"world": {
+								"x": 0,
+								"y": 0,
+								"width": 3840,
+								"height": 2160,
+								"originX": 0,
+								"originY": 0,
+								"color": [
+									1,
+									1,
+									1,
+									0.25
+								],
+								"zElevation": 0
+							}
+						}
+					],
+					"sid": 682583721494726,
+					"effectTypes": [],
+					"isInitiallyVisible": true,
+					"isInitiallyInteractive": true,
+					"color": [
+						1,
+						1,
+						1,
+						1
+					],
+					"backgroundColor": [
+						1,
+						1,
+						1,
+						1
+					],
+					"isTransparent": true,
+					"parallaxX": 1,
+					"parallaxY": 1,
+					"scaleRate": 1,
+					"forceOwnTexture": false,
+					"renderingMode": "3d",
+					"drawOrder": "z-order",
+					"useRenderCells": false,
+					"blendMode": "normal",
+					"zElevation": 0,
+					"global": false
 				}
 			],
-			"instances": [],
+			"instances": [
+				{
+					"type": "PathfindingController",
+					"properties": {
+						"initially-visible": true,
+						"initial-animation": "Animation 1",
+						"initial-frame": 0,
+						"enable-collisions": true,
+						"live-preview": false
+					},
+					"uid": 41,
+					"instanceVariables": {},
+					"behaviors": {
+						"Pathfinding": {
+							"properties": {
+								"cell-size": 50,
+								"cell-border": 25,
+								"obstacles": "solids",
+								"max-speed": 0,
+								"acceleration": 0,
+								"deceleration": 0,
+								"rotate-speed": 0,
+								"rotate-object": false,
+								"diagonals": true,
+								"enabled": true
+							}
+						}
+					},
+					"world": {
+						"x": -76,
+						"y": -59,
+						"width": 37,
+						"height": 33,
+						"originX": 0.5,
+						"originY": 0.5,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						],
+						"angle": 0,
+						"zElevation": 0
+					}
+				}
+			],
 			"sid": 442148768824181,
 			"effectTypes": [],
 			"isInitiallyVisible": true,

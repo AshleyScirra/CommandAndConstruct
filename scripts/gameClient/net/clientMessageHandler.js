@@ -19,7 +19,7 @@ const FLAG_CHANGED_TURRET_OFFSET_ANGLE = (1 << 4);
 // This class handles receiving messages from the GameServer (whether it's hosted locally or receiving
 // messages over the network). It calls the appropriate GameClient methods for each message.
 // This keeps all the message handling logic in its own class rather than cluttering GameClient.
-export class GameClientMessageHandler {
+export class ClientMessageHandler {
 
 	// Private fields
 	#gameClient;					// reference to GameClient

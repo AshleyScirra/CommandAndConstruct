@@ -91,9 +91,23 @@
 			"bundled": false
 		},
 		{
+			"type": "plugin",
+			"id": "Tilemap",
+			"name": "Tilemap",
+			"author": "Scirra",
+			"bundled": false
+		},
+		{
 			"type": "behavior",
 			"id": "Fade",
 			"name": "Fade",
+			"author": "Scirra",
+			"bundled": false
+		},
+		{
+			"type": "behavior",
+			"id": "Pathfinding",
+			"name": "Pathfinding",
 			"author": "Scirra",
 			"bundled": false
 		},
@@ -123,7 +137,9 @@
 					"StatsText",
 					"CollisionGridMarker",
 					"MinimapCanvasFast",
-					"Rock"
+					"Rock",
+					"PathfindingController",
+					"PFDebugTilemap"
 				],
 				"subfolders": [],
 				"name": "Main game"
@@ -255,13 +271,21 @@
 							"script-info": {
 								"purpose": "none"
 							}
+						},
+						{
+							"name": "pathfindingController.js",
+							"type": "application/javascript",
+							"sid": 263929132365737,
+							"script-info": {
+								"purpose": "none"
+							}
 						}
 					],
 					"subfolders": [
 						{
 							"items": [
 								{
-									"name": "messageHandler.js",
+									"name": "clientMessageHandler.js",
 									"type": "application/javascript",
 									"sid": 875270580096877,
 									"script-info": {
@@ -556,6 +580,14 @@
 							"name": "gameServer.js",
 							"type": "application/javascript",
 							"sid": 135371504092731,
+							"file-info": {
+								"purpose": "none"
+							}
+						},
+						{
+							"name": "serverMessageHandler.js",
+							"type": "application/javascript",
+							"sid": 669347999869224,
 							"file-info": {
 								"purpose": "none"
 							}

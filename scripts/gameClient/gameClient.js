@@ -3,12 +3,13 @@ import { MultiEventHandler } from "../utils/multiEventHandler.js";
 import { KahanSum } from "../utils/clientKahanSum.js";
 import { ClientUnit } from "../clientUnits/clientUnit.js";
 import { ClientProjectile } from "../clientUnits/clientProjectile.js";
-import { GameClientMessageHandler } from "./net/messageHandler.js";
+import { ClientMessageHandler } from "./net/clientMessageHandler.js";
 import { PingManager } from "./net/pingManager.js";
 import { PointerManager } from "./ui/pointerManager.js";
 import { ViewManager } from "./ui/viewManager.js";
 import { SelectionManager } from "./ui/selectionManager.js";
 import { Minimap } from "./ui/minimap.js";
+import { PathfindingController } from "./pathfindingController.js";
 import * as MathUtils from "../utils/clientMathUtils.js";
 
 // The GameClient class is created while on a game layout, and handles representing the
@@ -38,6 +39,7 @@ export class GameClient {
 	#viewManager;					// ViewManager class
 	#selectionManager;				// SelectionManager class
 	#minimap;						// Minimap class
+	#pathfindingController;			// PathfindingController class
 	
 	#player = 0;					// Player number this client controls
 	
@@ -51,10 +53,10 @@ export class GameClient {
 			[runtime,		"tick",		() => this.#OnTick()]
 		]);
 		
-		// Create GameClientMessageHandler which handles messages from GameServer
+		// Create ClientMessageHandler which handles messages from GameServer
 		// and calls the appropriate methods on this class. Also create the PingManager
 		// which handles pings and also synchronizing the client clock.
-		this.#messageHandler = new GameClientMessageHandler(this);
+		this.#messageHandler = new ClientMessageHandler(this);
 		this.#pingManager = new PingManager(this);
 		
 		// Create PointerManager which handles pointer inputs (mouse, touch and pen).
@@ -68,6 +70,8 @@ export class GameClient {
 		
 		// Create Minimap class which handles the minimap
 		this.#minimap = new Minimap(this);
+		
+		this.#pathfindingController = new PathfindingController(this);
 	}
 	
 	Release()
@@ -113,6 +117,11 @@ export class GameClient {
 		return this.#minimap;
 	}
 	
+	GetPathfindingController()
+	{
+		return this.#pathfindingController;
+	}
+	
 	// Return an array of all Construct object types used for units.
 	GetAllUnitObjectTypes()
 	{
@@ -154,7 +163,7 @@ export class GameClient {
 	
 	// Called when GameServer sends the initial state of the game.
 	// The client needs to create objects to represent the server state.
-	CreateInitialState(data)
+	async CreateInitialState(data)
 	{
 		// Set the layout size
 		const [layoutWidth, layoutHeight] = data["layoutSize"];
@@ -163,6 +172,9 @@ export class GameClient {
 		// Start up PingManager now that we know the GameServer is up and running
 		// and ready to respond to pings
 		this.#pingManager.Start();
+		
+		// Initialise pathfinding controller
+		await this.#pathfindingController.Init();
 	}
 	
 	// Called in the ClientUnit constructor

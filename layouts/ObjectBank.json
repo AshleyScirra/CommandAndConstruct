@@ -179,6 +179,50 @@
 						"angle": 0,
 						"zElevation": 0
 					}
+				},
+				{
+					"type": "PathfindingController",
+					"properties": {
+						"initially-visible": true,
+						"initial-animation": "Animation 1",
+						"initial-frame": 0,
+						"enable-collisions": true,
+						"live-preview": false
+					},
+					"uid": 42,
+					"instanceVariables": {},
+					"behaviors": {
+						"Pathfinding": {
+							"properties": {
+								"cell-size": 30,
+								"cell-border": -1,
+								"obstacles": "solids",
+								"max-speed": 200,
+								"acceleration": 1000,
+								"deceleration": 2000,
+								"rotate-speed": 135,
+								"rotate-object": true,
+								"diagonals": true,
+								"enabled": true
+							}
+						}
+					},
+					"world": {
+						"x": -94,
+						"y": -88,
+						"width": 37,
+						"height": 33,
+						"originX": 0.5,
+						"originY": 0.5,
+						"color": [
+							1,
+							1,
+							1,
+							1
+						],
+						"angle": 0,
+						"zElevation": 0
+					}
 				}
 			],
 			"sid": 507327732133215,

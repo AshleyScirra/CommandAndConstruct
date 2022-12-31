@@ -1,0 +1,21 @@
+{
+	"name": "PFDebugTilemap",
+	"plugin-id": "Tilemap",
+	"sid": 755469663102314,
+	"isGlobal": false,
+	"instanceVariables": [],
+	"behaviorTypes": [],
+	"effectTypes": [],
+	"image": {
+		"width": 100,
+		"height": 100,
+		"originX": 0.5,
+		"originY": 0.5,
+		"originalSource": "",
+		"exportFormat": "lossless",
+		"exportQuality": 0.8,
+		"imageSpriteId": 529143,
+		"useCollisionPoly": true
+	},
+	"tile-collision-polys": {}
+}
