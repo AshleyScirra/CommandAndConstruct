@@ -66,9 +66,9 @@ export class GameServer {
 	// Provide a GameServer method to send a message to the runtime for convenience.
 	// This also specifies a transmission mode (reliable ordered, reliable unordered,
 	// or unreliable) for the host to retransmit as, defaulting to reliable ordered.
-	SendToRuntime(message, transmissionMode, forPlayer, transferList)
+	SendToRuntime(message, transmissionMode = "o", forPlayer = null, transferList = null)
 	{
-		this.#sendMessageFunc(message, transmissionMode || "o", forPlayer, transferList);
+		this.#sendMessageFunc(message, transmissionMode, forPlayer, transferList);
 	}
 	
 	GetMessageHandler()
@@ -314,13 +314,9 @@ export class GameServer {
 			unit.Tick(dt);
 		}
 		
-		// Send some full unit updates for this tick, which are all spread over
-		// ticks across the time period UNIT_FULL_UPDATE_PERIOD, along with delta
-		// updates, which are a set of specific values that have changed in units.
-		this.#serverMessageHandler.SendUnitUpdates();
-		
-		// Send any events that have happened over the network.
-		this.#serverMessageHandler.SendNetworkEvents();
+		// Send game updates for this tick. This includes full unit updates, delta unit
+		// updates, and a list of the network events that have happened.
+		this.#serverMessageHandler.SendBinaryGameUpdate();
 		
 		// Check the game victory/defeat conditions e.g. if one team is defeated.
 		this.#CheckGameEndCondition();

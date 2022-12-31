@@ -6,8 +6,7 @@ import { ClientUnit } from "../../clientUnits/clientUnit.js";
 import { SteppedValueTimeline } from "./steppedValueTimeline.js";
 
 // The binary message types
-const MESSAGE_TYPE_UNIT_UPDATES = 0;	// full and delta unit updates
-const MESSAGE_TYPE_EVENTS = 1;			// list of events that have happened
+const MESSAGE_TYPE_GAME_UPDATES = 0;	// full and delta unit updates, and network events
 
 // Flags delta updates, which must match those on the server side.
 const FLAG_CHANGED_POSITION =			 (1 << 0);
@@ -88,10 +87,8 @@ export class ClientMessageHandler {
 			pos += 1;
 			
 			// Read the message with a different method depending on the message type.
-			if (messageType === MESSAGE_TYPE_UNIT_UPDATES)
-				this.#OnUnitUpdates(dataView, pos);
-			else if (messageType === MESSAGE_TYPE_EVENTS)
-				this.#OnNetworkEvents(dataView, pos);
+			if (messageType === MESSAGE_TYPE_GAME_UPDATES)
+				this.#OnGameUpdate(dataView, pos);
 			else
 				throw new Error(`unexpected message type '${messageType}'`);
 		}
@@ -111,7 +108,7 @@ export class ClientMessageHandler {
 	}
 	
 	// Receiving full and delta data updates about some units.
-	#OnUnitUpdates(dataView, pos)
+	#OnGameUpdate(dataView, pos)
 	{
 		// Read the server time when the message was sent.
 		const serverTime = dataView.getFloat64(pos);
@@ -121,7 +118,10 @@ export class ClientMessageHandler {
 		pos = this.#ReadFullUnitUpdates(dataView, pos, serverTime);
 		
 		// Read the delta updates that follow.
-		this.#ReadDeltaUnitUpdates(dataView, pos, serverTime);
+		pos = this.#ReadDeltaUnitUpdates(dataView, pos, serverTime);
+		
+		// Read the network events that follow.
+		this.#ReadNetworkEvents(dataView, pos, serverTime);
 	}
 	
 	#ReadFullUnitUpdates(dataView, pos, serverTime)
@@ -280,14 +280,12 @@ export class ClientMessageHandler {
 			if (unit)
 				unit.SetLastUpdateTime(serverTime);
 		}
+		
+		return pos;
 	}
 	
-	#OnNetworkEvents(dataView, pos)
+	#ReadNetworkEvents(dataView, pos, serverTime)
 	{
-		// Read the server time.
-		const serverTime = dataView.getFloat64(pos);
-		pos += 8;
-		
 		// Read the number of events.
 		const eventCount = dataView.getUint16(pos);
 		pos += 2;
@@ -316,7 +314,9 @@ export class ClientMessageHandler {
 		// Now we have a list of events that are meant to happen at a time.
 		// Queue them up for the right time using the stepped timeline, using the event
 		// list as the timeline value.
-		this.#networkEventTimeline.Add(serverTime, eventList)
+		this.#networkEventTimeline.Add(serverTime, eventList);
+		
+		return pos;
 	}
 	
 	#ReadProjectileFiredEvent(dataView, pos, eventList)

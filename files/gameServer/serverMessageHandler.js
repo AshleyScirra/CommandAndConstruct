@@ -1,7 +1,6 @@
 
 // The binary message types
-const MESSAGE_TYPE_UNIT_UPDATES = 0;	// full and delta unit updates
-const MESSAGE_TYPE_EVENTS = 1;			// list of events that have happened
+const MESSAGE_TYPE_GAME_UPDATES = 0;	// full and delta unit updates, and network events
  
 // The amount of time over which all units in the game will have a full update sent
 // out by the server, currently set to every 2 seconds.
@@ -131,9 +130,15 @@ export class ServerMessageHandler {
 		this.#unitsPendingDeltaUpdate.delete(unit);
 	}
 	
-	// Send full and delta unit updates in one message. They both use the same transmission mode
-	// and sending them together allows compression to work more effectively.
-	SendUnitUpdates()
+	AddNetworkEvent(networkEvent)
+	{
+		this.#networkEvents.push(networkEvent);
+	}
+	
+	// Send full and delta unit updates, and network events, in one message.
+	// These all use the same transmission mode and sending them together allows
+	// compression to work more effectively.
+	SendBinaryGameUpdate()
 	{
 		// Send data with some unit full updates. These contain all the information about
 		// a unit, such as its position, angle, speed and turret offset angle. Each tick this is
@@ -180,8 +185,9 @@ export class ServerMessageHandler {
 		}
 		
 		// If for some reason there are no full updates to send (maybe every single unit was destroyed?)
-		// *and* no delta updates, then skip sending any update.
-		if (sendUnits.length === 0 && this.#unitsPendingDeltaUpdate.size === 0)
+		// *and* no delta updates and no network events, then skip sending any update.
+		if (sendUnits.length === 0 && this.#unitsPendingDeltaUpdate.size === 0 &&
+			this.#networkEvents.length === 0)
 		{
 			return;
 		}
@@ -190,12 +196,45 @@ export class ServerMessageHandler {
 		let pos = 0;		// write position in bytes
 		
 		// Write the message type as a byte.
-		dataView.setUint8(pos, MESSAGE_TYPE_UNIT_UPDATES);
+		dataView.setUint8(pos, MESSAGE_TYPE_GAME_UPDATES);
 		pos += 1;
 		
 		// Write the server time at the tick this message was sent.
 		dataView.setFloat64(pos, this.#gameServer.GetGameTime());
 		pos += 8;
+		
+		// Write the full unit updates with full details about some units.
+		pos = this.#WriteUnitFullUpdates(dataView, pos, sendUnits);
+		
+		// Continue on to writing delta updates following on from the full updates.
+		// These are a list of specific values that have changed in units this tick, such as
+		// the platform angle, or the turret offset angle. Values that have not changed are
+		// not transmitted here, in order to save bandwidth.
+		pos = this.#WriteUnitDeltaUpdates(dataView, pos);
+		
+		// Continue on to writing network events following on from the delta updates.
+		// These are a list of one-off events that have happened in the past tick.
+		pos = this.#WriteNetworkEvents(dataView, pos);
+		
+		// Finished writing the unit update data.
+		// Copy out a new ArrayBuffer with just the data written.
+		const arrayBuffer = this.#dataArrayBuffer.slice(0, pos);
+		
+		// Send the binary data with the game state update to the runtime.
+		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
+		// This also uses reliable unordered transmission. Unreliable transmission is tempting
+		// but many of the updates are important enough to be worth retransmitting: both full
+		// unit updates, and delta updates for details like speed which have on-going movement
+		// on the client, should be retransmitted if lost to try to minimise the error before
+		// the next full update arrives; network events must also always arrive even if late.
+		// However by allowing unordered transmission we still allow for newer updates to
+		// arrive sooner, which will allow the client to update the state even more promptly.
+		this.SendToRuntime(arrayBuffer, "r", null, [arrayBuffer])
+	}
+	
+	#WriteUnitFullUpdates(dataView, pos, sendUnits)
+	{
+		const startPos = pos;
 		
 		// Write the total number of full updates to be sent in this update.
 		dataView.setUint16(pos, sendUnits.length);
@@ -211,14 +250,15 @@ export class ServerMessageHandler {
 			this.#unitsPendingDeltaUpdate.delete(unit);
 		}
 		
-		// Save size of state data for stats
-		this.#gameServer.AddStatStateData(pos);
-		const stateDataEndPos = pos;
+		// Measure unit full updates data for stats.
+		this.#gameServer.AddStatStateData(pos - startPos);
 		
-		// Continue on to writing delta updates following on from the full updates.
-		// These are a list of specific values that have changed in units this tick, such as
-		// the platform angle, or the turret offset angle. Values that have not changed are
-		// not transmitted here, in order to save bandwidth.
+		return pos;
+	}
+	
+	#WriteUnitDeltaUpdates(dataView, pos)
+	{
+		const startPos = pos;
 		
 		// Write the number of delta updates.
 		dataView.setUint16(pos, this.#unitsPendingDeltaUpdate.size);
@@ -233,46 +273,15 @@ export class ServerMessageHandler {
 		// Clear all units pending delta updates now they have been written.
 		this.#unitsPendingDeltaUpdate.clear();
 		
-		// Save size of delta data for stats
-		this.#gameServer.AddStatDeltaData(pos - stateDataEndPos);
+		// Measure unit delta updates data for stats.
+		this.#gameServer.AddStatDeltaData(pos - startPos);
 		
-		// Finished writing the unit update data.
-		// Copy out a new ArrayBuffer with just the data written.
-		const arrayBuffer = this.#dataArrayBuffer.slice(0, pos);
-		
-		// Send the binary data with the game state update to the runtime.
-		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
-		// This also uses reliable unordered transmission. Unreliable transmission is tempting
-		// but many of the updates are important enough to be worth retransmitting: both full
-		// unit updates, and delta updates for details like speed which have on-going movement
-		// on the client, should be retransmitted if lost to try to minimuse the error before
-		// the next full update arrives. However by allowing unordered transmission we still
-		// allow for newer updates to arrive sooner, which will allow the client to update
-		// the state of units even more promptly.
-		this.SendToRuntime(arrayBuffer, "r", null, [arrayBuffer])
+		return pos;
 	}
 	
-	AddNetworkEvent(networkEvent)
+	#WriteNetworkEvents(dataView, pos)
 	{
-		this.#networkEvents.push(networkEvent);
-	}
-	
-	SendNetworkEvents()
-	{
-		// Skip if there are no network events to send.
-		if (this.#networkEvents.length === 0)
-			return;
-		
-		const dataView = this.#dataView;
-		let pos = 0;		// write position in bytes
-		
-		// Write the message type as a byte.
-		dataView.setUint8(pos, MESSAGE_TYPE_EVENTS);
-		pos += 1;
-		
-		// Write the server time at the tick these events happened.
-		dataView.setFloat64(pos, this.#gameServer.GetGameTime());
-		pos += 8;
+		const startPos = pos;
 		
 		// Write the number of events.
 		dataView.setUint16(pos, this.#networkEvents.length);
@@ -287,16 +296,9 @@ export class ServerMessageHandler {
 		// Clear all the network events now they have been written.
 		this.#networkEvents.length = 0;
 		
-		// Finished writing network events.
-		// Copy out a new ArrayBuffer with just the data written.
-		const arrayBuffer = this.#dataArrayBuffer.slice(0, pos);
-		this.#gameServer.AddStatEventData(arrayBuffer.byteLength);		// measure data sent for stats
+		// Measure network event data for stats.
+		this.#gameServer.AddStatEventData(pos - startPos);
 		
-		// Send the binary data with the list of events to the runtime.
-		// The arrayBuffer is transferred to save a copy, as it isn't needed here any more.
-		// This also uses reliable but unordered transmission. Events must arrive at clients,
-		// but they don't have to be received in the correct order. Clients can compensate
-		// for late events.
-		this.SendToRuntime(arrayBuffer, "r", null, [arrayBuffer]);
+		return pos;
 	}
 }
