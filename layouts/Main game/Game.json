@@ -558,8 +558,8 @@
 							"type": "PFDebugTilemap",
 							"properties": {
 								"initially-visible": true,
-								"tile-width": 50,
-								"tile-height": 50,
+								"tile-width": 80,
+								"tile-height": 80,
 								"tile-x-offset": 0,
 								"tile-y-offset": 0,
 								"tile-x-spacing": 0,
@@ -573,14 +573,14 @@
 							"behaviors": {},
 							"ownData": {
 								"tilemapData": {
-									"width": 76,
-									"height": 43,
+									"width": 48,
+									"height": 27,
 									"max-width": 120,
 									"max-height": 67,
 									"data": "8040x0"
 								},
-								"tile-width": 50,
-								"tile-height": 50,
+								"tile-width": 80,
+								"tile-height": 80,
 								"tile-x-offset": 0,
 								"tile-y-offset": 0,
 								"tile-x-spacing": 0,
@@ -647,8 +647,8 @@
 					"behaviors": {
 						"Pathfinding": {
 							"properties": {
-								"cell-size": 50,
-								"cell-border": 25,
+								"cell-size": 80,
+								"cell-border": 50,
 								"obstacles": "solids",
 								"max-speed": 0,
 								"acceleration": 0,

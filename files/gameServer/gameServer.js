@@ -4,6 +4,7 @@ import { ObjectData } from "./units/objectData.js";
 import { Unit } from "./units/unit.js";
 import { NetworkEvent } from "./networkEvents/networkEvents.js";
 import { CollisionGrid } from "./collisions/collisionGrid.js";
+import { ServerPathfinding } from "./serverPathfinding.js";
 import { KahanSum } from "./utils/kahanSum.js";
 import * as MathUtils from "./utils/mathUtils.js";
 
@@ -38,6 +39,7 @@ export class GameServer {
 	#isGameOver = false;			// set to true once victory/defeat condition met
 	
 	#collisionGrid;					// CollisionGrid for collision cells optimisation
+	#serverPathfinding;				// ServerPathfinding for server-side pathfinding manager
 	
 	// For stats
 	#statStateData = 0;
@@ -78,8 +80,9 @@ export class GameServer {
 	
 	Init()
 	{
-		// Create the collision grid
+		// Create the collision grid and server-side pathfinding controller
 		this.#collisionGrid = new CollisionGrid(this);
+		this.#serverPathfinding = new ServerPathfinding(this);
 		
 		// Add 500 starting units for each player in rows opposing each other.
 		const randomOffset = (v => (v / -2) + Math.random() * v);
@@ -183,6 +186,11 @@ export class GameServer {
 	GetCollisionGrid()
 	{
 		return this.#collisionGrid;
+	}
+	
+	GetPathfinding()
+	{
+		return this.#serverPathfinding;
 	}
 	
 	GetLayoutSize()

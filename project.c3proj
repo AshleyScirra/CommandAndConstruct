@@ -591,6 +591,14 @@
 							"file-info": {
 								"purpose": "none"
 							}
+						},
+						{
+							"name": "serverPathfinding.js",
+							"type": "application/javascript",
+							"sid": 860208971998632,
+							"file-info": {
+								"purpose": "none"
+							}
 						}
 					],
 					"subfolders": [

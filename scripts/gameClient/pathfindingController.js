@@ -54,4 +54,20 @@ export class PathfindingController {
 			}
 		}
 	}
+	
+	// Find a path between two points using the Pathfinding behavior. Return the result
+	// as a list of waypoints (i.e. [[x1, y1], [x2, y2], ...]) or null if no path
+	// was able to be calculated.
+	async FindPath(fromX, fromY, toX, toY)
+	{
+		const foundPath = await this.#pathfindingBeh.calculatePath(fromX, fromY, toX, toY);
+		if (foundPath)
+		{
+			return [...this.#pathfindingBeh.nodes()];
+		}
+		else
+		{
+			return null;
+		}
+	}
 }

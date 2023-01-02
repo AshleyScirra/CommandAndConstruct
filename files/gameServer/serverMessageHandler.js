@@ -31,6 +31,11 @@ export class ServerMessageHandler {
 	#dataArrayBuffer = new ArrayBuffer(262144);
 	#dataView = new DataView(this.#dataArrayBuffer);
 	
+	// For sending async messages: keep track of message IDs and the corresponding
+	// promise resolve/reject functions.
+	#nextMessageId = 0;
+	#messagePromiseMap = new Map();	// id -> { resolve, reject }
+	
 	constructor(gameServer)
 	{
 		this.#gameServer = gameServer;
@@ -44,27 +49,74 @@ export class ServerMessageHandler {
 		]);
 	}
 	
+	// Send a fire-and-forget message to the runtime.
 	SendToRuntime(msg, transmissionMode, forPlayer, transferList)
 	{
 		this.#gameServer.SendToRuntime(msg, transmissionMode, forPlayer, transferList);
 	}
 	
+	// Send a message to the runtime and return a promise that resolves
+	// when a reply is received. This is done by sending a message with a unique
+	// ID, and waiting for a reply to come back with the same ID.
+	SendToRuntimeAsync(msg, transmissionMode, forPlayer, transferList)
+	{
+		// Attach a unique message ID
+		const messageId = this.#nextMessageId++;
+		msg["message-id"] = messageId;
+		
+		// Create a promise and save its resolve and reject methods in the
+		// promise map for this message ID
+		const promise = new Promise((resolve, reject) =>
+		{
+			this.#messagePromiseMap.set(messageId, { resolve, reject });
+		});
+		
+		// Send the message to the runtime. It should send a message back
+		// with the same "message-id" field in order to resolve the promise.
+		this.SendToRuntime(msg, transmissionMode, forPlayer, transferList);
+		
+		// Return the promise created for this message.
+		return promise;
+	}
+	
 	// Main method for handling a message from a client.
 	HandleMessage(msg)
 	{
-		// Look up the function to call for this message type in the message map.
-		const messageType = msg["type"];
-		const handlerFunc = this.#messageMap.get(messageType);
-
-		if (handlerFunc)
+		// Messages sent in response to SendToRuntimeAsync() include a message-id
+		// field. Use this to look up the corresponding promise and resolve it.
+		if (typeof msg["message-id"] === "number")
 		{
-			// Call the message handler function with the provided message.
-			handlerFunc(msg);
+			// Find resolve/reject methods for this message ID.
+			const info = this.#messagePromiseMap.get(msg["message-id"]);
+			
+			if (!info)
+				throw new Error(`invalid async message id ${msg["message-id"]}`);
+			
+			// Now the message is handled, delete its entry from the map.
+			this.#messagePromiseMap.delete(msg["message-id"]);
+			
+			// Either reject or resolve the promise based on the message content.
+			if (msg["reject"])
+				info.reject(msg["reject"]);
+			else
+				info.resolve(msg["resolve"]);
 		}
-		else
+		else	// other messages (without a "message-id" field).
 		{
-			// Messages should always have a handler, so log an error if it's not found.
-			console.error(`[GameServer] No message handler for type '${messageType}'`);
+			// Look up the function to call for this message type in the message map.
+			const messageType = msg["type"];
+			const handlerFunc = this.#messageMap.get(messageType);
+
+			if (handlerFunc)
+			{
+				// Call the message handler function with the provided message.
+				handlerFunc(msg);
+			}
+			else
+			{
+				// Messages should always have a handler, so log an error if it's not found.
+				console.error(`[GameServer] No message handler for type '${messageType}'`);
+			}
 		}
 	}
 	

@@ -38,7 +38,8 @@ export class ClientMessageHandler {
 			["create-initial-state", m => this.#OnCreateInitialState(m)],
 			["pong", m => this.#OnPong(m)],
 			["game-over", m => this.#OnGameOver(m)],
-			["stats", m => this.#OnStats(m)]
+			["stats", m => this.#OnStats(m)],
+			["find-path", m => this.#OnFindPath(m)]
 		]);
 	}
 	
@@ -397,6 +398,23 @@ export class ClientMessageHandler {
 			for (const func of eventList)
 				func(lateness);
 		}
+	}
+	
+	// GameServer uses the Pathfinding behavior of the host player to perform pathfinding
+	// calculations for it. When receiving a find-path message, find the path and send
+	// the result back to GameServer.
+	async #OnFindPath(m)
+	{
+		const [fromX, fromY] = m["from"];
+		const [toX, toY] = m["to"];
+		
+		const pfController = this.#gameClient.GetPathfindingController();
+		const result = await pfController.FindPath(fromX, fromY, toX, toY);
+		
+		this.#gameClient.SendToServer({
+			"message-id": m["message-id"],	// pass same message-id for reply
+			"resolve": result				// send resulting path as result
+		}, "");
 	}
 	
 	// Get information about units, such as their size and image point locations,

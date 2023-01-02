@@ -17,9 +17,8 @@ export class MovableUnitPlatform extends UnitPlatform {
 	// Private fields
 	#movable;				// MovableObject to represent platform position
 	
-	#isMoving = false;		// Moving state
-	#targetX = 0;			// When moving, the position to move to
-	#targetY = 0;
+	#moveState = "";		// String of current movement state (see #TickMovement())
+	#waypoints = null;		// Remaining list of positions to move to
 	
 	#lastSpeed = 0;			// Speed on previous tick
 	#maxSpeed = 250;		// Maximum speed in px/s/s
@@ -154,27 +153,28 @@ export class MovableUnitPlatform extends UnitPlatform {
 		}
 	}
 	
-	MoveToPosition(x, y)
+	// Unit has been commanded to move to the given position. Use pathfinding to find a series
+	// of waypoints to arrive at the destination.
+	async MoveToPosition(x, y)
 	{
-		// Set the moving state to the target position. Also clamp the target position
-		// to the layout.
-		this.#isMoving = true;
+		// Clamp target position inside the layout area.
 		[x, y] = this.GetGameServer().ClampToLayout(x, y);
-		this.#targetX = x;
-		this.#targetY = y;
-	}
-	
-	ContainsPoint(x, y)
-	{
-		// The base class ContainsPoint() method checks the point relative to the origin.
-		// So first translate the point to be relative to the unit position.
+		
+		// Reset the movement state, bringing the unit to a stop and clearing any prior waypoints.
+		this.#moveState = "stopping";
+		this.#waypoints = [];
+		
+		// Find a path from the unit's current position to the destination, and store the result
+		// as the list of waypoints to move to. (Note this can be null if no path was found.)
 		const [myX, myY] = this.GetPosition();
-		return super.ContainsPoint(x - myX, y - myY);
+		this.#waypoints = await this.GetGameServer().GetPathfinding().FindPath(myX, myY, x, y);
 	}
 	
 	Tick(dt)
 	{
-		if (this.#isMoving)
+		// moveState is an empty string while not moving. If it's set to
+		// anything, then call #TickMovement() to handle the movement.
+		if (this.#moveState)
 		{
 			this.#TickMovement(dt);
 		}
@@ -182,91 +182,181 @@ export class MovableUnitPlatform extends UnitPlatform {
 	
 	#TickMovement(dt)
 	{
-		// Movement currently happens in three phases:
-		// 1) slow to a stop (if not already stopped)
-		// 2) rotate to point towards the target
-		// 3) accelerate once pointing directly towards the target
-		// TODO: pathfinding, better movement, per-unit speeds etc.
+		// Call different methods depending on the move state.
+		// Note else-if is not used as the move state is allowed to fall through
+		// to the next state in the same tick.
 		
-		// Get the unit's current angle and calculate the angle to the target.
+		// The first move state is "stopping", which just brings the unit to a stop
+		// if it is already moving when MoveToPosition() is called.
+		if (this.#moveState === "stopping")
+		{
+			this.#TickStateStopping();
+		}
+		
+		// The second move state is "rotate-first". This will rotate the unit to
+		// point towards its first waypoint while it is stopped.
+		if (this.#moveState === "rotate-first")
+		{
+			this.#TickStateRotateFirst(dt);
+		}
+		
+		// The third move state is "moving", in which it is assumed to be now
+		// pointing at its target and so it will accelerate towards it, and brake
+		// when getting close to the destination.
+		if (this.#moveState === "moving")
+		{
+			this.#TickStateMoving();
+		}
+		
+		// Always call #TickApplyMovement() as that applies acceleration
+		// and moves the platform at its current speed.
+		this.#TickApplyMovement(dt);
+	}
+	
+	// Bring the unit to a stop if it is already moving.
+	#TickStateStopping()
+	{
+		if (this.GetSpeed() > 0)
+		{
+			// Brake until stopped.
+			this.SetAcceleration(-this.#maxAcceleration);
+		}
+		else
+		{
+			// Unit is at a stop. Proceed to next move state.
+			this.SetAcceleration(0);
+			this.SetSpeed(0);
+			this.#moveState = "rotate-first";
+		}
+	}
+	
+	// Rotate the unit to point at its first waypoint.
+	#TickStateRotateFirst(dt)
+	{
+		// If pathfinding failed, then the waypoints will be set to null. In this case
+		// cancel movement, returning the move state to not moving.
+		if (this.#waypoints === null)
+		{
+			this.#moveState = "";
+			return;
+		}
+		
+		// While the pathfinding result is not yet ready, the waypoints will be an empty
+		// array. In this case just wait until the pathfinding result comes in and fills
+		// the waypoints array.
+		if (this.#waypoints.length === 0)
+		{
+			return;
+		}
+		
+		// Get current position and first waypoint position.
 		const [currentX, currentY] = this.GetPosition();
-		const targetAngle = MathUtils.AngleTo(currentX, currentY, this.#targetX, this.#targetY);
+		const [curTargetX, curTargetY] = this.#waypoints[0];
+		
+		// Get current angle and the angle to the first waypoint.
 		const currentAngle = this.GetAngle();
+		const targetAngle = MathUtils.AngleTo(currentX, currentY, curTargetX, curTargetY);
 		
-		// Find the square distance to the target, and also calculate the stopping distance,
-		// which is the distance the unit will stop in if applying its maximum deceleration.
-		const sqDistToTarget = MathUtils.DistanceSquared(currentX, currentY, this.#targetX, this.#targetY);
+		// If the unit is facing in the right direction, proceed to the next move state.
+		// Note a small angular difference is allowed in order to avoid floating point
+		// precision errors counting as not being in the right direction.
+		if (MathUtils.AngleDifference(targetAngle, currentAngle) < MathUtils.ToRadians(0.01))
+		{
+			this.#moveState = "moving";
+		}
+		else
+		{
+			// While not facing in the right direction, rotate towards the target angle.
+			this.SetAngle(MathUtils.AngleRotate(currentAngle, targetAngle, this.#rotateSpeed * dt));
+		}
+	}
+	
+	// Accelerate the unit towards its next waypoint, and brake when it is close to its destination.
+	#TickStateMoving()
+	{
+		// Get current position and next waypoint position.
+		const [currentX, currentY] = this.GetPosition();
+		const [curTargetX, curTargetY] = this.#waypoints[0];
+		
+		// Find the square distance to the target (avoiding the need to calculate a square root).
+		const sqDistToTarget = MathUtils.DistanceSquared(currentX, currentY, curTargetX, curTargetY);
+		
+		// Calculate the stopping distance, which is the distance the unit will stop in when
+		// travelling at its maximum speed and applying its maximum deceleration.
 		const stoppingDist = 0.5 * this.#maxSpeed * this.#maxSpeed / this.#maxDeceleration;
-		
+
 		// If the unit is within the stopping distance of its target, then calculate a new
 		// maximum speed based on how much it needs to have slowed down to stop.
 		let curMaxSpeed = this.#maxSpeed;
 		if (sqDistToTarget <= stoppingDist * stoppingDist)
 		{
+			// Now we need the real distance to the target, so take the square root.
 			const distToTarget = Math.sqrt(sqDistToTarget);
 			curMaxSpeed = Math.sqrt(2 * this.#maxDeceleration * distToTarget);
 		}
 		
-		// Current angle points at angle to target: start accelerating.
-		// Note this counts being within 0.01 degrees as pointing at the target. This helps avoid
-		// floating point rounding errors failing to match closely, especially as the unit moves.
-		if (MathUtils.AngleDifference(targetAngle, currentAngle) < MathUtils.ToRadians(0.01))
-		{
-			// Accelerate or brake according to whether the unit is under or over the current
-			// allowed maximum speed.  If it's exactly at the maximum speed, set the acceleration
-			// to 0, so clients don't keep trying to accelerate units travelling at max speed.
-			if (this.GetSpeed() < curMaxSpeed)
-				this.SetAcceleration(this.#maxAcceleration);
-			else if (this.GetSpeed() > curMaxSpeed)
-				this.SetAcceleration(-this.#maxDeceleration);
-			else
-				this.SetAcceleration(0);
-			
-			// Also update the angle directly to the target to correct any small rounding errors.
-			// This will only perform a small correction so is unlikely to be visible to players.
-			this.SetAngle(targetAngle);
-		}
-		else	// unit is not pointing directly at its target
-		{
-			// If still travelling but the target has moved, apply braking until stopped.
-			if (this.GetSpeed() > 0)
-			{
-				this.SetAcceleration(-this.#maxDeceleration);
-			}
-			else
-			{
-				// While stopped but not pointing at the target, rotate towards the target.
-				this.SetAcceleration(0);
-				this.SetAngle(MathUtils.AngleRotate(currentAngle, targetAngle, this.#rotateSpeed * dt));
-			}
-		}
-		
+		// Accelerate or brake according to whether the unit is under or over the current
+		// allowed maximum speed.  If it's exactly at the maximum speed, set the acceleration
+		// to 0, so clients don't keep trying to accelerate units travelling at max speed.
+		if (this.GetSpeed() < curMaxSpeed)
+			this.SetAcceleration(this.#maxAcceleration);
+		else if (this.GetSpeed() > curMaxSpeed)
+			this.SetAcceleration(-this.#maxDeceleration);
+		else
+			this.SetAcceleration(0);
+
+		// Also update the angle directly to the target to correct any small rounding errors.
+		// This will only perform a small correction so is unlikely to be visible to players.
+		this.SetAngle(MathUtils.AngleTo(currentX, currentY, curTargetX, curTargetY));
+	}
+	
+	#TickApplyMovement(dt)
+	{
 		// Adjust the speed according to the acceleration.
 		const acceleration = this.GetAcceleration();
 		if (acceleration !== 0)
 		{
 			this.SetSpeed(this.GetSpeed() + acceleration * dt, 0);
 		}
-		
+
 		// If moving, apply the movement at the current speed.
 		if (this.GetSpeed() !== 0)
 		{
 			// Calculate the distance to move this tick. Note this also takes in to account
 			// the current acceleration, but the acceleration must not allow the movement to
 			// exceed the maximum speed or go negative.
-			const moveDist = MathUtils.Clamp(this.GetSpeed() * dt + 0.5 * this.GetAcceleration() * dt * dt,
+			const moveDist = MathUtils.Clamp(this.GetSpeed() * dt + 0.5 * acceleration * dt * dt,
 											 0, this.#maxSpeed * dt);
 			
 			// Check if we've arrived, which is when the target position is nearer than the
 			// distance to move. Note this compares squared distances so there doesn't have
 			// to be an expensive square root calculation.
-			if (moveDist * moveDist >= sqDistToTarget)
+			const hasTarget = (this.#waypoints && this.#waypoints.length > 0);
+			const [currentX, currentY] = this.GetPosition();
+			const [curTargetX, curTargetY] = (hasTarget ? this.#waypoints[0] : [0, 0]);
+			const sqDistToTarget = MathUtils.DistanceSquared(currentX, currentY, curTargetX, curTargetY);
+		
+			if (hasTarget && moveDist * moveDist >= sqDistToTarget)
 			{
-				// Arrived at target position
-				this.SetPosition(this.#targetX, this.#targetY);
-				this.SetSpeed(0);
-				this.SetAcceleration(0);
-				this.#isMoving = false;
+				// Arrived at the target position. Remove the waypoint from the list.
+				this.#waypoints.shift();
+				
+				// If this was the last waypoint, then set the final position,
+				// bring the unit to a complete halt, and stop movement.
+				if (this.#waypoints.length === 0)
+				{
+					this.SetPosition(curTargetX, curTargetY);
+					this.SetSpeed(0);
+					this.SetAcceleration(0);
+					this.#moveState = "";
+				}
+				else
+				{
+					// Otherwise proceeding to the next waypoint.
+					// Start the movement process from the beginning again.
+					// (TODO: improve this algorithm)
+					this.#moveState = "stopping";
+				}
 			}
 			else
 			{
@@ -277,7 +367,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 				this.SetPosition(currentX + dx, currentY + dy);
 			}
 		}
-		
+
 		// Once the unit comes to a stop - i.e. the first time the speed reaches 0 after
 		// not being 0 - send position and speed delta updates. This ensures the client
 		// can correct the resting position of the unit as quickly as possible, since
@@ -288,7 +378,15 @@ export class MovableUnitPlatform extends UnitPlatform {
 			this.GetUnit().MarkPositionDelta();
 			this.GetUnit().MarkPlatformSpeedChanged();
 		}
-		
+
 		this.#lastSpeed = this.GetSpeed();
+	}
+	
+	ContainsPoint(x, y)
+	{
+		// The base class ContainsPoint() method checks the point relative to the origin.
+		// So first translate the point to be relative to the unit position.
+		const [myX, myY] = this.GetPosition();
+		return super.ContainsPoint(x - myX, y - myY);
 	}
 }
