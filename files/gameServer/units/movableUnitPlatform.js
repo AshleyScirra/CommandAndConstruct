@@ -22,6 +22,8 @@ export class MovableUnitPlatform extends UnitPlatform {
 	
 	#lastSpeed = 0;			// Speed on previous tick
 	#maxSpeed = 250;		// Maximum speed in px/s/s
+	#curMaxSpeed = 0;		// Temporary maximum speed restriction
+	#targetSpeed = 0;		// Current speed to accelerate or brake towards
 	#maxAcceleration = 250;	// Maximum acceleration in px/s/s
 	#maxDeceleration = 500;	// Maximum deceleration (braking) in px/s/s
 	#curAcceleration = 0;	// Current acceleration
@@ -44,6 +46,8 @@ export class MovableUnitPlatform extends UnitPlatform {
 		
 		// Update collision shape and collision cells for initial position.
 		this.UpdateCollision();
+		
+		this.#ResetCurMaxSpeed();
 	}
 	
 	GetPosition()
@@ -163,6 +167,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 		// Reset the movement state, bringing the unit to a stop and clearing any prior waypoints.
 		this.#moveState = "stopping";
 		this.#waypoints = [];
+		this.#ResetCurMaxSpeed();
 		
 		// Find a path from the unit's current position to the destination, and store the result
 		// as the list of waypoints to move to. (Note this can be null if no path was found.)
@@ -178,6 +183,13 @@ export class MovableUnitPlatform extends UnitPlatform {
 		{
 			this.#TickMovement(dt);
 		}
+	}
+	
+	// A lower maximum speed can be imposed while maneuvering. Resetting it
+	// puts the current maximum speed at the highest allowed value.
+	#ResetCurMaxSpeed()
+	{
+		this.#curMaxSpeed = this.#maxSpeed;
 	}
 	
 	#TickMovement(dt)
@@ -205,7 +217,17 @@ export class MovableUnitPlatform extends UnitPlatform {
 		// when getting close to the destination.
 		if (this.#moveState === "moving")
 		{
-			this.#TickStateMoving();
+			// Moving to the last waypoint is handled specially.
+			if (this.#waypoints.length === 1)
+			{
+				this.#TickStateMoving_LastWaypoint(dt);
+			}
+			// Otherwise handle moving to a waypoint when there is at
+			// least one more waypoint after that.
+			else
+			{
+				this.#TickStateMoving_MoreWaypoints(dt);
+			}
 		}
 		
 		// Always call #TickApplyMovement() as that applies acceleration
@@ -216,12 +238,10 @@ export class MovableUnitPlatform extends UnitPlatform {
 	// Bring the unit to a stop if it is already moving.
 	#TickStateStopping()
 	{
-		if (this.GetSpeed() > 0)
-		{
-			// Brake until stopped.
-			this.SetAcceleration(-this.#maxAcceleration);
-		}
-		else
+		this.#ResetCurMaxSpeed();
+		this.#targetSpeed = 0;
+		
+		if (this.GetSpeed() === 0)
 		{
 			// Unit is at a stop. Proceed to next move state.
 			this.SetAcceleration(0);
@@ -233,6 +253,9 @@ export class MovableUnitPlatform extends UnitPlatform {
 	// Rotate the unit to point at its first waypoint.
 	#TickStateRotateFirst(dt)
 	{
+		this.#ResetCurMaxSpeed();
+		this.#targetSpeed = 0;
+		
 		// If pathfinding failed, then the waypoints will be set to null. In this case
 		// cancel movement, returning the move state to not moving.
 		if (this.#waypoints === null)
@@ -271,52 +294,213 @@ export class MovableUnitPlatform extends UnitPlatform {
 		}
 	}
 	
-	// Accelerate the unit towards its next waypoint, and brake when it is close to its destination.
-	#TickStateMoving()
+	// When moving towards waypoints, rotates the unit towards the target angle.
+	// However this also has two additional purposes:
+	// 1) once it's pointing at the target angle, any temporary speed limit is lifted,
+	//    allowing it to accelerate back to full speed once it's back on track.
+	// 2) if the unit cannot reach the target angle because it's inside its turn circle,
+	//    then revert back to "stopping" state. This will bring the unit to a halt, point
+	//    directly towards the waypoint, and then start accelerating towards it again,
+	//    avoiding the problem of units circling endlessly around targets they can't reach.
+	#RotateTowardsAngle(targetAngle, dt, sqDistToTarget)
 	{
-		// Get current position and next waypoint position.
+		const currentAngle = this.GetAngle();
+		const angleDiff = MathUtils.AngleDifference(targetAngle, currentAngle);
+		if (angleDiff < MathUtils.ToRadians(0.01))
+		{
+			// Near enough directly on target. Remove any speed restriction and
+			// set to the exact target angle.
+			this.#ResetCurMaxSpeed();
+			this.SetAngle(targetAngle);
+		}
+		else	// not yet on target
+		{
+			// Check to see if the target is beyond the unit's turn circle.
+			// Find how long the unit will take to rotate to its target angle,
+			// and then how far it will travel at its current speed in that time.
+			const rotateTime = angleDiff / this.#rotateSpeed;
+			const travelDist = this.GetSpeed() * rotateTime;
+			
+			// If the unit would travel further than the distance to the target in
+			// this time, then it may not be able to reach it with its turn circle,
+			// so come to a halt and start over. However only do this if the distance
+			// is at least 30px away to avoid inadvertently activating this while
+			// maneuvering close to waypoints.
+			if (travelDist * travelDist > sqDistToTarget &&
+				sqDistToTarget > 30 * 30)
+			{
+				this.#moveState = "stopping";
+			}
+			else
+			{
+				// Otherwise just rotate towards the target angle.
+				this.SetAngle(MathUtils.AngleRotate(currentAngle, targetAngle, this.#rotateSpeed * dt));
+			}
+		}
+	}
+	
+	// Unit is moving towards a waypoint with at least one more waypoint following.
+	#TickStateMoving_MoreWaypoints(dt)
+	{
+		// Get current position, the current waypoint position, and the following waypoint
+		// position after that.
+		const [currentX, currentY] = this.GetPosition();
+		const [curTargetX, curTargetY] = this.#waypoints[0];
+		const [nextTargetX, nextTargetY] = this.#waypoints[1];
+		
+		// Find square distance to current waypoint.
+		const sqDistToTarget = MathUtils.DistanceSquared(currentX, currentY, curTargetX, curTargetY);
+		
+		// Find the angle to the current waypoint and rotate towards it.
+		// Note this removes any temporary speed restriction if the unit is on target.
+		const targetAngle = MathUtils.AngleTo(currentX, currentY, curTargetX, curTargetY);
+		this.#RotateTowardsAngle(targetAngle, dt, sqDistToTarget);
+		
+		// If #RotateTowardsAngle() determines the target is inside the turn circle it will
+		// revert the move state to "stopping". If it does that, don't try to handle any
+		// more of the normal waypoint movement.
+		if (this.#moveState === "stopping")
+			return;
+		
+		// Find the angle from the current waypoint to the next waypoint, and then the
+		// angle between that and the angle from the current waypoint to the unit.
+		// This is the angle within which the turn circle must fit.
+		const nextAngle = MathUtils.AngleTo(curTargetX, curTargetY, nextTargetX, nextTargetY);
+		const waypointAngleDiff = MathUtils.AngleDifference(targetAngle + Math.PI, nextAngle);
+		
+		// Find the radius of the turn circle at the current speed.
+		const turnCircleRadius = this.GetSpeed() / this.#rotateSpeed;
+		
+		// Find the distance from the current waypoint at which the unit can begin to turn
+		// early given its current turn circle.
+		const tanHalfDiff = Math.tan(waypointAngleDiff / 2);
+		const turnDistCurSpeed = turnCircleRadius / tanHalfDiff;
+		let turnDist = turnDistCurSpeed;
+		
+		// If the turn circle distance is more than half the distance to the next waypoint,
+		// it is probably going to overshoot the next waypoint too badly and so must slow down.
+		// Using the half distance as the limit of the turn circle, the calculation can then
+		// be done in reverse to establish the maximum allowed speed to perform a turn that
+		// will leave it at the right angle half-way to the next waypoint.
+		const nextWaypointDist = MathUtils.DistanceTo(curTargetX, curTargetY, nextTargetX, nextTargetY)
+		if (turnDistCurSpeed > nextWaypointDist / 2)
+		{
+			// The early turn distance is now set to half the distance to the next waypoint,
+			// which is less than the previous turn distance.
+			turnDist = nextWaypointDist / 2;
+			
+			// Now calculate the slower speed from the new reduced turn distance.
+			const slowTurnCircleRadius = turnDist * tanHalfDiff;
+			const slowSpeed = slowTurnCircleRadius * this.#rotateSpeed;
+			
+			// Determine the distance the unit will take to brake from its maximum speed to the
+			// lower speed. Add on to that the turn distance, resulting in the overall distance
+			// from the next waypoint at which the unit must use a reduced speed.
+			const speedDiff = this.#maxSpeed - slowSpeed;
+			const slowdownDist = turnDist + 0.5 * speedDiff * speedDiff / this.#maxDeceleration;
+			
+			// If the unit is within this reduced speed limit range, then impose a temporary
+			// speed limit of the slow speed. This must remain even after it starts to move to
+			// the next waypoint, so the speed limit is only lifted once it is pointing directly
+			// at its current waypoint, via #ResetCurMaxSpeed().
+			if (sqDistToTarget <= slowdownDist * slowdownDist)
+			{
+				this.#curMaxSpeed = slowSpeed;
+			}
+		}
+		
+		// Aim to go as fast as allowed.
+		this.#targetSpeed = this.#curMaxSpeed;
+		
+		// If the unit is within the early turn range, then switch to the next waypoint
+		// so it can begin to turn towards it.
+		if (sqDistToTarget <= turnDist * turnDist)
+		{
+			this.#waypoints.shift();
+		}
+	}
+	
+	// Unit is moving towards its last waypoint.
+	#TickStateMoving_LastWaypoint(dt)
+	{
+		// Get current position and final waypoint position.
 		const [currentX, currentY] = this.GetPosition();
 		const [curTargetX, curTargetY] = this.#waypoints[0];
 		
 		// Find the square distance to the target (avoiding the need to calculate a square root).
 		const sqDistToTarget = MathUtils.DistanceSquared(currentX, currentY, curTargetX, curTargetY);
 		
+		// Check if we've arrived, which is when the target position is nearer than the
+		// distance to move at the current speed, or at least 2px.
+		const moveDist = Math.max(this.GetSpeed() * dt, 2);
+		if (moveDist * moveDist >= sqDistToTarget)
+		{
+			// Arrived at the target position. Remove the waypoint from the list.
+			this.#waypoints.shift();
+
+			// That was the last waypoint, so set the final position,
+			// bring the unit to a complete halt, and stop movement.
+			this.SetPosition(curTargetX, curTargetY);
+			this.SetSpeed(0);
+			this.SetAcceleration(0);
+			this.#moveState = "";
+			this.#targetSpeed = 0;
+			this.#ResetCurMaxSpeed();
+			return;
+		}
+		
+		// Not yet arrived at target position.
 		// Calculate the stopping distance, which is the distance the unit will stop in when
 		// travelling at its maximum speed and applying its maximum deceleration.
 		const stoppingDist = 0.5 * this.#maxSpeed * this.#maxSpeed / this.#maxDeceleration;
 
 		// If the unit is within the stopping distance of its target, then calculate a new
 		// maximum speed based on how much it needs to have slowed down to stop.
-		let curMaxSpeed = this.#maxSpeed;
+		let stoppingMaxSpeed = this.#maxSpeed;
 		if (sqDistToTarget <= stoppingDist * stoppingDist)
 		{
 			// Now we need the real distance to the target, so take the square root.
 			const distToTarget = Math.sqrt(sqDistToTarget);
-			curMaxSpeed = Math.sqrt(2 * this.#maxDeceleration * distToTarget);
+			stoppingMaxSpeed = Math.sqrt(2 * this.#maxDeceleration * distToTarget);
 		}
-		
-		// Accelerate or brake according to whether the unit is under or over the current
-		// allowed maximum speed.  If it's exactly at the maximum speed, set the acceleration
-		// to 0, so clients don't keep trying to accelerate units travelling at max speed.
-		if (this.GetSpeed() < curMaxSpeed)
-			this.SetAcceleration(this.#maxAcceleration);
-		else if (this.GetSpeed() > curMaxSpeed)
-			this.SetAcceleration(-this.#maxDeceleration);
-		else
-			this.SetAcceleration(0);
 
-		// Also update the angle directly to the target to correct any small rounding errors.
-		// This will only perform a small correction so is unlikely to be visible to players.
-		this.SetAngle(MathUtils.AngleTo(currentX, currentY, curTargetX, curTargetY));
+		// Also update the angle. This allows the unit to rotate towards the target position
+		// if it's not already pointing in the right direction, but also allows the angle to
+		// be corrected over time as it moves in a straight line, as floating point precision
+		// errors may mean the angle is not calculated perfectly.
+		const targetAngle = MathUtils.AngleTo(currentX, currentY, curTargetX, curTargetY);
+		this.#RotateTowardsAngle(targetAngle, dt, sqDistToTarget);
+		
+		// Accelerate or brake towards the current maximum speed.
+		this.#targetSpeed = Math.min(this.#curMaxSpeed, stoppingMaxSpeed);
 	}
 	
 	#TickApplyMovement(dt)
 	{
+		// Accelerate or brake according to whether the unit is under or over the target speed.
+		// If it's exactly at the target speed, set the acceleration to 0, so clients don't keep
+		// trying to apply acceleration.
+		if (this.GetSpeed() < this.#targetSpeed)
+			this.SetAcceleration(this.#maxAcceleration);
+		else if (this.GetSpeed() > this.#targetSpeed)
+			this.SetAcceleration(-this.#maxDeceleration);
+		else
+			this.SetAcceleration(0);
+		
 		// Adjust the speed according to the acceleration.
 		const acceleration = this.GetAcceleration();
 		if (acceleration !== 0)
 		{
-			this.SetSpeed(this.GetSpeed() + acceleration * dt, 0);
+			// End on the exact target speed if the change in acceleration would reach it.
+			const speedChange = acceleration * dt;
+			if (Math.abs(this.GetSpeed() - this.#targetSpeed) <= speedChange)
+			{
+				this.SetSpeed(this.#targetSpeed);
+			}
+			else
+			{
+				this.SetSpeed(this.GetSpeed() + acceleration * dt);
+			}
 		}
 
 		// If moving, apply the movement at the current speed.
@@ -328,44 +512,12 @@ export class MovableUnitPlatform extends UnitPlatform {
 			const moveDist = MathUtils.Clamp(this.GetSpeed() * dt + 0.5 * acceleration * dt * dt,
 											 0, this.#maxSpeed * dt);
 			
-			// Check if we've arrived, which is when the target position is nearer than the
-			// distance to move. Note this compares squared distances so there doesn't have
-			// to be an expensive square root calculation.
-			const hasTarget = (this.#waypoints && this.#waypoints.length > 0);
+			// Advance by the move distance on the current angle.
 			const [currentX, currentY] = this.GetPosition();
-			const [curTargetX, curTargetY] = (hasTarget ? this.#waypoints[0] : [0, 0]);
-			const sqDistToTarget = MathUtils.DistanceSquared(currentX, currentY, curTargetX, curTargetY);
-		
-			if (hasTarget && moveDist * moveDist >= sqDistToTarget)
-			{
-				// Arrived at the target position. Remove the waypoint from the list.
-				this.#waypoints.shift();
-				
-				// If this was the last waypoint, then set the final position,
-				// bring the unit to a complete halt, and stop movement.
-				if (this.#waypoints.length === 0)
-				{
-					this.SetPosition(curTargetX, curTargetY);
-					this.SetSpeed(0);
-					this.SetAcceleration(0);
-					this.#moveState = "";
-				}
-				else
-				{
-					// Otherwise proceeding to the next waypoint.
-					// Start the movement process from the beginning again.
-					// (TODO: improve this algorithm)
-					this.#moveState = "stopping";
-				}
-			}
-			else
-			{
-				// Not yet arrived: advance by the move distance on the current angle.
-				const a = this.GetAngle();
-				const dx = Math.cos(a) * moveDist;
-				const dy = Math.sin(a) * moveDist;
-				this.SetPosition(currentX + dx, currentY + dy);
-			}
+			const a = this.GetAngle();
+			const dx = Math.cos(a) * moveDist;
+			const dy = Math.sin(a) * moveDist;
+			this.SetPosition(currentX + dx, currentY + dy);
 		}
 
 		// Once the unit comes to a stop - i.e. the first time the speed reaches 0 after
