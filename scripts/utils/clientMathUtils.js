@@ -33,6 +33,12 @@ export function lerp(a, b, x)
 	return a + (b - a) * x;
 }
 
+// Return the angle in radians from the first position to the second.
+export function AngleTo(x1, y1, x2, y2)
+{
+	return Math.atan2(y2 - y1, x2 - x1);
+};
+
 // Calculate the difference between angles in the shortest direction.
 export function AngleDifference(a1, a2)
 {

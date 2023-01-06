@@ -1,4 +1,6 @@
 
+import * as MathUtils from "../utils/clientMathUtils.js";
+
 // A class to manage pathfinding. It essentially wraps the Pathfinding behavior in the
 // PathfindingController object, so it can use Construct's built-in pathfinding calculations.
 export class PathfindingController {
@@ -63,11 +65,49 @@ export class PathfindingController {
 		const foundPath = await this.#pathfindingBeh.calculatePath(fromX, fromY, toX, toY);
 		if (foundPath)
 		{
-			return [...this.#pathfindingBeh.nodes()];
+			const nodeList = [...this.#pathfindingBeh.nodes()];
+			
+			// For testing purposes: visualize the path on the DebugOverlay layer.
+			this.#DebugVisualizePath(fromX, fromY, nodeList);
+			
+			return nodeList;
 		}
 		else
 		{
 			return null;
+		}
+	}
+	
+	// Create PFNode and PFNodeLine objects on the DebugOverlay layer to visualize calculated paths.
+	// The objects have the Fade behavior so after a while they fade out and disappear.
+	#DebugVisualizePath(fromX, fromY, nodeList)
+	{
+		// Copy the node list and add the start position at the beginning as an extra node,
+		// so the start position is included in the visualization.
+		nodeList = nodeList.slice(0);
+		nodeList.unshift([fromX, fromY]);
+		
+		// For every node in the path
+		for (let i = 0, len = nodeList.length; i < len; ++i)
+		{
+			// Get current node position
+			const [x, y] = nodeList[i];
+			
+			// If this is not the last node in the list, then create a line to the next node
+			if (i < len - 1)
+			{
+				// Get next node position
+				const [nextX, nextY] = nodeList[i + 1];
+				
+				// Create a PFNodeLine (Tiled Background) instance. Set its angle to the next node
+				// and its width to the distance to the next node, so it acts as a line between them.
+				const lineInst = this.#runtime.objects.PFNodeLine.createInstance("DebugOverlay", x, y);
+				lineInst.angle = MathUtils.AngleTo(x, y, nextX, nextY);
+				lineInst.width = MathUtils.DistanceTo(x, y, nextX, nextY);
+			}
+			
+			// Create a PFNode sprite to represent this node.
+			this.#runtime.objects.PFNode.createInstance("DebugOverlay", x, y);
 		}
 	}
 }

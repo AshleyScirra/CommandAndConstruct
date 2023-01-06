@@ -1,0 +1,26 @@
+{
+	"name": "PFNodeLine",
+	"plugin-id": "TiledBg",
+	"sid": 759012734055459,
+	"isGlobal": false,
+	"instanceVariables": [],
+	"behaviorTypes": [
+		{
+			"behaviorId": "Fade",
+			"name": "Fade",
+			"sid": 619759328096837
+		}
+	],
+	"effectTypes": [],
+	"image": {
+		"width": 64,
+		"height": 8,
+		"originX": 0.5,
+		"originY": 0.5,
+		"originalSource": "",
+		"exportFormat": "lossless",
+		"exportQuality": 0.8,
+		"imageSpriteId": 8578202,
+		"useCollisionPoly": true
+	}
+}
