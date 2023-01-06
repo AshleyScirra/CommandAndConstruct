@@ -302,7 +302,9 @@ export class MovableUnitPlatform extends UnitPlatform {
 	//    then revert back to "stopping" state. This will bring the unit to a halt, point
 	//    directly towards the waypoint, and then start accelerating towards it again,
 	//    avoiding the problem of units circling endlessly around targets they can't reach.
-	#RotateTowardsAngle(targetAngle, dt, sqDistToTarget)
+	//    This is only used when moving towards the final waypoint, as other waypoints along
+	//    the way are often deliberately cut off by the turn circle.
+	#RotateTowardsAngle(targetAngle, dt, sqDistToTarget = Infinity)
 	{
 		const currentAngle = this.GetAngle();
 		const angleDiff = MathUtils.AngleDifference(targetAngle, currentAngle);
@@ -323,11 +325,8 @@ export class MovableUnitPlatform extends UnitPlatform {
 			
 			// If the unit would travel further than the distance to the target in
 			// this time, then it may not be able to reach it with its turn circle,
-			// so come to a halt and start over. However only do this if the distance
-			// is at least 30px away to avoid inadvertently activating this while
-			// maneuvering close to waypoints.
-			if (travelDist * travelDist > sqDistToTarget &&
-				sqDistToTarget > 30 * 30)
+			// so come to a halt and start over.
+			if (travelDist * travelDist > sqDistToTarget)
 			{
 				this.#moveState = "stopping";
 			}
@@ -351,21 +350,31 @@ export class MovableUnitPlatform extends UnitPlatform {
 		// Find square distance to current waypoint.
 		const sqDistToTarget = MathUtils.DistanceSquared(currentX, currentY, curTargetX, curTargetY);
 		
-		// Find the angle to the current waypoint and rotate towards it.
-		// Note this removes any temporary speed restriction if the unit is on target.
+		// Find the angle to the current waypoint, and the angle from the current waypoint
+		// to the next waypoint.
 		const targetAngle = MathUtils.AngleTo(currentX, currentY, curTargetX, curTargetY);
-		this.#RotateTowardsAngle(targetAngle, dt, sqDistToTarget);
-		
-		// If #RotateTowardsAngle() determines the target is inside the turn circle it will
-		// revert the move state to "stopping". If it does that, don't try to handle any
-		// more of the normal waypoint movement.
-		if (this.#moveState === "stopping")
-			return;
-		
-		// Find the angle from the current waypoint to the next waypoint, and then the
-		// angle between that and the angle from the current waypoint to the unit.
-		// This is the angle within which the turn circle must fit.
 		const nextAngle = MathUtils.AngleTo(curTargetX, curTargetY, nextTargetX, nextTargetY);
+		
+		// If the angle towards the current waypoint, and the angle to the next waypoint, are almost
+		// exactly in a straight line (based on the angle difference being under 2 degrees), remove
+		// the next waypoint early. In this case the next waypoint is basically redundant. This also
+		// avoids trying to calculate the turn circle for an almost straight line, which results in
+		// calculating a tiny or non-finite turn distance. This helps with the first waypoint sometimes
+		// forming a straight line between the unit and the next waypoint, and may also happen while
+		// units turn between waypoints.
+		if (MathUtils.AngleDifference(targetAngle, nextAngle) < MathUtils.ToRadians(2))
+		{
+			this.#waypoints.shift();
+			return;
+		}
+		
+		// Rotate towards the target angle.
+		// Note this removes any temporary speed restriction if the unit is on target.
+		this.#RotateTowardsAngle(targetAngle, dt);
+		
+		// Find the difference between the angle from the current waypoint back to the unit,
+		// and the angle from the current waypoint to the next waypoint.
+		// This is the angle within which the turn circle must fit.
 		const waypointAngleDiff = MathUtils.AngleDifference(targetAngle + Math.PI, nextAngle);
 		
 		// Find the radius of the turn circle at the current speed.
@@ -414,7 +423,15 @@ export class MovableUnitPlatform extends UnitPlatform {
 		
 		// If the unit is within the early turn range, then switch to the next waypoint
 		// so it can begin to turn towards it.
-		if (sqDistToTarget <= turnDist * turnDist)
+		// As a fail-safe against calculating a tiny turn circle distance, switch to the
+		// next waypoint when within range of whichever is largest:
+		// 1) the calculated turn circle distance
+		// 2) the distance travelled in 2 ticks at the current speed
+		// 2) 10 pixels
+		const minMoveDist = this.GetSpeed() * dt * 2;
+		if (sqDistToTarget <= Math.max(turnDist * turnDist,	
+									   minMoveDist * minMoveDist,
+									   10 * 10))
 		{
 			this.#waypoints.shift();
 		}
