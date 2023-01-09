@@ -239,7 +239,7 @@
 						"Fade": {
 							"properties": {
 								"fade-in-time": 0,
-								"wait-time": 5,
+								"wait-time": 7,
 								"fade-out-time": 5,
 								"destroy": true,
 								"enabled": true,
@@ -289,7 +289,7 @@
 						"Fade": {
 							"properties": {
 								"fade-in-time": 0,
-								"wait-time": 5,
+								"wait-time": 7,
 								"fade-out-time": 5,
 								"destroy": true,
 								"enabled": true,

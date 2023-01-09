@@ -33,8 +33,8 @@ export class GameServer {
 	#objectData = new Map();		// name -> ObjectData
 	
 	// Level size
-	#layoutWidth = 30000;
-	#layoutHeight = 10000;
+	#layoutWidth = 35000;
+	#layoutHeight = 15000;
 	
 	#isGameOver = false;			// set to true once victory/defeat condition met
 	
@@ -90,7 +90,7 @@ export class GameServer {
 		for (let i = 0; i < 500; ++i)
 		{
 			// Use a formula to arrange units in 5 rows
-			const x = 5000 + i * 40;
+			const x = 7000 + i * 40;
 			const y = 2500 + (i % 5) * 300;
 			
 			// Add player 0 unit along the top
