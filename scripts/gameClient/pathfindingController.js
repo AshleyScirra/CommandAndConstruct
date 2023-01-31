@@ -19,6 +19,10 @@ export class PathfindingController {
 		const pfControllerInst = this.#runtime.objects.PathfindingController.getFirstInstance();
 		this.#pathfindingBeh = pfControllerInst.behaviors.Pathfinding;
 		
+		// Set the base movement cost to 100, rather than the default 10. This allows finer
+		// control over the path costs for spreading with path groups.
+		this.#pathfindingBeh.map.moveCost = 100;
+		
 		// Get the debug tilemap for displaying the pathfinding map.
 		this.#debugTilemapInst = this.#runtime.objects.PFDebugTilemap.getFirstInstance();
 	}
@@ -109,5 +113,16 @@ export class PathfindingController {
 			// Create a PFNode sprite to represent this node.
 			this.#runtime.objects.PFNode.createInstance("DebugOverlay", x, y);
 		}
+	}
+	
+	// Forward calls to start and end pathfinding groups to the Pathfinding behavior.
+	StartGroup(baseCost, cellSpread, maxWorkers)
+	{
+		this.#pathfindingBeh.map.startPathGroup(baseCost, cellSpread, maxWorkers);
+	}
+	
+	EndGroup()
+	{
+		this.#pathfindingBeh.map.endPathGroup();
 	}
 }

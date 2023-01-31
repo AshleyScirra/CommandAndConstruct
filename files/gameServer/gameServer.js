@@ -34,7 +34,7 @@ export class GameServer {
 	
 	// Level size
 	#layoutWidth = 35000;
-	#layoutHeight = 15000;
+	#layoutHeight = 13000;
 	
 	#isGameOver = false;			// set to true once victory/defeat condition met
 	
@@ -204,14 +204,29 @@ export class GameServer {
 				MathUtils.Clamp(y, 0, this.#layoutHeight)];
 	}
 	
+	// Called when GameServer receives a command from a player to move units
+	// to a location.
 	MoveUnits(player, units)
 	{
+		// Determine whether to use a pathfinding group for moving these units.
+		// This is done if the number of units to move is above the threshold.
+		const groupThreshold = this.#serverPathfinding.GetGroupThreshold();
+		const useGroup = (units.length > groupThreshold);
+		
+		// If using a group, start the pathfinding group now before finding paths.
+		if (useGroup)
+			this.#serverPathfinding.StartGroup();
+		
+		// Collect an array of units to move, with objects in the format:
+		// { platform, curX, curY, toX, toY }
+		const unitsToMove = [];
+		
 		// For each unit being commanded to move
 		for (const u of units)
 		{
 			const id = u["id"];
-			const x = u["x"];
-			const y = u["y"];
+			const toX = u["x"];
+			const toY = u["y"];
 			
 			// Look up unit from its ID.
 			const unit = this.GetUnitById(id);
@@ -223,9 +238,70 @@ export class GameServer {
 			if (!unit || unit.GetPlayer() !== player)
 				continue;
 			
-			// Instruct the unit to move to the given position.
-			unit.GetPlatform().MoveToPosition(x, y);
+			// Add this unit to the list of units to move.
+			const platform = unit.GetPlatform();
+			const [curX, curY] = platform.GetPosition();
+			unitsToMove.push({
+				platform,
+				curX, curY,
+				toX, toY
+			});
 		}
+		
+		// If using a pathfinding group, shuffle the order of units to try to spread out
+		// simultaneous pathfinding requests.
+		if (useGroup)
+		{
+			// Sort units horizontally and collect units in to two halves.
+			unitsToMove.sort((a, b) => a.curX - b.curX);
+			let mid = Math.floor(unitsToMove.length / 2);
+			const leftSide = unitsToMove.slice(0, mid);
+			leftSide.reverse();
+			const rightSide = unitsToMove.slice(mid);
+			
+			// Sort the left and right sides vertically and collect each side in to
+			// both top and bottom quadrants.
+			leftSide.sort((a, b) => a.curY - b.curY);
+			rightSide.sort((a, b) => a.curY - b.curY);
+			
+			mid = Math.floor(leftSide.length / 2);
+			const topLeftSide = leftSide.slice(0, mid);
+			topLeftSide.reverse();
+			const bottomLeftSide = leftSide.slice(mid);
+			
+			mid = Math.floor(rightSide.length / 2);
+			const topRightSide = rightSide.slice(0, mid);
+			topRightSide.reverse();
+			const bottomRightSide = rightSide.slice(mid);
+			
+			// Now clear unitsToMove and rebuild it by picking one unit from each quadrant
+			// at a time until all four quadrants are empty.
+			unitsToMove.length = 0;
+			const maxLen = Math.max(topLeftSide.length, bottomLeftSide.length, topRightSide.length, bottomRightSide.length);
+			for (let i = 0; i < maxLen; ++i)
+			{
+				if (topLeftSide.length > 0)
+					unitsToMove.push(topLeftSide.pop());
+				if (bottomRightSide.length > 0)
+					unitsToMove.push(bottomRightSide.pop());
+				if (topRightSide.length > 0)
+					unitsToMove.push(topRightSide.pop());
+				if (bottomLeftSide.length > 0)
+					unitsToMove.push(bottomLeftSide.pop());
+			}
+		}
+		
+		// Instruct each unit to move to its target position. This performs
+		// pathfinding to calculate a route to the destination.
+		for (const { platform, toX, toY} of unitsToMove)
+		{
+			platform.MoveToPosition(toX, toY);
+		}
+		
+		// If a pathfinding group was used, end it now that all units have
+		// sent their pathfinding jobs.
+		if (useGroup)
+			this.#serverPathfinding.EndGroup();
 	}
 	
 	// Called when a turret fires a projectile.

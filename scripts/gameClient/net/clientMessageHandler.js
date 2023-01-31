@@ -39,7 +39,9 @@ export class ClientMessageHandler {
 			["pong", m => this.#OnPong(m)],
 			["game-over", m => this.#OnGameOver(m)],
 			["stats", m => this.#OnStats(m)],
-			["find-path", m => this.#OnFindPath(m)]
+			["find-path", m => this.#OnFindPath(m)],
+			["pathfinding-start-group", m => this.#OnPathfindingStartGroup(m)],
+			["pathfinding-end-group", m => this.#OnPathfindingEndGroup(m)]
 		]);
 	}
 	
@@ -415,6 +417,22 @@ export class ClientMessageHandler {
 			"message-id": m["message-id"],	// pass same message-id for reply
 			"resolve": result				// send resulting path as result
 		}, "");
+	}
+	
+	// ServerPathfinding sends messages to start and stop pathfinding groups
+	// in the host player's PathfindingController.
+	#OnPathfindingStartGroup(m)
+	{
+		const baseCost = m["baseCost"];
+		const cellSpread = m["cellSpread"];
+		const maxWorkers = m["maxWorkers"];
+		
+		this.#gameClient.GetPathfindingController().StartGroup(baseCost, cellSpread, maxWorkers);
+	}
+	
+	#OnPathfindingEndGroup()
+	{
+		this.#gameClient.GetPathfindingController().EndGroup();
 	}
 	
 	// Get information about units, such as their size and image point locations,
