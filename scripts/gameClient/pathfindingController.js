@@ -74,12 +74,9 @@ export class PathfindingController {
 			// If the destination position cell is not an obstacle, replace the last node with
 			// the specified destination position. This allows moving to the exact location
 			// rather than the middle of the nearest cell at the destination position.
-			const lastNode = nodeList.at(-1);
-			const pfMap = this.#pathfindingBeh.map;
-			const cellSize = pfMap.cellSize;
-			
-			if (!pfMap.isCellObstacle(Math.floor(toX / cellSize), Math.floor(toY / cellSize)))
+			if (!this.IsCellObstacle(toX, toY))
 			{
+				const lastNode = nodeList.at(-1);
 				lastNode[0] = toX;
 				lastNode[1] = toY;
 			}
