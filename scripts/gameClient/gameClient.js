@@ -52,7 +52,8 @@ export class GameClient {
 		this.#gameMode = gameMode;
 		
 		this.#eventHandlers = new MultiEventHandler([
-			[runtime,		"tick",		() => this.#OnTick()]
+			[runtime,		"tick",		() => this.#OnTick()],
+			[runtime,		"resize",	() => this.#OnWindowResize()]
 		]);
 		
 		// Create ClientMessageHandler which handles messages from GameServer
@@ -182,6 +183,17 @@ export class GameClient {
 		
 		// Initialise pathfinding controller
 		await this.#pathfindingController.Init();
+		
+		// The pathfinding controller has updated the pathfinding map in Init().
+		// Now the cell obstacles are ready, update the minimap terrain.
+		this.#minimap.UpdateTerrain();
+	}
+	
+	// Tell the minimap to redraw the terrain when the window resizes so it reflects
+	// the new window resolution.
+	#OnWindowResize()
+	{
+		this.#minimap.UpdateTerrain();
 	}
 	
 	// Called in the ClientUnit constructor

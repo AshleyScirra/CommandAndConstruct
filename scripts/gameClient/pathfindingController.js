@@ -128,6 +128,15 @@ export class PathfindingController {
 		}
 	}
 	
+	// Return a boolean indicating if a given layout position is an obstacle.
+	// Used by the minimap to draw the terrain.
+	IsCellObstacle(x, y)
+	{
+		const pfMap = this.#pathfindingBeh.map;
+		const cellSize = pfMap.cellSize;
+		return pfMap.isCellObstacle(Math.floor(x / cellSize), Math.floor(y / cellSize));
+	}
+	
 	// Forward calls to start and end pathfinding groups to the Pathfinding behavior.
 	StartGroup(baseCost, cellSpread, maxWorkers)
 	{

@@ -151,7 +151,9 @@
 							"GameOverText",
 							"MinimapCanvasFast",
 							"MinimapCanvasSlow",
-							"UnitSelectionBox"
+							"UnitSelectionBox",
+							"MinimapCanvasTerrain",
+							"MinimapBackground"
 						],
 						"subfolders": [],
 						"name": "UI"

@@ -10,12 +10,13 @@ const isMobile = /ipod|ipad|iphone|android/i.test(navigator.userAgent);
 // screen; on desktop it uses 200x200 since it's easier to see there.
 const MINIMAP_AREA = isMobile ? 300 * 300 : 200 * 200;
 
-// The minimap is drawn using two DrawingCanvas instances for two "layers" of the minimap.
+// The minimap is drawn using three DrawingCanvas instances for three "layers" of the minimap.
 // Since drawing units is relatively expensive in CPU time, but they don't move quickly on
 // the minimap, units are drawn on to a DrawingCanvas that updates at just 20 FPS instead
 // of every frame. The difference is hardly noticable and it only uses 1/3 the drawing time.
 // Other content, like projectiles and the viewport area, update every frame as they take
 // less CPU time to draw and they benefit more from being displayed smoothly.
+// (The terrain layer at the back only draws once when the window is resized.)
 const SLOW_UPDATE_FPS = 20;
 
 // The Minimap class manages rendering the game state to a minimap via a DrawingCanvas
@@ -23,17 +24,26 @@ const SLOW_UPDATE_FPS = 20;
 export class Minimap {
 
 	#gameClient;				// reference to GameClient
+	#backgroundInst;			// the MinimapBackground instance (TiledBackground)
+	#terrainInst;				// the MinimapCanvasTerrain instance (draws once per window size)
 	#slowInst;					// the MinimapCanvasSlow instance (draws at a lower FPS)
 	#fastInst;					// the MinimapCanvasFast instance (draws at full FPS)
 	#deviceScale = 1;			// the DrawingCanvas scale of device pixels per object pixel
-	#lastDrawTime = 0;
+	#lastDrawTime = 0;			// for tracking slow update redraws
+	
+	// Last terrain canvas device size, for tracking when it changes
+	#lastTerrainDeviceWidth = 0;
+	#lastTerrainDeviceHeight = 0;
+	#redrawTerrain = false;		// for forcing terrain to redraw
 	
 	constructor(gameClient)
 	{
 		this.#gameClient = gameClient;
 		
-		// Get the two minimap DrawingCanvas instances
+		// Get the background and three minimap DrawingCanvas instances
 		const runtime = this.#gameClient.GetRuntime();
+		this.#backgroundInst = runtime.objects.MinimapBackground.getFirstInstance();
+		this.#terrainInst = runtime.objects.MinimapCanvasTerrain.getFirstInstance();
 		this.#slowInst = runtime.objects.MinimapCanvasSlow.getFirstInstance();
 		this.#fastInst = runtime.objects.MinimapCanvasFast.getFirstInstance();
 	}
@@ -46,6 +56,10 @@ export class Minimap {
 		const minimapWidth = Math.sqrt(aspectRatio * MINIMAP_AREA);
 		const minimapHeight = minimapWidth / aspectRatio;
 		
+		this.#backgroundInst.width = minimapWidth;
+		this.#backgroundInst.height = minimapHeight;
+		this.#terrainInst.width = minimapWidth;
+		this.#terrainInst.height = minimapHeight;
 		this.#slowInst.width = minimapWidth;
 		this.#slowInst.height = minimapHeight;
 		this.#fastInst.width = minimapWidth;
@@ -60,6 +74,19 @@ export class Minimap {
 		// (Note both canvas instances are the same size so we only need to use one.)
 		this.#deviceScale = this.#slowInst.surfaceDeviceWidth / this.#slowInst.width;
 		
+		// If the terrain canvas device size has changed due to the window size changing,
+		// or the redraw flag is set, redraw the terrain representation on the minimap.
+		if (this.#redrawTerrain ||
+			this.#terrainInst.surfaceDeviceWidth !== this.#lastTerrainDeviceWidth ||
+			this.#terrainInst.surfaceDeviceHeight !== this.#lastTerrainDeviceHeight)
+		{
+			this.#DrawTerrainCanvas();
+			
+			this.#redrawTerrain = false;
+			this.#lastTerrainDeviceWidth = this.#terrainInst.surfaceDeviceWidth;
+			this.#lastTerrainDeviceHeight = this.#terrainInst.surfaceDeviceHeight;
+		}
+		
 		// Draw the slow-update canvas at a lower framerate to reduce its CPU overhead.
 		const slowUpdateInterval = 1 / SLOW_UPDATE_FPS;
 		if (this.#lastDrawTime <= gameTime - slowUpdateInterval)
@@ -72,11 +99,68 @@ export class Minimap {
 		this.#DrawFastUpdateCanvas();
 	}
 	
+	// When the window is resized, or when the pathfinding map is first generated,
+	// clear the terrain canvas to transparent and flag that terrain should be redrawn.
+	// The clear forces it to resize its surface in automatic resolution mode so it
+	// adapts to a resized window, and setting the flag ensures it redraws even if the
+	// resolution has not changed, since in that case the surface device size stays
+	// the same. (This is necessary on startup after generating the pathfinding map.)
+	UpdateTerrain()
+	{
+		this.#terrainInst.clearCanvas([0, 0, 0, 0]);
+		this.#redrawTerrain = true;
+	}
+	
+	// Draws terrain to the minimap, but only as a one-off on startup or when the
+	// window is resized.
+	#DrawTerrainCanvas()
+	{
+		// Get the pathfinding controller, which has the obstacle map, the
+		// current layout size, and the terrain canvas device size.
+		const pathfindingController = this.#gameClient.GetPathfindingController();
+		const [layoutWidth, layoutHeight] = this.#gameClient.GetViewManager().GetLayoutSize();
+		const deviceWidth = this.#terrainInst.surfaceDeviceWidth;
+		const deviceHeight = this.#terrainInst.surfaceDeviceHeight;
+		
+		// Draw terrain by directly generating an ImageData with pixel data.
+		// Create it at the size matching the surface device size.
+		const imageData = new ImageData(deviceWidth, deviceHeight);
+		
+		// For convenience, update the pixel data with a Uint32Array instead
+		// of the default Uint8ClampedArray. This means each pixel is a single
+		// element in the array.
+		const u32arr = new Uint32Array(imageData.data.buffer);
+		
+		// For each device pixel in the ImageData
+		for (let y = 0; y < deviceHeight; ++y)
+		{
+			// Calculate the layout Y co-ordinate for this device pixel Y
+			const layoutY = y * layoutHeight / deviceHeight;
+			
+			for (let x = 0; x < deviceWidth; ++x)
+			{
+				// Calculate the layout X co-ordinate for this device pixel X
+				const layoutX = x * layoutWidth / deviceWidth;
+				
+				// Check if this pixel is an obstacle via PathfindingController.
+				// If it is, write an opaque grey pixel in to the ImageData.
+				if (pathfindingController.IsCellObstacle(layoutX, layoutY))
+				{
+					const index = y * deviceWidth + x;
+					u32arr[index] = 0xFF505050;		// hex in ARGB order
+				}
+			}
+		}
+		
+		// Now the pixel data has been generated, load it in to the terrain canvas.
+		this.#terrainInst.loadImagePixelData(imageData);
+	}
+	
 	// Draw the bottom DrawingCanvas of the minimap, updating at a lower framerate to save CPU time.
 	#DrawSlowUpdateCanvas()
 	{	
-		// Clear the minimap to a grey color.
-		this.#slowInst.clearCanvas([0.2, 0.2, 0.2]);
+		// Clear to fully transparent.
+		this.#slowInst.clearCanvas([0, 0, 0, 0]);
 		
 		// Draw small colored rectangles for each player's units.
 		// TODO: have some centralized way to store players and their colors
