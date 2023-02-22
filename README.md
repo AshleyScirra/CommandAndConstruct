@@ -21,6 +21,7 @@ Here's a list of blog posts so far about this project.
 - [RTS round-up: Improving Construct through game development](https://www.construct.net/en/blogs/construct-official-blog-1/rts-round-up-improving-1605)
 - [RTS devlog #8: How to beat lag](https://www.construct.net/en/blogs/ashleys-blog-2/rts-devlog-beat-lag-1607)
 - [RTS devlog #9: Extreme pathfinding](https://www.construct.net/en/blogs/ashleys-blog-2/rts-devlog-extreme-pathfinding-1608)
+- [RTS devlog #10: Following paths](https://www.construct.net/en/blogs/ashleys-blog-2/rts-devlog-10-following-paths-1611)
 
 ## Try the project
 
