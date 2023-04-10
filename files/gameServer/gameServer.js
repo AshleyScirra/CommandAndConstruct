@@ -327,7 +327,7 @@ export class GameServer {
 		// check units in the same collision cell as this projectile. Note the method
 		// takes a rectangle, but projectiles are just a point, so a zero-sized rectangle
 		// is passed using the same left/right and top/bottom values. Also note that
-		// ForEachItemInArea() call run the callback repeatedly with the same thing,
+		// ForEachItemInArea() can run its callback repeatedly with the same thing,
 		// but that doesn't matter here - as soon as a hit is detected it stops iterating,
 		// and checking something that isn't hit multiple times will have negligible
 		// performance overhead (and collision cells overall are a huge improvement).
