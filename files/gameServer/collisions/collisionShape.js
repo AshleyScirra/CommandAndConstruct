@@ -100,6 +100,11 @@ export class CollisionShape {
 		return [this.#boxLeft, this.#boxTop, this.#boxRight, this.#boxBottom];
 	}
 	
+	GetPolyPoints()
+	{
+		return this.#polyPoints;
+	}
+	
 	// Check if a given position is inside the collision shape.
 	// Note the point must be relative to the origin, like the collision polygon is itself.
 	ContainsPoint(x, y)
@@ -139,5 +144,66 @@ export class CollisionShape {
 		
 		// If there is an odd number of intersections, the point is inside the shape.
 		return (intersectionCount % 2) === 1;
+	}
+	
+	// Check if a given collision shape intersects this collision shape.
+	// Since collision shape poly points are relative to their origins, the X and Y offset
+	// to the other shape must be provided.
+	IntersectsOther(collisionShape, offX, offY)
+	{
+		// First check if the bounding boxes of the collision shapes do not intersect.
+		// This is a fast way to reject far-apart collision shapes.
+		const myBox = this.GetBox();
+		const otherBox = collisionShape.GetBox();
+		
+		if (myBox[0] > otherBox[2] + offX ||	// left > right
+			myBox[1] > otherBox[3] + offY ||	// top > bottom
+			myBox[2] < otherBox[0] + offX ||	// right < left
+			myBox[3] < otherBox[1] + offY)		// bottom < top
+		{
+			return false;
+		}
+		
+		// Next check if either shape completely encloses the other. This is done by taking
+		// the first polygon point of one shape, and checking if that point is contained within
+		// the other shape. This must be checked both ways round (this shape contains other shape
+		// and other shape contains this shape).
+		const otherPolyPoints = collisionShape.GetPolyPoints();
+		const otherFirstPoint = otherPolyPoints[0];
+		if (this.ContainsPoint(otherFirstPoint[0] + offX, otherFirstPoint[1] + offY))
+		{
+			return true;
+		}
+		
+		const myFirstPoint = this.#polyPoints[0];
+		if (collisionShape.ContainsPoint(myFirstPoint[0] - offX, myFirstPoint[1] - offY))
+		{
+			return true;
+		}
+		
+		// Next do a brute-force check of every combination of polygon segments between the two
+		// collision shapes and test if they intersect. This is slow with many polygon points,
+		// but shapes tend to be relatively simple, and the bounding box check avoids reaching
+		// this check for most intersection tests.
+		for (let i = 0, leni = this.#polyPoints.length; i < leni; ++i)
+		{
+			const [p1x, p1y] = this.#polyPoints[i];
+			const [p2x, p2y] = this.#polyPoints[(i + 1) % leni];
+			
+			for (let j = 0, lenj = otherPolyPoints.length; j < lenj; ++j)
+			{
+				const [p3x, p3y] = otherPolyPoints[j];
+				const [p4x, p4y] = otherPolyPoints[(j + 1) % lenj];
+				
+				if (MathUtils.SegmentsIntersect(p1x, p1y, p2x, p2y,
+												p3x + offX, p3y + offY, p4x + offX, p4y + offY))
+				{
+					return true;
+				}
+			}
+		}
+		
+		// No intersection found.
+		return false;
 	}
 }

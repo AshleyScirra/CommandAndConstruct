@@ -52,6 +52,11 @@ export class UnitPlatform {
 		return 0;
 	}
 	
+	GetCollisionShape()
+	{
+		return this.#collisionShape;
+	}
+	
 	Tick(dt)
 	{
 		// override
@@ -78,5 +83,50 @@ export class UnitPlatform {
 	ContainsPoint(x, y)
 	{
 		return this.#collisionShape.ContainsPoint(x, y);
+	}
+	
+	// Check if this UnitPlatform intersects another UnitPlatform.
+	IntersectsOther(unitPlatform)
+	{
+		// Testing if a unit platform intersects itself returns false.
+		if (unitPlatform === this)
+			return false;
+		
+		// Determine offset between the two unit platform positions, since the CollisionShape
+		// IntersectsOther() method needs the offset.
+		const [myX, myY] = this.GetPosition();
+		const [otherX, otherY] = unitPlatform.GetPosition();
+		
+		// Use the CollisionShape IntersectsOther() method for actual intersection test.
+		return this.#collisionShape.IntersectsOther(unitPlatform.GetCollisionShape(), otherX - myX, otherY - myY);
+	}
+	
+	// Check if this UnitPlatform intersects any other UnitPlatform.
+	IntersectsAnyOther()
+	{
+		// Result to return from this method.
+		let result = false;
+		
+		// Get unit's collision box as the area of interest in the collision grid.
+		const [x, y] = this.GetPosition();
+		const [left, top, right, bottom] = this.#collisionShape.GetBox();
+		
+		// To efficiently eliminate most far-away units, use the collision grid to only
+		// check units in the same collision cells as this unit. Also note that ForEachItemInArea()
+		// can run its callback repeatedly with the same thing, but that doesn't matter here -
+		// it only means some units may be checked more than once, but it won't affect the result.
+		this.GetGameServer().GetCollisionGrid().ForEachItemInArea(
+			x + left, y + top, x + right, y + bottom,
+			unitPlatform =>
+			{
+				// Test if this unit platform intersects another unit platform in the same collision cell.
+				if (this.IntersectsOther(unitPlatform))
+				{
+					result = true;	// return true from IntersectsAnyOther()
+					return true;	// bail out and stop iterating in ForEachItemInArea()
+				}
+			});
+		
+		return result;
 	}
 }
