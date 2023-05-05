@@ -249,6 +249,10 @@
 									}
 								},
 								{
+									"type": "comment",
+									"text": "Show the join link in both a text box and a QR code."
+								},
+								{
 									"id": "set-text",
 									"objectClass": "HostJoinLink",
 									"sid": 112408181554234,
@@ -262,6 +266,30 @@
 									"sid": 469950649442188,
 									"parameters": {
 										"visibility": "visible"
+									}
+								},
+								{
+									"id": "set-visible",
+									"objectClass": "CopyLinkButton",
+									"sid": 344333667028091,
+									"parameters": {
+										"visibility": "visible"
+									}
+								},
+								{
+									"id": "set-visible",
+									"objectClass": "QRCode",
+									"sid": 563228534598185,
+									"parameters": {
+										"visibility": "visible"
+									}
+								},
+								{
+									"id": "set-text",
+									"objectClass": "QRCode",
+									"sid": 493527544202147,
+									"parameters": {
+										"text": "HostJoinLink.Text"
 									}
 								},
 								{
@@ -394,6 +422,31 @@
 						}
 					],
 					"sid": 298666513731590
+				},
+				{
+					"eventType": "comment",
+					"text": "Clicking the 'Copy' button copies the host join link to the clipboard."
+				},
+				{
+					"eventType": "block",
+					"conditions": [
+						{
+							"id": "on-clicked",
+							"objectClass": "CopyLinkButton",
+							"sid": 924259337210420
+						}
+					],
+					"actions": [
+						{
+							"id": "copy-text",
+							"objectClass": "Clipboard",
+							"sid": 551871152056004,
+							"parameters": {
+								"text": "HostJoinLink.Text"
+							}
+						}
+					],
+					"sid": 623768501505058
 				}
 			],
 			"sid": 992347831605519

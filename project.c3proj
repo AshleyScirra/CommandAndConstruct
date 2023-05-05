@@ -1,6 +1,6 @@
 {
 	"projectFormatVersion": 1,
-	"savedWithRelease": 33000,
+	"savedWithRelease": 34000,
 	"name": "Command & Construct",
 	"runtime": "c3",
 	"useWorker": "worker",
@@ -17,6 +17,13 @@
 			"type": "plugin",
 			"id": "Button",
 			"name": "Button",
+			"author": "Scirra",
+			"bundled": false
+		},
+		{
+			"type": "plugin",
+			"id": "Clipboard",
+			"name": "Clipboard",
 			"author": "Scirra",
 			"bundled": false
 		},
@@ -94,6 +101,13 @@
 			"type": "plugin",
 			"id": "Tilemap",
 			"name": "Tilemap",
+			"author": "Scirra",
+			"bundled": false
+		},
+		{
+			"type": "plugin",
+			"id": "qrcode",
+			"name": "QR code",
 			"author": "Scirra",
 			"bundled": false
 		},
@@ -204,7 +218,9 @@
 							"MultiplayerHostInstructions",
 							"MultiplayerJoinStatus",
 							"MultiplayerStatusText",
-							"HostJoinLink"
+							"HostJoinLink",
+							"CopyLinkButton",
+							"QRCode"
 						],
 						"subfolders": [],
 						"name": "Host & Join"
@@ -217,7 +233,8 @@
 					"Multiplayer",
 					"Browser",
 					"Keyboard",
-					"Mouse"
+					"Mouse",
+					"Clipboard"
 				],
 				"subfolders": [],
 				"name": "Global"
