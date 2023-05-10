@@ -225,7 +225,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 		// If a movement controller exists, tick it to advance the unit movement.
 		if (this.#movementController)
 		{
-			this.#movementController.TickMovement(dt);
+			this.#movementController.Tick(dt);
 			
 			this.#lastSpeed = this.GetSpeed();
 		}

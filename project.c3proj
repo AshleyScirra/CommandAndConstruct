@@ -1,6 +1,6 @@
 {
 	"projectFormatVersion": 1,
-	"savedWithRelease": 34000,
+	"savedWithRelease": 34100,
 	"name": "Command & Construct",
 	"runtime": "c3",
 	"useWorker": "worker",
@@ -711,6 +711,38 @@
 											"name": "unitMovementController.js",
 											"type": "application/javascript",
 											"sid": 689911879075945,
+											"file-info": {
+												"purpose": "none"
+											}
+										},
+										{
+											"name": "stopping.js",
+											"type": "application/javascript",
+											"sid": 812760053415413,
+											"file-info": {
+												"purpose": "none"
+											}
+										},
+										{
+											"name": "rotateFirst.js",
+											"type": "application/javascript",
+											"sid": 259108538630515,
+											"file-info": {
+												"purpose": "none"
+											}
+										},
+										{
+											"name": "moving.js",
+											"type": "application/javascript",
+											"sid": 463305752858328,
+											"file-info": {
+												"purpose": "none"
+											}
+										},
+										{
+											"name": "unitMovementState.js",
+											"type": "application/javascript",
+											"sid": 123425829059399,
 											"file-info": {
 												"purpose": "none"
 											}
