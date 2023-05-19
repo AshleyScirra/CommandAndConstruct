@@ -5,6 +5,10 @@ import * as MathUtils from "../../utils/clientMathUtils.js";
 import { ClientUnit } from "../../clientUnits/clientUnit.js";
 import { SteppedValueTimeline } from "./steppedValueTimeline.js";
 
+// Whether server sends extra debug state for units for development purposes only.
+// This must match the value specified on the server and should be turned off for releases.
+const ENABLE_DEBUG_STATE = true;
+
 // The binary message types
 const MESSAGE_TYPE_GAME_UPDATES = 0;	// full and delta unit updates, and network events
 
@@ -14,6 +18,8 @@ const FLAG_CHANGED_SPEED =				 (1 << 1);
 const FLAG_CHANGED_ACCELERATION =		 (1 << 2);
 const FLAG_CHANGED_PLATFORM_ANGLE =		 (1 << 3);
 const FLAG_CHANGED_TURRET_OFFSET_ANGLE = (1 << 4);
+
+const FLAG_CHANGED_DEBUG_STATE =		 (1 << 7);		// for development purposes only
 
 // This class handles receiving messages from the GameServer (whether it's hosted locally or receiving
 // messages over the network). It calls the appropriate GameClient methods for each message.
@@ -143,6 +149,14 @@ export class ClientMessageHandler {
 			// Read player number unit belongs to.
 			const player = dataView.getUint8(pos);
 			pos += 1;
+			
+			// Read debug state if enabled.
+			let debugState = 0;
+			if (ENABLE_DEBUG_STATE)
+			{
+				debugState = dataView.getUint8(pos);
+				pos += 1;
+			}
 
 			// Read the X and Y position.
 			const x = dataView.getUint16(pos);
@@ -190,6 +204,8 @@ export class ClientMessageHandler {
 					turretOffsetAngle
 				});
 			}
+			
+			unit.SetDebugState(debugState);
 			
 			// Set the last update time for the unit (used for timeout).
 			unit.SetLastUpdateTime(serverTime);
@@ -277,6 +293,15 @@ export class ClientMessageHandler {
 				{
 					unit.GetTurret().OnNetworkUpdateOffsetAngle(serverTime, offsetAngle);
 				}
+			}
+			
+			if ((deltaChangeFlags & FLAG_CHANGED_DEBUG_STATE) !== 0)
+			{
+				const debugState = dataView.getUint8(pos);
+				pos += 1;
+				
+				if (unit)
+					unit.SetDebugState(debugState);
 			}
 			
 			// If the unit was found, set the last update time for the unit (used for timeout).

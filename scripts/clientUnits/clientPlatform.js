@@ -136,11 +136,12 @@ export class ClientPlatform {
 	}
 	
 	// Whenever the unit platform position or angle changes, update the turret
-	// and selection box so they follow the platform's changes.
+	// and selection box (and debug text if any) so they follow the platform's changes.
 	#OnPositionOrAngleChanged()
 	{
 		this.#unit.GetTurret().Update();
 		this.#unit.UpdateSelectionBox();
+		this.#unit.UpdateDebugTextPosition();
 	}
 	
 	// When receiving position, speed or angle updates from the network, insert the

@@ -203,6 +203,7 @@
 								"rotate-speed": 135,
 								"rotate-object": true,
 								"diagonals": true,
+								"direct-movement": "to-destination",
 								"enabled": true
 							}
 						}

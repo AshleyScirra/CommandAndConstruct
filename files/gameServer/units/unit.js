@@ -3,6 +3,10 @@ import { MovableUnitPlatform } from "./movableUnitPlatform.js";
 import { UnitTurret } from "./unitTurret.js";
 import * as MathUtils from "../utils/mathUtils.js";
 
+// Whether server sends extra debug state for units for development purposes only.
+// This must match the value specified on the client and should be turned off for releases.
+const ENABLE_DEBUG_STATE = true;
+
 // Unit IDs are sent as a uint16 value to save on bandwidth, allowing for around 65k
 // active units in the entire game at any one time, which should (?!) be enough.
 // An incrementing value is used to assign IDs, but it must wrap round once it reaches
@@ -33,6 +37,8 @@ const FLAG_CHANGED_ACCELERATION =		 (1 << 2);
 const FLAG_CHANGED_PLATFORM_ANGLE =		 (1 << 3);
 const FLAG_CHANGED_TURRET_OFFSET_ANGLE = (1 << 4);
 
+const FLAG_CHANGED_DEBUG_STATE =		 (1 << 7);		// for development purposes only
+
 // A Unit represents any static or movable unit in the game
 export class Unit {
 	
@@ -50,6 +56,9 @@ export class Unit {
 	// For delta updates, this value is sent as a byte with bits set according to which
 	// values for the unit have changed in the last tick.
 	#deltaChangeFlags = 0;
+	
+	// For development purposes only: an extra byte sent to clients for debug info.
+	#debugState = 0;
 	
 	constructor(gameServer, player, x, y, angle)
 	{
@@ -124,6 +133,13 @@ export class Unit {
 		// Write the player number as a byte.
 		dataView.setUint8(pos, this.GetPlayer());
 		pos += 1;
+		
+		// Write the debug state as a byte if enabled for development.
+		if (ENABLE_DEBUG_STATE)
+		{
+			dataView.setUint8(pos, this.#debugState);
+			pos += 1;
+		}
 
 		// Write the X and Y position as uint16s
 		const platform = this.GetPlatform();
@@ -153,6 +169,9 @@ export class Unit {
 		// Tell the turret a full update was written, since it tracks the last sent angle.
 		turret.OnSentFullUpdate();
 		
+		// Clear the delta change flags, as everything has now been transmitted in a full update.
+		this.#deltaChangeFlags = 0;
+ 		
 		return pos;
 	}
 	
@@ -187,6 +206,24 @@ export class Unit {
 	{
 		this.#deltaChangeFlags |= FLAG_CHANGED_TURRET_OFFSET_ANGLE;
 		this.#AddForDeltaUpdate();
+	}
+	
+	#MarkDebugStateChanged()
+	{
+		this.#deltaChangeFlags |= FLAG_CHANGED_DEBUG_STATE;
+		this.#AddForDeltaUpdate();
+	}
+	
+	// The debug state is an extra byte sent to clients for displaying debug info
+	// during development.
+	SetDebugState(n)
+	{
+		n = MathUtils.Clamp(Math.floor(n), 0, 255);
+		if (this.#debugState === n)
+			return;		// no change
+		
+		this.#debugState = n;
+		this.#MarkDebugStateChanged();
 	}
 	
 	#AddForDeltaUpdate()
@@ -241,6 +278,12 @@ export class Unit {
 		{
 			dataView.setUint16(pos, MathUtils.AngleToUint16(this.GetTurret().GetAngle()));
 			pos += 2;
+		}
+		
+		if (ENABLE_DEBUG_STATE && (this.#deltaChangeFlags & FLAG_CHANGED_DEBUG_STATE) !== 0)
+		{
+			dataView.setUint8(pos, this.#debugState);
+			pos += 1;
 		}
 		
 		// Reset all the delta change flags now they have been used.

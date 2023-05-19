@@ -2,6 +2,10 @@
 import { ClientPlatform } from "./clientPlatform.js";
 import { ClientTurret } from "./clientTurret.js";
 
+// For development purposes only: whether to show a Text object with the current
+// debug state above units.
+const SHOW_UNIT_DEBUG_STATE = true;
+
 // If a unit is not updated by the server for this long, it will be destroyed on the
 // assumption something got out of sync. This is currently set to 7 seconds as the
 // server sends full updates every 2 seconds, and so this time means the unit likely
@@ -22,11 +26,23 @@ export class ClientUnit {
 	#selectionBoxInst;			// Construct instance representing selection box
 	#lastUpdateTime = 0;		// last time received any update from server
 	
+	// For development purposes only: current unit debug state and a Text object
+	// instance in which to display the debug state
+	#debugState = 0;
+	#debugTextInst;
+	
 	constructor(gameClient, id, player)
 	{
 		this.#gameClient = gameClient;
 		this.#id = id;
 		this.#player = player;
+		
+		// If enabled, create a debug text instance for this unit
+		if (SHOW_UNIT_DEBUG_STATE)
+		{
+			const runtime = gameClient.GetRuntime();
+			this.#debugTextInst = runtime.objects.DebugStateText.createInstance("DebugOverlay", 0, 0);
+		}
 		
 		// Add GameClient state for this unit
 		this.#gameClient.UnitWasCreated(this);
@@ -39,6 +55,7 @@ export class ClientUnit {
 		unit.#platform = new ClientPlatform(unit, info.x, info.y, info.platformAngle, info.speed);
 		unit.#turret = new ClientTurret(unit, info.turretOffsetAngle);
 		unit.#turret.Update();
+		unit.UpdateDebugTextPosition();
 		return unit;
 	}
 	
@@ -50,6 +67,10 @@ export class ClientUnit {
 		// Destroy turret and platform
 		this.#turret.Release();
 		this.#platform.Release();
+		
+		// Destroy any debug text instance
+		if (this.#debugTextInst)
+			this.#debugTextInst.destroy();
 	}
 	
 	GetGameClient()
@@ -130,6 +151,16 @@ export class ClientUnit {
 		this.#selectionBoxInst.angle = angle;
 	}
 	
+	// For updating the position of the debug text when used during development.
+	UpdateDebugTextPosition()
+	{
+		if (!this.#debugTextInst)
+			return;		// not in use
+		
+		const [x, y] = this.#platform.GetPosition();
+		this.#debugTextInst.setPosition(x, y - 50);
+	}
+	
 	// Use the unit platform for collision checks.
 	ContainsPoint(x, y)
 	{
@@ -165,5 +196,29 @@ export class ClientUnit {
 			this.#selectionBoxInst.destroy();
 			this.#selectionBoxInst = null;
 		}
+	}
+	
+	SetDebugState(n)
+	{
+		this.#debugState = n;
+		
+		// Update debug text object if showing
+		if (this.#debugTextInst)
+		{
+			// Debug state is currently used for movement state
+			const MOVE_STATES = ["none", "stopping", "rotate-first", "moving"];
+			
+			this.#debugTextInst.text = MOVE_STATES[n] || "???";
+			
+			// Treat debug state 0 as making the text object invisible (i.e. nothing to report),
+			// otherwise show the text object with the current state.
+			this.#debugTextInst.isVisible = (n !== 0);
+			
+		}
+	}
+	
+	GetDebugState()
+	{
+		return this.#debugState;
 	}
 }
