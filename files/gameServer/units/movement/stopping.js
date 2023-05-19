@@ -10,6 +10,9 @@ export class UnitMovementStateStopping extends UnitMovementState {
 	constructor(controller)
 	{
 		super(controller);
+		
+		// Set debug state 1 for "stopping"
+		this.SetUnitDebugState(1);
 	}
 	
 	Tick(dt)
@@ -17,9 +20,21 @@ export class UnitMovementStateStopping extends UnitMovementState {
 		const controller = this.GetController();
 		const unitPlatform = this.GetUnitPlatform();
 		const waypoints = this.GetWaypoints();
+		const startingPosition = unitPlatform.SavePosition();
 		
 		// Step movement with a target speed of 0, which will decelerate it to a stop.
 		controller.StepMovement(dt, 0);
+		
+		// See if it collided with anything. If so revert back to the original position
+		// and bring the unit to an immediate stop, which will allow it to proceed directly
+		// to the next state.
+		const didCollide = unitPlatform.IntersectsAnyOther();
+		if (didCollide)
+		{
+			unitPlatform.RestorePosition(startingPosition);
+			unitPlatform.SetSpeed(0);
+			this.GetUnit().MarkPositionDelta();
+		}
 		
 		// Unit has come to a stop
 		if (unitPlatform.GetSpeed() === 0)

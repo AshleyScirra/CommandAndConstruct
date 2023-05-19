@@ -41,4 +41,9 @@ export class UnitMovementState {
 	{
 		return this.#controller.GetUnit();
 	}
+	
+	SetUnitDebugState(n)
+	{
+		this.GetUnit().SetDebugState(n);
+	}
 }

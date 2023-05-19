@@ -135,6 +135,9 @@ export class UnitMovementController {
 			unitPlatform.SetAcceleration(0);
 		
 		// Adjust the speed according to the acceleration.
+		// Note that setting the speed merely to apply acceleration does not send a delta update
+		// to clients for the unit speed: instead it relies on the client applying the acceleration
+		// to adjust the speed itself.
 		const acceleration = unitPlatform.GetAcceleration();
 		if (acceleration !== 0)
 		{
@@ -142,11 +145,11 @@ export class UnitMovementController {
 			const speedChange = acceleration * dt;
 			if (Math.abs(unitPlatform.GetSpeed() - targetSpeed) <= speedChange)
 			{
-				unitPlatform.SetSpeed(targetSpeed);
+				unitPlatform.SetSpeed(targetSpeed, false /* sendDelta */);
 			}
 			else
 			{
-				unitPlatform.SetSpeed(unitPlatform.GetSpeed() + acceleration * dt);
+				unitPlatform.SetSpeed(unitPlatform.GetSpeed() + acceleration * dt, false /* sendDelta */);
 			}
 		}
 

@@ -129,4 +129,23 @@ export class UnitPlatform {
 		
 		return result;
 	}
+	
+	// Methods to save and restore the unit position and angle, which is useful when stepping
+	// movement and detecting a collision.
+	SavePosition()
+	{
+		const [x, y] = this.GetPosition();
+		
+		return {
+			x,
+			y,
+			angle: this.GetAngle()
+		};
+	}
+	
+	RestorePosition(p)
+	{
+		this.SetPosition(p.x, p.y);
+		this.SetAngle(p.angle);
+	}
 }

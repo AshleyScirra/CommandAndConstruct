@@ -92,7 +92,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 		return this.#movable.GetSpeed();
 	}
 	
-	SetSpeed(s)
+	SetSpeed(s, sendDelta = true)
 	{
 		// Limit to maximum speed
 		s = MathUtils.Clamp(s, 0, this.#maxSpeed);
@@ -102,8 +102,14 @@ export class MovableUnitPlatform extends UnitPlatform {
 		
 		this.#movable.SetSpeed(s);
 
-		// Note that speed changes don't usually send delta updates -
-		// mostly just changes in acceleration are sent instead.
+		// Note that speed changes that occur merely to apply acceleration don't send delta updates,
+		// as the client adjusts the speed according to the current acceleration, avoiding the need
+		// to use up bandwidth sending constant speed changes as units accelerate or decelerate normally.
+		// By default speed changes do send a delta update, in case of things like stopping due to hitting
+		// an obstacle, since that is not a change the client can easily predict, so only the normal
+		// speed changes due to acceleration/deceleration opt-out of sending delta updates.
+		if (sendDelta)
+			this.GetUnit().MarkPlatformSpeedChanged();
 	}
 	
 	GetLastSpeed()
@@ -239,6 +245,9 @@ export class MovableUnitPlatform extends UnitPlatform {
 		{
 			this.#movementController.Release();
 			this.#movementController = null;
+			
+			// Set the unit debug state back to 0 to hide its movement state
+			this.GetUnit().SetDebugState(0);
 		}
 	}
 	

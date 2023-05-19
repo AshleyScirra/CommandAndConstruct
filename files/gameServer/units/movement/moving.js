@@ -14,10 +14,16 @@ export class UnitMovementStateMoving extends UnitMovementState {
 	constructor(controller)
 	{
 		super(controller);
+		
+		// Set debug state 3 for "moving"
+		this.SetUnitDebugState(3);
 	}
 	
 	Tick(dt)
 	{
+		const controller = this.GetController();
+		const unitPlatform = this.GetUnitPlatform();
+		
 		// Approaching the last waypoint is managed differently, as the unit will brake and
 		// come to a halt at the last waypoint, whereas for other waypoints it will turn ahead
 		// of the waypoint to cut the corner rather than overshoot.
@@ -30,8 +36,19 @@ export class UnitMovementStateMoving extends UnitMovementState {
 			this.#TickMoreWaypoints(dt);
 		}
 		
-		// Step the movement with the current target speed.
-		this.GetController().StepMovement(dt, this.#targetSpeed);
+		// Step the movement with the current target speed. However if it hits something,
+		// put it back to its original position (so it doesn't move). TODO: react to being
+		// blocked somehow!
+		const startingPosition = unitPlatform.SavePosition();
+		
+		controller.StepMovement(dt, this.#targetSpeed);
+		
+		if (unitPlatform.IntersectsAnyOther())
+		{
+			unitPlatform.RestorePosition(startingPosition);
+			unitPlatform.SetSpeed(0);
+			this.GetUnit().MarkPositionDelta();
+		}
 	}
 	
 	#TickMoreWaypoints(dt)
@@ -236,7 +253,15 @@ export class UnitMovementStateMoving extends UnitMovementState {
 			else
 			{
 				// Otherwise just rotate towards the target angle.
+				// However if this causes the unit to collide with another one, then revert
+				// back to the starting angle.
 				unitPlatform.SetAngle(MathUtils.AngleRotate(currentAngle, targetAngle, rotateSpeed * dt));
+				
+				if (unitPlatform.IntersectsAnyOther())
+				{
+					this.#ResetCurMaxSpeed();	// allow accelerating to try to drive past obstacle
+					unitPlatform.SetAngle(currentAngle);
+				}
 			}
 		}
 	}
