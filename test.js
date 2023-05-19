@@ -29,7 +29,7 @@ function testFunction()
 	// filler
 	// filler
 	
-	console.log("Hello testFunction");
+	console.log("Hello testFunction - changed");
 	
 	// filler
 	// filler
@@ -93,7 +93,7 @@ class Test {
 		// filler
 		// filler
 
-		console.log("Hello firstMethod");
+		console.log("Hello firstMethod - changed");
 
 		// filler
 		// filler
@@ -156,7 +156,7 @@ class Test {
 		// filler
 		// filler
 
-		console.log("Hello secondMethod");
+		console.log("Hello secondMethod - changed");
 
 		// filler
 		// filler
@@ -219,7 +219,7 @@ class Test {
 		// filler
 		// filler
 
-		console.log("Hello thirdMethod");
+		console.log("Hello thirdMethod - changed");
 
 		// filler
 		// filler
