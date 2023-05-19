@@ -1,68 +1,6 @@
-function test()
-{
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-
-	console.log("Hello world");
-	
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-	// filler
-}
 
 class Test {
-	method()
+	firstMethod()
 	{
 		// filler
 		// filler
@@ -93,7 +31,7 @@ class Test {
 		// filler
 		// filler
 		
-		console.log("Hello world");
+		console.log("Hello firstMethod");
 		
 		// filler
 		// filler
@@ -124,10 +62,8 @@ class Test {
 		// filler
 		// filler
 	}
-}
-
-export class ExportTest {
-	exportMethod()
+	
+	secondMethod()
 	{
 		// filler
 		// filler
@@ -158,7 +94,70 @@ export class ExportTest {
 		// filler
 		// filler
 		
-		console.log("Hello world");
+		console.log("Hello secondMethod");
+		
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+	}
+	
+	thirdMethod()
+	{
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		// filler
+		
+		console.log("Hello thirdMethod");
 		
 		// filler
 		// filler
