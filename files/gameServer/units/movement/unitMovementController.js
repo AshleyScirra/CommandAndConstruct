@@ -171,11 +171,14 @@ export class UnitMovementController {
 		}
 
 		// Once the unit comes to a stop - i.e. the first time the speed reaches 0 after
-		// not being 0 - send position and speed delta updates. This ensures the client
-		// can correct the resting position of the unit as quickly as possible, since
-		// predicting deceleration is tricky. Note that the acceleration being set to 0
-		// will already send a delta update for the acceleration change.
-		if (unitPlatform.GetSpeed() === 0 && unitPlatform.GetLastSpeed() !== 0)
+		// not being 0 - or when it first starts moving - send position and speed delta updates.
+		// This ensures the client can correct the resting position of the unit as quickly as
+		// possible once it stops, since predicting deceleration is tricky. (Note that the
+		// acceleration being set to 0 will already send a delta update for the acceleration change.)
+		// This also ensures that starting when stopped due to queuing during movement also
+		// promptly updates the client.
+		if ((unitPlatform.GetSpeed() === 0 && unitPlatform.GetLastSpeed()) !== 0 ||
+			(unitPlatform.GetSpeed() !== 0 && unitPlatform.GetLastSpeed() === 0))
 		{
 			this.GetUnit().MarkPositionDelta();
 			this.GetUnit().MarkPlatformSpeedChanged();
