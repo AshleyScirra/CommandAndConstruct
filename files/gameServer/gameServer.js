@@ -90,8 +90,8 @@ export class GameServer {
 		for (let i = 0; i < 500; ++i)
 		{
 			// Use a formula to arrange units in 5 rows
-			const x = 7000 + i * 40;
-			const y = 2500 + (i % 5) * 300;
+			const x = 5000 + i * 50;
+			const y = 2000 + (i % 5) * 350;
 			
 			// Add player 0 unit along the top
 			this._AddUnitAtPosition(0, x + randomOffset(50), y + randomOffset(50), Math.PI / 2 + randomOffset(0.5));
