@@ -49,7 +49,49 @@
 					}
 				],
 				"sid": 914009311454783,
-				"name": "Animation 1",
+				"name": "FullCollision",
+				"isLooping": false,
+				"isPingPong": false,
+				"repeatCount": 1,
+				"repeatTo": 0,
+				"speed": 5
+			},
+			{
+				"frames": [
+					{
+						"width": 241,
+						"height": 129,
+						"originX": 0.5,
+						"originY": 0.5,
+						"originalSource": "",
+						"exportFormat": "lossless",
+						"exportQuality": 0.8,
+						"imageSpriteId": 3052489,
+						"collisionPoly": {
+							"points": [
+								0.4896265560165975,
+								0.05426356589147287,
+								0.9253112033195021,
+								0.49612403100775193,
+								0.4896265560165973,
+								0.937984496124031,
+								0.08298755186721994,
+								0.49612403100775193
+							]
+						},
+						"useCollisionPoly": true,
+						"imagePoints": [
+							{
+								"name": "Turret",
+								"x": 0.4315352697095436,
+								"y": 0.49612403100775193
+							}
+						],
+						"duration": 1
+					}
+				],
+				"sid": 547326270063384,
+				"name": "ObstacleCollision",
 				"isLooping": false,
 				"isPingPong": false,
 				"repeatCount": 1,

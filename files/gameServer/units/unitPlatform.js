@@ -8,10 +8,11 @@ import { CollisionBox } from "../collisions/collisionBox.js";
 export class UnitPlatform {
 
 	// Private fields
-	#unit;					// reference to Unit
-	#objectData;			// reference to ObjectData for this platform
-	#collisionShape;		// reference to CollisionShape for collision detection
-	#collisionBox;			// the collision box for the collision grid
+	#unit;						// reference to Unit
+	#objectData;				// reference to ObjectData for this platform
+	#fullCollisionShape;		// reference to CollisionShape for full collision detection
+	#obstacleCollisionShape;	// reference to CollisionShape for obstacle collision detection
+	#collisionBox;				// the collision box for the collision grid
 	
 	constructor(unit, objectData)
 	{
@@ -19,7 +20,8 @@ export class UnitPlatform {
 		
 		this.#unit = unit;
 		this.#objectData = objectData;
-		this.#collisionShape = new CollisionShape(gameServer, objectData);
+		this.#fullCollisionShape = new CollisionShape(gameServer, objectData.GetFullCollisionPoly());
+		this.#obstacleCollisionShape = new CollisionShape(gameServer, objectData.GetObstacleCollisionPoly());
 		this.#collisionBox = new CollisionBox(gameServer, this);
 	}
 	
@@ -52,9 +54,14 @@ export class UnitPlatform {
 		return 0;
 	}
 	
-	GetCollisionShape()
+	GetFullCollisionShape()
 	{
-		return this.#collisionShape;
+		return this.#fullCollisionShape;
+	}
+	
+	GetObstacleCollisionShape()
+	{
+		return this.#obstacleCollisionShape;
 	}
 	
 	Tick(dt)
@@ -67,25 +74,33 @@ export class UnitPlatform {
 	{
 		// If necessary update the collision shape to reflect the new angle.
 		// If the angle hasn't really changed this call will be ignored.
-		this.#collisionShape.Update(this.GetAngle());
+		this.#fullCollisionShape.Update(this.GetAngle());
+		this.#obstacleCollisionShape.Update(this.GetAngle());
 		
 		// Moving or rotating the platform could affect which collision cells
 		// it is in, so recalculate its collision box in layout co-ordinates,
 		// and update the collision box to that rectangle.
 		const [x, y] = this.GetPosition();
-		const [left, top, right, bottom] = this.#collisionShape.GetBox();
+		const [left, top, right, bottom] = this.#fullCollisionShape.GetBox();
 		
 		this.#collisionBox.Update(x + left, y + top, x + right, y + bottom);
 	}
 	
-	// Check if a given point - relative to the origin - is inside the collision shape
-	// for this platform.
-	ContainsPoint(x, y)
+	// Check if a given point - relative to the origin - is inside the a collision shape
+	// for this platform. There are separate methods for both the full and obstacle shapes.
+	ContainsPoint_Full(x, y)
 	{
-		return this.#collisionShape.ContainsPoint(x, y);
+		return this.#fullCollisionShape.ContainsPoint(x, y);
+	}
+	
+	ContainsPoint_Obstacle(x, y)
+	{
+		return this.#obstacleCollisionShape.ContainsPoint(x, y);
 	}
 	
 	// Check if this UnitPlatform intersects another UnitPlatform.
+	// Note this is done using the obstacle collision mask instead of the full collision mask,
+	// as using a reduced collision mask can help with unit queuing scenarios.
 	IntersectsOther(unitPlatform)
 	{
 		// Testing if a unit platform intersects itself returns false.
@@ -98,7 +113,7 @@ export class UnitPlatform {
 		const [otherX, otherY] = unitPlatform.GetPosition();
 		
 		// Use the CollisionShape IntersectsOther() method for actual intersection test.
-		return this.#collisionShape.IntersectsOther(unitPlatform.GetCollisionShape(), otherX - myX, otherY - myY);
+		return this.#obstacleCollisionShape.IntersectsOther(unitPlatform.GetObstacleCollisionShape(), otherX - myX, otherY - myY);
 	}
 	
 	// Check if this UnitPlatform intersects any other UnitPlatform.
@@ -109,7 +124,7 @@ export class UnitPlatform {
 		
 		// Get unit's collision box as the area of interest in the collision grid.
 		const [x, y] = this.GetPosition();
-		const [left, top, right, bottom] = this.#collisionShape.GetBox();
+		const [left, top, right, bottom] = this.#obstacleCollisionShape.GetBox();
 		
 		// To efficiently eliminate most far-away units, use the collision grid to only
 		// check units in the same collision cells as this unit. Also note that ForEachItemInArea()

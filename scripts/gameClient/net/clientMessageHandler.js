@@ -467,22 +467,18 @@ export class ClientMessageHandler {
 		// For each entry in the list of all unit object types, get the data
 		// for that object type and return all the data in an array.
 		return this.#gameClient.GetAllUnitObjectTypes().map(
-			objectType => this.#GetConstructObjectDataFor(objectType)
+			entry => this.#GetConstructObjectDataFor(entry.kind, entry.objectType)
 		);
 	}
 	
 	// Get object data for a single Construct object type.
-	#GetConstructObjectDataFor(objectType)
+	#GetConstructObjectDataFor(kind, objectType)
 	{
 		const inst = objectType.getFirstInstance();
 		
 		// Make sure there is an instance in the layout to get data from.
 		if (!inst)
 			throw new Error(`need an instance of '${objectType.name}' in the layout`);
-		
-		// Get instance position in layout co-ordinates
-		const x = inst.x;
-		const y = inst.y;
 		
 		// Get the object origin from the first animation frame.
 		// Note this is normalized to a [0, 1] range; everything else is in pixels
@@ -497,11 +493,18 @@ export class ClientMessageHandler {
 		
 		// Get the collision poly points, which also are returned in layout co-ordinates
 		// and so made relative to the object origin.
-		const collisionPoly = [];
-		for (let i = 0, len = inst.getPolyPointCount(); i < len; ++i)
+		const fullCollisionPoly = this.#GetCollisionPolygonPointsArray(inst);
+		
+		// For unit platform objects, also get the obstacle collision polygon from the
+		// "ObstacleCollision" animation. This allows using a different reduced collision polygon
+		// for unit navigation collision tests, while still using the full collision polygon for
+		// things like projectile impact collision detection.
+		let obstacleCollisionPoly = null;
+		if (kind === "platform")
 		{
-			const [px, py] = inst.getPolyPoint(i);
-			collisionPoly.push([px - x, py - y]);
+			inst.setAnimation("ObstacleCollision");
+			obstacleCollisionPoly = this.#GetCollisionPolygonPointsArray(inst);
+			inst.setAnimation("FullCollision");
 		}
 		
 		// Return all details as a JSON object.
@@ -510,9 +513,27 @@ export class ClientMessageHandler {
 			"width": inst.width,
 			"height": inst.height,
 			"origin": [originX, originY],
-			"imagePoint": [imgPtX - x, imgPtY - y],
-			"collisionPoly": collisionPoly
+			"imagePoint": [imgPtX - inst.x, imgPtY - inst.y],
+			"fullCollisionPoly": fullCollisionPoly,
+			"obstacleCollisionPoly": obstacleCollisionPoly
 		};
+	}
+	
+	#GetCollisionPolygonPointsArray(inst)
+	{
+		// Get the collision poly points for an instance's currently showing animation frame,
+		// which also are returned in layout co-ordinates and so made relative to the object origin.
+		const collisionPoly = [];
+		const x = inst.x;
+		const y = inst.y;
+		
+		for (let i = 0, len = inst.getPolyPointCount(); i < len; ++i)
+		{
+			const [px, py] = inst.getPolyPoint(i);
+			collisionPoly.push([px - x, py - y]);
+		}
+		
+		return collisionPoly;
 	}
 	
 	#OnGameOver(m)

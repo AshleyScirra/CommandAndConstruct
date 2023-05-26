@@ -342,8 +342,8 @@ export class GameServer {
 					return false;	// bail out but keep iterating in ForEachItemInArea()
 
 				// Check if the projectile hit this unit. This only uses the projectile
-				// position as a point and tests if it is inside the unit platform's collision shape.
-				if (unitPlatform.ContainsPoint(x, y))
+				// position as a point and tests if it is inside the unit platform's full collision shape.
+				if (unitPlatform.ContainsPoint_Full(x, y))
 				{
 					// Queue a network event to tell clients that a projectile hit something.
 					this.#serverMessageHandler.AddNetworkEvent(new NetworkEvent.ProjectileHit(projectile));

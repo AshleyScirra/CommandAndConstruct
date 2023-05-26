@@ -1200,7 +1200,7 @@
 							"type": "TankPlatform",
 							"properties": {
 								"initially-visible": true,
-								"initial-animation": "Animation 1",
+								"initial-animation": "FullCollision",
 								"initial-frame": 0,
 								"enable-collisions": true,
 								"live-preview": false

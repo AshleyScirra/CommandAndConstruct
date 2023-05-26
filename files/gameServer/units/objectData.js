@@ -12,7 +12,8 @@ export class ObjectData {
 	#originY = 0;
 	#imagePointX = 0;
 	#imagePointY = 0;
-	#collisionPoly = [];
+	#fullCollisionPoly = [];
+	#obstacleCollisionPoly = [];
 	
 	constructor(gameServer, entry)
 	{
@@ -25,7 +26,8 @@ export class ObjectData {
 		this.#originY = entry["origin"][1];
 		this.#imagePointX = entry["imagePoint"][0];
 		this.#imagePointY = entry["imagePoint"][1];
-		this.#collisionPoly = entry["collisionPoly"];
+		this.#fullCollisionPoly = entry["fullCollisionPoly"];
+		this.#obstacleCollisionPoly = entry["obstacleCollisionPoly"];
 	}
 	
 	GetSize()
@@ -43,8 +45,13 @@ export class ObjectData {
 		return [this.#imagePointX, this.#imagePointY];
 	}
 	
-	GetCollisionPoly()
+	GetFullCollisionPoly()
 	{
-		return this.#collisionPoly;
+		return this.#fullCollisionPoly;
+	}
+	
+	GetObstacleCollisionPoly()
+	{
+		return this.#obstacleCollisionPoly;
 	}
 }

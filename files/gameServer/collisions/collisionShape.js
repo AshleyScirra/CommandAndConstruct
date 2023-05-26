@@ -6,10 +6,10 @@ import * as MathUtils from "../utils/mathUtils.js";
 // Note the shape is relative to the origin, so callers must offset collision checks.
 export class CollisionShape {
 
-	#gameServer;			// reference to GameServer
-	#objectData;			// reference to ObjectData which collision polygon is taken from
-	#angle = 0;				// current rotation of this CollisionShape
-	#polyPoints = [];		// current list of polygon points with rotation
+	#gameServer;				// reference to GameServer
+	#originalPolyPoints = [];	// reference to source list of polygon points from ObjectData
+	#angle = 0;					// current rotation of this CollisionShape
+	#polyPoints = [];			// current list of polygon points with rotation
 	
 	// The bounding box of the rotated collision shape
 	#boxLeft = 0;
@@ -17,14 +17,14 @@ export class CollisionShape {
 	#boxRight = 0;
 	#boxBottom = 0;
 	
-	constructor(gameServer, objectData)
+	constructor(gameServer, originalPolyPoints)
 	{
 		this.#gameServer = gameServer;
-		this.#objectData = objectData;
+		this.#originalPolyPoints = originalPolyPoints;
 		
 		// Take a copy of the original collision polygon and store it in
 		// this CollisionShape's polygon points.
-		for (const [x, y] of objectData.GetCollisionPoly())
+		for (const [x, y] of this.#originalPolyPoints)
 		{
 			this.#polyPoints.push([x, y]);
 		}
@@ -45,14 +45,13 @@ export class CollisionShape {
 		// given angle. Note to avoid needing to repeatedly calculate sin/cos
 		// of the same angle, these are calculated in advanced and the
 		// RotatePoint2() method used to pass pre-calculated sin/cos values.
-		const originalPoly = this.#objectData.GetCollisionPoly();
 		const sin_a = Math.sin(angle);
 		const cos_a = Math.cos(angle);
 		
-		for (let i = 0, len = originalPoly.length; i < len; ++i)
+		for (let i = 0, len = this.#originalPolyPoints.length; i < len; ++i)
 		{
 			// Get point in original collision polygon
-			const [origX, origY] = originalPoly[i];
+			const [origX, origY] = this.#originalPolyPoints[i];
 			
 			// Rotate it around the origin by the given angle (using precalculated
 			// sin/cos of the angle). Since poly points are relative to the origin,

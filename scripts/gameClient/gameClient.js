@@ -135,10 +135,13 @@ export class GameClient {
 	{
 		const runtime = this.#runtime;
 		
-		return [
-			runtime.objects.TankPlatform,
-			runtime.objects.TankTurret
-		];
+		return [{
+			kind: "platform",
+			objectType: runtime.objects.TankPlatform
+		}, {
+			kind: "turret",
+			objectType: runtime.objects.TankTurret
+		}];
 	}
 	
 	GetConstructObjectData()
@@ -149,7 +152,7 @@ export class GameClient {
 	Init()
 	{
 		// Destroy all existing Construct instances placed on the layout before starting the game.
-		for (const objectType of this.GetAllUnitObjectTypes())
+		for (const { objectType } of this.GetAllUnitObjectTypes())
 		{
 			for (const inst of objectType.instances())
 			{

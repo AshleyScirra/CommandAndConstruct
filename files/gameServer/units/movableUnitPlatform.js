@@ -251,11 +251,17 @@ export class MovableUnitPlatform extends UnitPlatform {
 		}
 	}
 	
-	ContainsPoint(x, y)
+	// The base class ContainsPoint methods check the point relative to the origin.
+	// So first translate the point to be relative to the unit position.
+	ContainsPoint_Full(x, y)
 	{
-		// The base class ContainsPoint() method checks the point relative to the origin.
-		// So first translate the point to be relative to the unit position.
 		const [myX, myY] = this.GetPosition();
-		return super.ContainsPoint(x - myX, y - myY);
+		return super.ContainsPoint_Full(x - myX, y - myY);
+	}
+	
+	ContainsPoint_Obstacle(x, y)
+	{
+		const [myX, myY] = this.GetPosition();
+		return super.ContainsPoint_Obstacle(x - myX, y - myY);
 	}
 }
