@@ -37,8 +37,8 @@ export class UnitMovementStateMoving extends UnitMovementState {
 		}
 		
 		// Step the movement with the current target speed. However if it hits something,
-		// put it back to its original position (so it doesn't move). TODO: react to being
-		// blocked somehow!
+		// put it back to its original position (so it doesn't move). Then put it in to
+		// reverse, in an effort to move it back from whatever blocked it.
 		const startingPosition = unitPlatform.SavePosition();
 		
 		controller.StepMovement(dt, this.#targetSpeed);
@@ -48,6 +48,14 @@ export class UnitMovementStateMoving extends UnitMovementState {
 			unitPlatform.RestorePosition(startingPosition);
 			unitPlatform.SetSpeed(0);
 			this.GetUnit().MarkPositionDelta();
+			
+			// Reverse for a brief random amount of time, then return to the "moving" state.
+			// Note the randomization is important: if two units drive in to each other at
+			// the same time, reversing for the same amount of time means each will reverse
+			// and then drive forward and collide in exactly the same way again. Adding an
+			// amount of randomness ensures that eventually one unit will get ahead, resolving
+			// the collision instead of getting permanently stuck.
+			controller.SetNextState("reverse", 0.25 + Math.random() * 0.5, "moving");
 		}
 	}
 	

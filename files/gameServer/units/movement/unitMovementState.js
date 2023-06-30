@@ -42,6 +42,11 @@ export class UnitMovementState {
 		return this.#controller.GetUnit();
 	}
 	
+	GetGameServer()
+	{
+		return this.#controller.GetGameServer();
+	}
+	
 	SetUnitDebugState(n)
 	{
 		this.GetUnit().SetDebugState(n);

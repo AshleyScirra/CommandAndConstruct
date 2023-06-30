@@ -2,6 +2,7 @@
 import { UnitMovementStateStopping } from "./stopping.js";
 import { UnitMovementStateRotateFirst } from "./rotateFirst.js";
 import { UnitMovementStateMoving } from "./moving.js";
+import { UnitMovementStateReverse } from "./reverse.js";
 
 import * as MathUtils from "../../utils/mathUtils.js";
 
@@ -9,7 +10,8 @@ import * as MathUtils from "../../utils/mathUtils.js";
 const STATE_CLASS_MAP = new Map([
 	["stopping",		UnitMovementStateStopping],
 	["rotate-first",	UnitMovementStateRotateFirst],
-	["moving",			UnitMovementStateMoving]
+	["moving",			UnitMovementStateMoving],
+	["reverse",			UnitMovementStateReverse]
 ]);
 
 // UnitMovementController manages the movement of a MovableUnitPlatform along a path.
@@ -23,6 +25,7 @@ export class UnitMovementController {
 	#stateStr = "";			// String of current movement state
 	#stateObj = null;		// UnitMovementState derived class that manages the current state
 	#nextStateStr = "";		// String of next movement state to set (at end of tick)
+	#nextStateArgs = [];	// Arguments to pass to next state constructor
 	#waypoints = [];		// Remaining list of positions to move to
 
 	constructor(unitPlatform)
@@ -47,6 +50,11 @@ export class UnitMovementController {
 		return this.#unitPlatform.GetUnit();
 	}
 	
+	GetGameServer()
+	{
+		return this.#unitPlatform.GetGameServer();
+	}
+	
 	GetWaypoints()
 	{
 		return this.#waypoints;
@@ -65,7 +73,7 @@ export class UnitMovementController {
 	}
 	
 	// Immediately sets the current state, also releasing and replacing the current state object.
-	#SetState(stateStr)
+	#SetState(stateStr, ...args)
 	{
 		// Release any prior state object
 		if (this.#stateObj)
@@ -90,16 +98,17 @@ export class UnitMovementController {
 			const StateClass = STATE_CLASS_MAP.get(this.#stateStr);
 			if (StateClass)
 			{
-				this.#stateObj = new StateClass(this);
+				this.#stateObj = new StateClass(this, ...args);
 			}
 		}
 	}
 	
 	// Set the next state to switch to at the end of the current tick. This avoids
 	// releasing the current state object while it is still processing in the middle of a tick.
-	SetNextState(stateStr)
+	SetNextState(stateStr, ...args)
 	{
 		this.#nextStateStr = stateStr;
+		this.#nextStateArgs = args;
 	}
 	
 	Tick(dt)
@@ -113,8 +122,9 @@ export class UnitMovementController {
 		// If a next state has been set, switch to it now it's at the end of the tick.
 		if (this.#nextStateStr)
 		{
-			this.#SetState(this.#nextStateStr);
+			this.#SetState(this.#nextStateStr, ...this.#nextStateArgs);
 			this.#nextStateStr = "";
+			this.#nextStateArgs = [];
 		}
 	}
 	
@@ -160,7 +170,8 @@ export class UnitMovementController {
 			// the current acceleration, but the acceleration must not allow the movement to
 			// exceed the maximum speed or go negative.
 			const moveDist = MathUtils.Clamp(unitPlatform.GetSpeed() * dt + 0.5 * acceleration * dt * dt,
-											 0, unitPlatform.GetMaxSpeed() * dt);
+											 -unitPlatform.GetMaxSpeed() * dt,
+											 unitPlatform.GetMaxSpeed() * dt);
 			
 			// Advance by the move distance on the current angle.
 			const [currentX, currentY] = unitPlatform.GetPosition();

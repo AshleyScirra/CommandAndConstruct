@@ -95,7 +95,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 	SetSpeed(s, sendDelta = true)
 	{
 		// Limit to maximum speed
-		s = MathUtils.Clamp(s, 0, this.#maxSpeed);
+		s = MathUtils.Clamp(s, -this.#maxSpeed, this.#maxSpeed);
 		
 		if (s === this.GetSpeed())
 			return;		// no change

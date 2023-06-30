@@ -206,7 +206,7 @@ export class ClientUnit {
 		if (this.#debugTextInst)
 		{
 			// Debug state is currently used for movement state
-			const MOVE_STATES = ["none", "stopping", "rotate-first", "moving"];
+			const MOVE_STATES = ["none", "stopping", "rotate-first", "moving", "reverse"];
 			
 			this.#debugTextInst.text = MOVE_STATES[n] || "???";
 			
