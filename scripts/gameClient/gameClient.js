@@ -315,12 +315,19 @@ export class GameClient {
 			"units": unitsArray.map(unit =>
 			{
 				const [x, y] = unit.GetPlatform().GetPositionWithCorrectionApplied();
+				const moveX = targetX + (x - midX);
+				const moveY = targetY + (y - midY);
+				
+				// Also show this unit's move destination
+				unit.GetPlatform().ShowMoveMarker(moveX, moveY);
+				
 				return {
 					"id": unit.GetId(),
 					// Note the position is rounded to the nearest pixel, mainly to make sure long
-					// fractional digits (e.g. 100.3333333333...) don't waste bandwidth.
-					"x": Math.round(targetX + (x - midX)),
-					"y": Math.round(targetY + (y - midY))
+					// fractional digits (e.g. 100.3333333333...) don't waste bandwidth as this
+					// is sent in JSON format.
+					"x": Math.round(moveX),
+					"y": Math.round(moveY)
 				};
 			})
 		});

@@ -82,7 +82,7 @@ export class PathfindingController {
 			}
 			
 			// For testing purposes: visualize the path on the DebugOverlay layer.
-			this.#DebugVisualizePath(fromX, fromY, nodeList);
+			//this.#DebugVisualizePath(fromX, fromY, nodeList);
 			
 			return nodeList;
 		}

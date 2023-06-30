@@ -167,7 +167,8 @@
 							"MinimapCanvasSlow",
 							"UnitSelectionBox",
 							"MinimapCanvasTerrain",
-							"MinimapBackground"
+							"MinimapBackground",
+							"MoveMarker"
 						],
 						"subfolders": [],
 						"name": "UI"

@@ -30,6 +30,8 @@ export class ClientPlatform {
 	#maxSpeed = 250;	// maximum speed - TODO: sync with server-side value
 	#acceleration = 0;	// current acceleration in px/s/s
 	
+	#moveMarkerInst;	// Construct instance representing move destination
+	
 	constructor(unit, x, y, angle, speed)
 	{
 		this.#unit = unit;
@@ -58,6 +60,8 @@ export class ClientPlatform {
 	
 	Release()
 	{
+		this.ClearMoveMarker();
+		
 		this.#timelinePos.Release();
 		this.#timelinePosHistory.Release();
 		this.#timelineAngle.Release();
@@ -259,6 +263,10 @@ export class ClientPlatform {
 			
 			const angle = this.GetAngle();
 			this.OffsetPosition(Math.cos(angle) * moveDist, Math.sin(angle) * moveDist);
+			
+			// If a move marker is showing, clear it if it's gotten close on the assumption
+			// it's now arrived.
+			this.#ClearMoveMarkerIfClose();
 		}
 	}
 	
@@ -366,5 +374,44 @@ export class ClientPlatform {
 	ContainsPoint(x, y)
 	{
 		return this.#inst.containsPoint(x, y);
+	}
+	
+	// Create an instance of a MoveMarker at the given position, or if there's an existing
+	// instance for this unit, just move it to the new position.
+	ShowMoveMarker(moveX, moveY)
+	{
+		const runtime = this.#unit.GetRuntime();
+		
+		if (!this.#moveMarkerInst)
+		{
+			this.#moveMarkerInst = runtime.objects.MoveMarker.createInstance("Background", moveX, moveY);
+		}
+		
+		this.#moveMarkerInst.setPosition(moveX, moveY);
+	}
+	
+	ClearMoveMarker()
+	{
+		if (this.#moveMarkerInst)
+		{
+			this.#moveMarkerInst.destroy();
+			this.#moveMarkerInst = null;
+		}
+	}
+	
+	#ClearMoveMarkerIfClose()
+	{
+		if (!this.#moveMarkerInst)
+			return;		// no move marker showing
+		
+		const [myX, myY] = this.GetPosition();
+		const [markerX, markerY] = this.#moveMarkerInst.getPosition();
+		
+		// If within 50px of the marker (using square distances to avoid square root)
+		// then destroy the marker on the assumption the unit has arrived.
+		if (MathUtils.DistanceSquared(myX, myY, markerX, markerY) < 50 * 50)
+		{
+			this.ClearMoveMarker();
+		}
 	}
 }

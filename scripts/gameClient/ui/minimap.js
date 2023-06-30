@@ -162,6 +162,16 @@ export class Minimap {
 		// Clear to fully transparent.
 		this.#slowInst.clearCanvas([0, 0, 0, 0]);
 		
+		// Draw move markers to the minimap as 1px size green dots, so the scheduled movements
+		// of units can be seen.
+		const runtime = this.#gameClient.GetRuntime();
+		for (const moveMarkerInst of runtime.objects.MoveMarker.instances())
+		{
+			let [x, y] = moveMarkerInst.getPosition();
+			[x, y] = this.#GameToMinimap(x, y);
+			this.#FillRect(this.#slowInst, x - 0.5, y - 0.5, 1, 1, [0, 0.67, 0]);
+		}
+		
 		// Draw small colored rectangles for each player's units.
 		// TODO: have some centralized way to store players and their colors
 		for (let player = 0; player < 2; player++)
