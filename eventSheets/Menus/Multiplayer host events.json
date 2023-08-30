@@ -71,9 +71,9 @@
 						{
 							"id": "connect",
 							"objectClass": "Multiplayer",
-							"sid": 274145809365396,
+							"sid": 164739995146306,
 							"parameters": {
-								"server": "\"wss://multiplayer.scirra.com\""
+								"server": "\"wss://multiplayer.construct.net\""
 							}
 						}
 					],

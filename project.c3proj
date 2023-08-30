@@ -1,6 +1,6 @@
 {
 	"projectFormatVersion": 1,
-	"savedWithRelease": 34700,
+	"savedWithRelease": 35000,
 	"name": "Command & Construct",
 	"runtime": "c3",
 	"useWorker": "worker",
@@ -974,7 +974,8 @@
 		"cordovaiOSScheme": "app",
 		"cordovaAndroidScheme": "https",
 		"autoReloadScriptsOnPreview": false,
-		"exportFileStructure": "folders"
+		"exportFileStructure": "folders",
+		"uidAllocationMode": "increment"
 	},
 	"viewportWidth": 1920,
 	"viewportHeight": 1080,
