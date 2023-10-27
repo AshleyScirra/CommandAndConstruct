@@ -1,0 +1,31 @@
+
+{
+	"compilerOptions": {
+		/* Visit https://aka.ms/tsconfig to read more about this file */
+
+		/* Construct-specific configuration */
+
+		/* When converting existing JS code to TS code, you may get lots of errors about the
+		   use of implicit "any". It is recommended to fix those errors by adding type annotations,
+		   but it may be useful during development to temporarily disable those errors, which can
+		   be done by uncommenting the line below. */
+		//"noImplicitAny": false,
+
+		/* Avoid transpiling JavaScript features */
+		"target": "ES2022", 
+
+		/* Use modern standard JavaScript (ES) Modules */
+		"module": "ES2022",
+
+		/* Avoid removing unused imports, as it can break importsForEvents.js. */
+		"verbatimModuleSyntax": true,
+
+		/* Disable polyfill code for CommonJS modules - Construct always uses ES Modules */
+		"esModuleInterop": false,
+
+		/* Other standard settings specified by tsc --init */
+		"forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
+		"strict": true,                                      /* Enable all strict type-checking options. */
+		"skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
+	}
+}
