@@ -1,20 +1,21 @@
 
 import { NetworkEvent } from "./networkEvent.js";
+import { Projectile } from "../units/projectile.js";
 import * as MathUtils from "../utils/mathUtils.js";
 
 // The FireProjectile event represents a projectile being fired from a turret.
-NetworkEvent.FireProjectile = class FireProjectile extends NetworkEvent {
+export class FireProjectileEvent extends NetworkEvent {
 	
 	#projectile;			// projectile that was fired
 	
-	constructor(projectile)
+	constructor(projectile: Projectile)
 	{
 		super();
 		
 		this.#projectile = projectile;
 	}
 	
-	Write(dataView, pos)
+	Write(dataView: DataView, pos: number)
 	{
 		const projectile = this.#projectile;
 		

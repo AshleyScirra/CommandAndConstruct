@@ -4,7 +4,7 @@ import { PromiseThrottle } from "./promiseThrottle.js";
 // Latency simulation to help with testing under poor network conditions.
 // This is implemented as part of GameServer, rather than using the equivalent
 // Multiplayer object feature, so it can also be used in single player mode.
-function Wait(ms)
+function Wait(ms: number)
 {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -21,7 +21,7 @@ const SIMULATE_PACKET_LOSS = 0.2;	// packet loss as a percentage
 
 // The main send/receive messaging methods await this to simulate latency.
 // It resolves with false if the packet is to be simulated as dropped due to packet loss.
-export async function WaitForSimulatedLatency(transmissionMode, direction)
+export async function WaitForSimulatedLatency(transmissionMode: string, direction: "send" | "receive")
 {
 	// Skip if not simulating latency. Also skip if no transmission mode is specified;
 	// this is used for control messages between the multiplayer host and GameServer

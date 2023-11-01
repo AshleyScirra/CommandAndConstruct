@@ -3,8 +3,8 @@
 import { WaitForSimulatedLatency } from "./utils/latencySimulation.js";
 import { GameServer } from "./gameServer.js";
 
-let messagePort = null;		// for communicating with runtime
-let gameServer = null;		// main GameServer class
+let messagePort: MessagePort | null = null;		// for communicating with runtime
+let gameServer: GameServer | null = null;		// main GameServer class
 
 // Construct's createWorker() API will send this worker a "construct-worker-init"
 // message with the message port to directly communicate with the runtime.
@@ -12,13 +12,13 @@ self.addEventListener("message", e =>
 {
 	if (e.data && e.data["type"] === "construct-worker-init")
 	{
-		messagePort = e.data["port2"];
+		messagePort = e.data["port2"] as MessagePort;
 		messagePort.onmessage = OnMessageFromRuntime;
 	}
 });
 
 // Called when a message is received from the runtime, possibly with latency simulation.
-async function OnMessageFromRuntime(e)
+async function OnMessageFromRuntime(e: MessageEvent)
 {
 	// Look up the function to call for this message type in the message map.
 	const data = e.data;
@@ -43,7 +43,7 @@ async function OnMessageFromRuntime(e)
 }
 
 // Called when the runtime wants to initialise the GameServer.
-function OnInit(data)
+function OnInit(data: any)
 {
 	// Initialise GameServer, passing it the function that can send a message to the runtime
 	// and the Construct object data collected from the runtime.
@@ -51,7 +51,7 @@ function OnInit(data)
 }
 
 // Post a message to the runtime, possibly with latency simulation.
-async function SendMessageToRuntime(message, transmissionMode, forPlayer, transferList)
+async function SendMessageToRuntime(message: any, transmissionMode: string, forPlayer: number | null, transferList?: Array<any>)
 {
 	const isSent = await WaitForSimulatedLatency(transmissionMode, "send");
 	
@@ -59,10 +59,10 @@ async function SendMessageToRuntime(message, transmissionMode, forPlayer, transf
 	if (!isSent)
 		return;
 	
-	messagePort.postMessage({
+	messagePort!.postMessage({
 		"message": message,
 		"transmissionMode": transmissionMode,
 		"forPlayer": forPlayer		// null to broadcast, else player number to send to
-	}, transferList);
+	}, transferList!);
 }
 

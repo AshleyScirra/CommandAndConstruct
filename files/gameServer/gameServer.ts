@@ -2,16 +2,21 @@
 import { ServerMessageHandler } from "./serverMessageHandler.js";
 import { ObjectData } from "./units/objectData.js";
 import { Unit } from "./units/unit.js";
-import { NetworkEvent } from "./networkEvents/networkEvents.js";
+import * as NetworkEvents from "./networkEvents/networkEvents.js";
 import { CollisionGrid } from "./collisions/collisionGrid.js";
 import { ServerPathfinding } from "./serverPathfinding.js";
 import { KahanSum } from "./utils/kahanSum.js";
 import * as MathUtils from "./utils/mathUtils.js";
+import type { Projectile } from "./units/projectile.js";
+import type { MovableUnitPlatform } from "./units/movableUnitPlatform.js";
+import type { UnitPlatform } from "./units/unitPlatform.js";
 
 // Number of ticks per second to run the server at,
 // and the equivalent value in milliseconds between ticks.
 const SERVER_TICK_RATE = 30;
 const SERVER_TICK_MS_INTERVAL = (1000 / SERVER_TICK_RATE);
+
+type SendMessageFunctionType = (message: any, transmissionMode: string, forPlayer: number | null, transferList?: Array<any>) => Promise<void>;
  
 // The GameServer class represents the state of the game and runs the main game logic.
 // It runs in a Web Worker and communicates with clients by messaging - either local messages
@@ -19,18 +24,21 @@ const SERVER_TICK_MS_INTERVAL = (1000 / SERVER_TICK_RATE);
 export class GameServer {
 
 	// Private fields
-	#sendMessageFunc;				// called by SendToRuntime()
+	#sendMessageFunc; // called by SendToRuntime()
 	#serverMessageHandler;			// ServerMessageHandler class
 	
-	#allUnitsById = new Map();		// map of all units by id -> Unit
-	#allProjectilesById = new Map(); // map of all active projectiles by id -> Projectile
+	// map of all units by id -> Unit
+	#allUnitsById = new Map<number, Unit>();
+
+	// map of all active projectiles by id -> Projectile
+	#allProjectilesById = new Map<number, Projectile>();
 	
 	#tickTimerId = -1;				// timer ID for ticking GameServer
 	#lastTickTimeMs = 0;			// clock time at last tick in ms
 	#nextTickScheduledTimeMs = 0;	// time next tick ought to run at in ms
 	#gameTime = new KahanSum();		// serves as the clock for the game in seconds
 	
-	#objectData = new Map();		// name -> ObjectData
+	#objectData = new Map<string, ObjectData>();	// name -> ObjectData
 	
 	// Level size
 	#layoutWidth = 35000;
@@ -48,7 +56,7 @@ export class GameServer {
 	#frameCount = 0;
 	#timeInTickCalls = 0;
 	
- 	constructor(sendMessageFunc, constructObjectData)
+ 	constructor(sendMessageFunc: SendMessageFunctionType, constructObjectData: any[])
 	{
 		// The function to send a message to the runtime is passed to the constructor.
 		this.#sendMessageFunc = sendMessageFunc;
@@ -60,6 +68,10 @@ export class GameServer {
 		{
 			this.#objectData.set(entry["name"], new ObjectData(this, entry));
 		}
+
+		// Create the collision grid and server-side pathfinding controller
+		this.#collisionGrid = new CollisionGrid(this);
+		this.#serverPathfinding = new ServerPathfinding(this);
 		
 		// Initialize a game.
 		this.Init();
@@ -68,7 +80,7 @@ export class GameServer {
 	// Provide a GameServer method to send a message to the runtime for convenience.
 	// This also specifies a transmission mode (reliable ordered, reliable unordered,
 	// or unreliable) for the host to retransmit as, defaulting to reliable ordered.
-	SendToRuntime(message, transmissionMode = "o", forPlayer = null, transferList = null)
+	SendToRuntime(message: any, transmissionMode = "o", forPlayer: number | null = null, transferList?: Array<any>)
 	{
 		this.#sendMessageFunc(message, transmissionMode, forPlayer, transferList);
 	}
@@ -80,12 +92,8 @@ export class GameServer {
 	
 	Init()
 	{
-		// Create the collision grid and server-side pathfinding controller
-		this.#collisionGrid = new CollisionGrid(this);
-		this.#serverPathfinding = new ServerPathfinding(this);
-		
 		// Add 500 starting units for each player in rows opposing each other.
-		const randomOffset = (v => (v / -2) + Math.random() * v);
+		const randomOffset = ((v: number) => (v / -2) + Math.random() * v);
 		
 		for (let i = 0; i < 500; ++i)
 		{
@@ -118,21 +126,21 @@ export class GameServer {
 		setInterval(() => this.#SendStats(), 1000);
 	}
 	
-	_AddUnitAtPosition(player, x, y, angle)
+	_AddUnitAtPosition(player: number, x: number, y: number, angle: number)
 	{
 		// Create a unit and add it to the units by ID map
 		const unit = new Unit(this, player, x, y, angle);
 		this.#allUnitsById.set(unit.GetId(), unit);
 	}
 	
-	DestroyUnit(unit)
+	DestroyUnit(unit: Unit)
 	{
 		// Release the unit so it cleans up any leftover state, such as removing
 		// itself from any collision cells it was in.
 		unit.Release();
 		
 		// Queue a network event to tell clients that the unit was destroyed.
-		this.#serverMessageHandler.AddNetworkEvent(new NetworkEvent.UnitDestroyed(unit.GetId()));
+		this.#serverMessageHandler.AddNetworkEvent(new NetworkEvents.UnitDestroyedEvent(unit.GetId()));
 		
 		// Remove the unit from the server and from any pending messages in ServerMessageHandler.
 		this.#allUnitsById.delete(unit.GetId());
@@ -150,24 +158,24 @@ export class GameServer {
 		return this.#allUnitsById.size;
 	}
 	
-	HasUnitId(id)
+	HasUnitId(id: number)
 	{
 		return this.#allUnitsById.has(id);
 	}
 	
-	GetUnitById(id)
+	GetUnitById(id: number)
 	{
 		return this.#allUnitsById.get(id);
 	}
 	
-	HasProjectileId(id)
+	HasProjectileId(id: number)
 	{
 		return this.#allProjectilesById.has(id);
 	}
 	
-	GetObjectData(name)
+	GetObjectData(name: string)
 	{
-		return this.#objectData.get(name);
+		return this.#objectData.get(name)!;
 	}
 	
 	// Get the server-side game time in seconds.
@@ -198,7 +206,7 @@ export class GameServer {
 		return [this.#layoutWidth, this.#layoutHeight];
 	}
 	
-	ClampToLayout(x, y)
+	ClampToLayout(x: number, y: number)
 	{
 		return [MathUtils.Clamp(x, 0, this.#layoutWidth),
 				MathUtils.Clamp(y, 0, this.#layoutHeight)];
@@ -206,7 +214,7 @@ export class GameServer {
 	
 	// Called when GameServer receives a command from a player to move units
 	// to a location.
-	MoveUnits(player, units)
+	MoveUnits(player: number, units: any[])
 	{
 		// Determine whether to use a pathfinding group for moving these units.
 		// This is done if the number of units to move is above the threshold.
@@ -217,9 +225,10 @@ export class GameServer {
 		if (useGroup)
 			this.#serverPathfinding.StartGroup();
 		
-		// Collect an array of units to move, with objects in the format:
-		// { platform, curX, curY, toX, toY }
-		const unitsToMove = [];
+		// Collect an array of units to move
+		const unitsToMove: Array<{
+			platform: MovableUnitPlatform, curX: number, curY: number, toX: number, toY: number
+		}> = [];
 		
 		// For each unit being commanded to move
 		for (const u of units)
@@ -281,13 +290,13 @@ export class GameServer {
 			for (let i = 0; i < maxLen; ++i)
 			{
 				if (topLeftSide.length > 0)
-					unitsToMove.push(topLeftSide.pop());
+					unitsToMove.push(topLeftSide.pop()!);
 				if (bottomRightSide.length > 0)
-					unitsToMove.push(bottomRightSide.pop());
+					unitsToMove.push(bottomRightSide.pop()!);
 				if (topRightSide.length > 0)
-					unitsToMove.push(topRightSide.pop());
+					unitsToMove.push(topRightSide.pop()!);
 				if (bottomLeftSide.length > 0)
-					unitsToMove.push(bottomLeftSide.pop());
+					unitsToMove.push(bottomLeftSide.pop()!);
 			}
 		}
 		
@@ -305,17 +314,17 @@ export class GameServer {
 	}
 	
 	// Called when a turret fires a projectile.
-	OnFireProjectile(projectile)
+	OnFireProjectile(projectile: Projectile)
 	{
 		// Add to the list of all projectiles so it is ticked by GameServer.
 		this.#allProjectilesById.set(projectile.GetId(), projectile);
 		
 		// Queue a network event to tell clients that a projectile was fired.
-		this.#serverMessageHandler.AddNetworkEvent(new NetworkEvent.FireProjectile(projectile));
+		this.#serverMessageHandler.AddNetworkEvent(new NetworkEvents.FireProjectileEvent(projectile));
 	}
 	
 	// Called when a projectile moves to check if it hit anything.
-	CheckProjectileCollision(projectile)
+	CheckProjectileCollision(projectile: Projectile)
 	{
 		const [x, y] = projectile.GetPosition();
 		const player = projectile.GetPlayer();
@@ -333,7 +342,7 @@ export class GameServer {
 		// performance overhead (and collision cells overall are a huge improvement).
 		this.#collisionGrid.ForEachItemInArea(
 			x, y, x, y,
-			unitPlatform =>
+			(unitPlatform: UnitPlatform) =>
 			{
 				const unit = unitPlatform.GetUnit();
 				
@@ -346,7 +355,7 @@ export class GameServer {
 				if (unitPlatform.ContainsPoint_Full(x, y))
 				{
 					// Queue a network event to tell clients that a projectile hit something.
-					this.#serverMessageHandler.AddNetworkEvent(new NetworkEvent.ProjectileHit(projectile));
+					this.#serverMessageHandler.AddNetworkEvent(new NetworkEvents.ProjectileHitEvent(projectile));
 
 					// Apply the projectile damage to the unit health.
 					unit.ReduceHealth(projectile.GetDamage());
@@ -354,6 +363,8 @@ export class GameServer {
 					result = true;	// return true from CheckProjectileCollision()
 					return true;	// bail out and stop iterating in ForEachItemInArea()
 				}
+
+				return false;
 			});
 		
 		// Return true if a collision happened.
@@ -455,22 +466,22 @@ export class GameServer {
 		this.#tickTimerId = setTimeout(() => this.#Tick(), msToNextTick);
 	}
 	
-	AddUnitForDeltaUpdate(unit)
+	AddUnitForDeltaUpdate(unit: Unit)
 	{
 		this.#serverMessageHandler.AddUnitForDeltaUpdate(unit);
 	}
 	
-	AddStatStateData(s)
+	AddStatStateData(s: number)
 	{
 		this.#statStateData += s;
 	}
 	
-	AddStatDeltaData(s)
+	AddStatDeltaData(s: number)
 	{
 		this.#statDeltaData += s;
 	}
 	
-	AddStatEventData(s)
+	AddStatEventData(s: number)
 	{
 		this.#statEventData += s;
 	}

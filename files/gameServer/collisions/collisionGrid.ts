@@ -1,5 +1,7 @@
 
 import * as MathUtils from "../utils/mathUtils.js";
+import { GameServer } from "../gameServer.js";
+import { UnitPlatform } from "../units/unitPlatform.js";
 
 // Size of a collision cell in layout co-ordinates.
 // Cells are square so use this size on both dimensions.
@@ -19,9 +21,9 @@ export class CollisionGrid {
 	
 	// A two-dimensional array of collision cells, based on X axis first then Y axis.
 	// Each collision cell is just a Set of all the objects in that location.
-	#cells = [];
+	#cells: Array<Array<Set<UnitPlatform>>> = [];
 	
-	constructor(gameServer)
+	constructor(gameServer: GameServer)
 	{
 		this.#gameServer = gameServer;
 		
@@ -34,7 +36,7 @@ export class CollisionGrid {
 		// Initialise the two-dimensional cells array with an empty Set for each cell.
 		for (let x = 0; x < this.#horizCellCount; ++x)
 		{
-			const arr = [];
+			const arr : Array<Set<UnitPlatform>> = [];
 			for (let y = 0; y < this.#vertCellCount; ++y)
 			{
 				arr.push(new Set());
@@ -45,13 +47,13 @@ export class CollisionGrid {
 	}
 	
 	// Convert a given layout co-ordinate in to cell co-ordinates.
-	PositionToCell(x, y)
+	PositionToCell(x: number, y: number)
 	{
 		return [Math.floor(x / COLLISION_CELL_SIZE), Math.floor(y / COLLISION_CELL_SIZE)];
 	}
 	
 	// A helper iterator to iterate all collision cells in the given cell range.
-	*#cellsInRange(cellLeft, cellTop, cellRight, cellBottom)
+	*#cellsInRange(cellLeft: number, cellTop: number, cellRight: number, cellBottom: number)
 	{
 		// Clamp the collision cell range to the dimensions in use.
 		cellLeft =   MathUtils.Clamp(cellLeft,   0, this.#horizCellCount - 1);
@@ -71,7 +73,7 @@ export class CollisionGrid {
 	}
 	
 	// Remove an item from a given cell range.
-	Remove(item, cellLeft, cellTop, cellRight, cellBottom)
+	Remove(item: UnitPlatform, cellLeft: number, cellTop: number, cellRight: number, cellBottom: number)
 	{
 		for (const cellSet of this.#cellsInRange(cellLeft, cellTop, cellRight, cellBottom))
 		{
@@ -80,7 +82,7 @@ export class CollisionGrid {
 	}
 	
 	// Add an item to a given cell range.
-	Add(item, cellLeft, cellTop, cellRight, cellBottom)
+	Add(item: UnitPlatform, cellLeft: number, cellTop: number, cellRight: number, cellBottom: number)
 	{
 		for (const cellSet of this.#cellsInRange(cellLeft, cellTop, cellRight, cellBottom))
 		{
@@ -99,7 +101,7 @@ export class CollisionGrid {
 	// 3) The most natural way to write this would be to make it a generator function.
 	//    However profiling in Chrome showed this was still too slow, and using a callback
 	//    was significantly faster.
-	ForEachItemInArea(left, top, right, bottom, callback)
+	ForEachItemInArea(left: number, top: number, right: number, bottom: number, callback: (item: UnitPlatform) => boolean)
 	{
 		// Get the given rectangle as a cell range.
 		const [cellLeft, cellTop] = this.PositionToCell(left, top);

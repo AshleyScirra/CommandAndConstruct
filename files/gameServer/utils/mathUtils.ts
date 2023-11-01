@@ -3,7 +3,7 @@ const _2pi = 2 * Math.PI;
 
 // Return a value x "clamped" between the minimum and maximum values,
 // i.e. not lower than the minimum value and not higher than the maximum value.
-export function Clamp(x, lower, upper)
+export function Clamp(x: number, lower: number, upper: number)
 {
 	if (x < lower)
 		return lower;
@@ -14,21 +14,21 @@ export function Clamp(x, lower, upper)
 };
 
 // Return the angle in radians from the first position to the second.
-export function AngleTo(x1, y1, x2, y2)
+export function AngleTo(x1: number, y1: number, x2: number, y2: number)
 {
 	return Math.atan2(y2 - y1, x2 - x1);
 };
 
 // Return the distance between two points. Note this will involve a square
 // root in the calculation - DistanceSquared is faster.
-export function DistanceTo(x1, y1, x2, y2)
+export function DistanceTo(x1: number, y1: number, x2: number, y2: number)
 {
 	return Math.hypot(x2 - x1, y2 - y1);
 };
 
 // Return the distance squared between two points. This is useful to avoid
 // the need to calculate a square root when comparing distances.
-export function DistanceSquared(x1, y1, x2, y2)
+export function DistanceSquared(x1: number, y1: number, x2: number, y2: number)
 {
 	const dx = x2 - x1;
 	const dy = y2 - y1;
@@ -36,13 +36,13 @@ export function DistanceSquared(x1, y1, x2, y2)
 };
 
 // Convert degrees to radians.
-export function ToRadians(degrees)
+export function ToRadians(degrees: number)
 {
 	return degrees * Math.PI / 180;
 };
 
 // Calculate the difference between two angles in radians.
-export function AngleDifference(a1, a2)
+export function AngleDifference(a1: number, a2: number)
 {
 	if (a1 === a2)
 		return 0;		// angles identical
@@ -62,7 +62,7 @@ export function AngleDifference(a1, a2)
 }
 
 // Rotate angle 'start' towards angle 'end' by amount 'step'.
-export function AngleRotate(start, end, step)
+export function AngleRotate(start: number, end: number, step: number)
 {
 	const ss = Math.sin(start);
 	const cs = Math.cos(start);
@@ -85,14 +85,14 @@ export function AngleRotate(start, end, step)
 };
 
 // Rotate point p around origin (0, 0)
-export function RotatePoint(x, y, angle)
+export function RotatePoint(x: number, y: number, angle: number)
 {
 	return RotatePoint2(x, y, Math.sin(angle), Math.cos(angle));
 }
 
 
 // As with RotatePoint but using precomputed sin(angle) and cos(angle)
-export function RotatePoint2(x, y, sin_a, cos_a)
+export function RotatePoint2(x: number, y: number, sin_a: number, cos_a: number)
 {
 	const rx = (x * cos_a) - (y * sin_a);
 	const ry = (y * cos_a) + (x * sin_a);
@@ -101,7 +101,7 @@ export function RotatePoint2(x, y, sin_a, cos_a)
 
 // Test if two segments intersect, given by the first line (a1x, a1y) -> (a2x, a2y),
 // and the second line (b1x, b1y) -> (b2x, b2y).
-export function SegmentsIntersect(a1x, a1y, a2x, a2y, b1x, b1y, b2x, b2y)
+export function SegmentsIntersect(a1x: number, a1y: number, a2x: number, a2y: number, b1x: number, b1y: number, b2x: number, b2y: number)
 {
 	const det = (a2x - a1x) * (b2y - b1y) - (b2x - b1x) * (a2y - a1y);
 	if (det === 0)
@@ -120,7 +120,7 @@ export function SegmentsIntersect(a1x, a1y, a2x, a2y, b1x, b1y, b2x, b2y)
 // 0-65536, so a value in radians is expanded to that range. This has a precision of
 // about 0.005 degrees per increment, which is pretty good - over a distance of
 // 10,000 pixels that will only be off by about 1 pixel, so this should be good enough.
-export function AngleToUint16(a)
+export function AngleToUint16(a: number)
 {
 	// Ensure in [0, 2pi) range
 	a %= _2pi;
@@ -137,7 +137,7 @@ export function AngleToUint16(a)
 // the projectile speed and target's speed and angle, aiming at where the target will be
 // by the time the projectile arrives - but all assuming the target stays at the same
 // speed and angle.
-export function PredictiveAim(fromX, fromY, projectileSpeed, targetX, targetY, targetSpeed, targetAngle)
+export function PredictiveAim(fromX: number, fromY: number, projectileSpeed: number, targetX: number, targetY: number, targetSpeed: number, targetAngle: number)
 {
 	const dx = targetX - fromX;
 	const dy = targetY - fromY;

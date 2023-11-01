@@ -1,4 +1,6 @@
 
+import { Unit } from "./unit.js";
+import { ObjectData } from "./objectData.js";
 import { CollisionShape } from "../collisions/collisionShape.js";
 import { CollisionBox } from "../collisions/collisionBox.js";
 
@@ -14,7 +16,7 @@ export class UnitPlatform {
 	#obstacleCollisionShape;	// reference to CollisionShape for obstacle collision detection
 	#collisionBox;				// the collision box for the collision grid
 	
-	constructor(unit, objectData)
+	constructor(unit: Unit, objectData: ObjectData)
 	{
 		const gameServer = unit.GetGameServer();
 		
@@ -64,7 +66,7 @@ export class UnitPlatform {
 		return this.#obstacleCollisionShape;
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		// override
 	}
@@ -88,12 +90,12 @@ export class UnitPlatform {
 	
 	// Check if a given point - relative to the origin - is inside the a collision shape
 	// for this platform. There are separate methods for both the full and obstacle shapes.
-	ContainsPoint_Full(x, y)
+	ContainsPoint_Full(x: number, y: number)
 	{
 		return this.#fullCollisionShape.ContainsPoint(x, y);
 	}
 	
-	ContainsPoint_Obstacle(x, y)
+	ContainsPoint_Obstacle(x: number, y: number)
 	{
 		return this.#obstacleCollisionShape.ContainsPoint(x, y);
 	}
@@ -101,7 +103,7 @@ export class UnitPlatform {
 	// Check if this UnitPlatform intersects another UnitPlatform.
 	// Note this is done using the obstacle collision mask instead of the full collision mask,
 	// as using a reduced collision mask can help with unit queuing scenarios.
-	IntersectsOther(unitPlatform)
+	IntersectsOther(unitPlatform: UnitPlatform)
 	{
 		// Testing if a unit platform intersects itself returns false.
 		if (unitPlatform === this)
@@ -132,7 +134,7 @@ export class UnitPlatform {
 		// it only means some units may be checked more than once, but it won't affect the result.
 		this.GetGameServer().GetCollisionGrid().ForEachItemInArea(
 			x + left, y + top, x + right, y + bottom,
-			unitPlatform =>
+			(unitPlatform: UnitPlatform) =>
 			{
 				// Test if this unit platform intersects another unit platform in the same collision cell.
 				if (this.IntersectsOther(unitPlatform))
@@ -140,27 +142,10 @@ export class UnitPlatform {
 					result = true;	// return true from IntersectsAnyOther()
 					return true;	// bail out and stop iterating in ForEachItemInArea()
 				}
+
+				return false;
 			});
 		
 		return result;
-	}
-	
-	// Methods to save and restore the unit position and angle, which is useful when stepping
-	// movement and detecting a collision.
-	SavePosition()
-	{
-		const [x, y] = this.GetPosition();
-		
-		return {
-			x,
-			y,
-			angle: this.GetAngle()
-		};
-	}
-	
-	RestorePosition(p)
-	{
-		this.SetPosition(p.x, p.y);
-		this.SetAngle(p.angle);
 	}
 }

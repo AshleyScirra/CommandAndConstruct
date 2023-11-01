@@ -2,18 +2,18 @@
 import { NetworkEvent } from "./networkEvent.js";
 
 // The UnitDestroyed event tells clients that a unit was destroyed.
-NetworkEvent.UnitDestroyed = class UnitDestroyed extends NetworkEvent {
+export class UnitDestroyedEvent extends NetworkEvent {
 	
 	#unitId;			// ID of unit that was destroyed
 	
-	constructor(unitId)
+	constructor(unitId: number)
 	{
 		super();
 		
 		this.#unitId = unitId;
 	}
 	
-	Write(dataView, pos)
+	Write(dataView: DataView, pos: number)
 	{
 		// Event type
 		dataView.setUint8(pos, NetworkEvent.TYPE_UNIT_DESTROYED);

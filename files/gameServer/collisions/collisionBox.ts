@@ -1,4 +1,7 @@
 
+import { GameServer } from "../gameServer.js";
+import { UnitPlatform } from "../units/unitPlatform.js";
+
 // The CollisionBox class represents an axis-aligned bounding box of something collidable on the
 // collision grid. As it moves it will update which collision cells it is in.
 export class CollisionBox {
@@ -13,14 +16,14 @@ export class CollisionBox {
 	#lastCellRight = 0;
 	#lastCellBottom = 0;
 	
-	constructor(gameServer, owner)
+	constructor(gameServer: GameServer, owner: UnitPlatform)
 	{
 		this.#collisionGrid = gameServer.GetCollisionGrid();
 		this.#owner = owner;
 	}
 	
 	// Update which collision cells the box is in based on its rectangle in layout co-ordinates.
-	Update(left, top, right, bottom)
+	Update(left: number, top: number, right: number, bottom: number)
 	{
 		// Convert the rectangle in to cell co-ordinates.
 		const [cellLeft, cellTop] = this.#collisionGrid.PositionToCell(left, top);

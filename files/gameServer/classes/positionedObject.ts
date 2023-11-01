@@ -1,4 +1,6 @@
 
+import { GameServer } from "../gameServer.js";
+
 // A PositionedObject has an X and Y co-ordinate.
 export class PositionedObject {
 
@@ -7,7 +9,7 @@ export class PositionedObject {
 	#x = 0;					// X position
 	#y = 0;					// Y position
 	
-	constructor(gameServer, x = 0, y = 0)
+	constructor(gameServer: GameServer, x = 0, y = 0)
 	{
 		this.#gameServer = gameServer;
 		
@@ -20,7 +22,7 @@ export class PositionedObject {
 		return this.#gameServer;
 	}
 	
-	SetPosition(x, y)
+	SetPosition(x: number, y: number)
 	{
 		this.#x = x;
 		this.#y = y;

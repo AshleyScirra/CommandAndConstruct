@@ -1,5 +1,7 @@
 
+import { GameServer } from "../gameServer.js";
 import { MovableObject } from "../classes/movableObject.js";
+import { UnitTurret } from "./unitTurret.js";
 import * as MathUtils from "../utils/mathUtils.js";
 
 // Like unit IDs, projectile IDs are sent as a uint16 value to save on bandwidth,
@@ -9,7 +11,7 @@ import * as MathUtils from "../utils/mathUtils.js";
 // the ID wraps around, it's easy enough to handle that case anyway.
 let nextId = 0;					// the ID to assign the next projectile
 
-function GetNewProjectileId(gameServer)
+function GetNewProjectileId(gameServer: GameServer)
 {
 	// Keep incrementing the ID so long as the ID is still in use.
 	do {
@@ -35,7 +37,7 @@ export class Projectile extends MovableObject {
 	#damage = 20;				// amount of damage this projectile does
 	#damageVariance = 0.1;		// random variation in damage done as a percentage
 	
-	constructor(turret, x, y)
+	constructor(turret: UnitTurret, x: number, y: number)
 	{
 		const gameServer = turret.GetGameServer();
 		super(gameServer, x, y);
@@ -53,7 +55,7 @@ export class Projectile extends MovableObject {
 		return this.#id;
 	}
 	
-	SetDistanceTravelled(d)
+	SetDistanceTravelled(d: number)
 	{
 		this.#distanceTravelled = d;
 	}
@@ -73,7 +75,7 @@ export class Projectile extends MovableObject {
 		return this.#turret.GetUnit().GetPlayer();
 	}
 	
-	SetPosition(x, y)
+	SetPosition(x: number, y: number)
 	{
 		// Prevent the position going outside the layout.
 		[x, y] = this.GetGameServer().ClampToLayout(x, y);
@@ -88,7 +90,7 @@ export class Projectile extends MovableObject {
 		return this.#damage - (maxVariance / 2) + (Math.random() * maxVariance);
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		// Move the projectile at its angle and speed.
 		const [x, y] = this.GetPosition();

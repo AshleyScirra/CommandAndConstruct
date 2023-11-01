@@ -14,8 +14,9 @@ export class NetworkEvent {
 	{
 	}
 	
-	Write(dataView, pos)
+	Write(dataView: DataView, pos: number): number
 	{
 		// overridden by derived classes
+		throw new Error("require override");
 	}
 }

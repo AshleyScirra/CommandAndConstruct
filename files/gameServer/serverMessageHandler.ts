@@ -1,3 +1,6 @@
+import { GameServer } from "./gameServer.js";
+import { NetworkEvent } from "./networkEvents/networkEvent.js";
+import { Unit } from "./units/unit.js";
 
 // The binary message types
 const MESSAGE_TYPE_GAME_UPDATES = 0;	// full and delta unit updates, and network events
@@ -18,14 +21,14 @@ export class ServerMessageHandler {
 	// A set of all units pending a full update (which sends all the unit data).
 	// The set will be filled with all units every UNIT_FULL_UPDATE_PERIOD,
 	// and then gradually drained over time as updates are sent out.
-	#unitsPendingFullUpdate = new Set();
+	#unitsPendingFullUpdate = new Set<Unit>();
 	#numUnitFullUpdatesPerTick = 0;	// number of unit full updates to send out per tick
 	
 	// A set of units that have changed this tick, so need to send delta updates.
-	#unitsPendingDeltaUpdate = new Set();
+	#unitsPendingDeltaUpdate = new Set<Unit>();
 	
 	// Array of NetworkEvents waiting to send over the network.
-	#networkEvents = [];
+	#networkEvents: NetworkEvent[] = [];
 	
 	// A 256kb binary data buffer to use for sending binary updates to clients
 	#dataArrayBuffer = new ArrayBuffer(262144);
@@ -34,23 +37,23 @@ export class ServerMessageHandler {
 	// For sending async messages: keep track of message IDs and the corresponding
 	// promise resolve/reject functions.
 	#nextMessageId = 0;
-	#messagePromiseMap = new Map();	// id -> { resolve, reject }
+	#messagePromiseMap = new Map<number, { resolve: Function, reject: Function}>();
 	
-	constructor(gameServer)
+	constructor(gameServer: GameServer)
 	{
 		this.#gameServer = gameServer;
 		
 		// Map of message types that can be received from the client
 		// and the function to call to handle them.
 		this.#messageMap = new Map([
-			["ping", m => this.#OnPing(m)],
-			["move-units", m => this.#OnMoveUnits(m)],
-			["release", m => this.#OnRelease(m)]
+			["ping", (m: any) => this.#OnPing(m)],
+			["move-units", (m: any) => this.#OnMoveUnits(m)],
+			["release", (m: any) => this.#OnRelease(m)]
 		]);
 	}
 	
 	// Send a fire-and-forget message to the runtime.
-	SendToRuntime(msg, transmissionMode, forPlayer, transferList)
+	SendToRuntime(msg: any, transmissionMode: string, forPlayer: number | null, transferList?: Array<any>)
 	{
 		this.#gameServer.SendToRuntime(msg, transmissionMode, forPlayer, transferList);
 	}
@@ -58,7 +61,7 @@ export class ServerMessageHandler {
 	// Send a message to the runtime and return a promise that resolves
 	// when a reply is received. This is done by sending a message with a unique
 	// ID, and waiting for a reply to come back with the same ID.
-	SendToRuntimeAsync(msg, transmissionMode, forPlayer, transferList)
+	SendToRuntimeAsync(msg: any, transmissionMode: string, forPlayer: number | null, transferList?: Array<any>)
 	{
 		// Attach a unique message ID
 		const messageId = this.#nextMessageId++;
@@ -80,7 +83,7 @@ export class ServerMessageHandler {
 	}
 	
 	// Main method for handling a message from a client.
-	HandleMessage(msg)
+	HandleMessage(msg: any)
 	{
 		// Messages sent in response to SendToRuntimeAsync() include a message-id
 		// field. Use this to look up the corresponding promise and resolve it.
@@ -120,7 +123,7 @@ export class ServerMessageHandler {
 		}
 	}
 	
-	#OnMoveUnits(msg)
+	#OnMoveUnits(msg: any)
 	{
 		const player = msg["player"];
 		const units = msg["units"];
@@ -130,7 +133,7 @@ export class ServerMessageHandler {
 	
 	// Called when receiving a ping from a specific player. The server sends a "pong" message back
 	// with the game time, which allows clients to synchronize to the server time.
-	#OnPing(msg)
+	#OnPing(msg: any)
 	{
 		const id = msg["id"];
 		const player = msg["player"];
@@ -147,7 +150,7 @@ export class ServerMessageHandler {
 	}
 	
 	// Called when the runtime is ending the game.
-	#OnRelease(msg)
+	#OnRelease(msg: any)
 	{
 		// Only player 0 - the single player or multiplayer host - can terminate GameServer.
 		if (msg["player"] !== 0)
@@ -170,19 +173,19 @@ export class ServerMessageHandler {
 	
 	// When some value in a unit changes, it calls this method to add it to a set of
 	// units for sending delta updates over the network.
-	AddUnitForDeltaUpdate(unit)
+	AddUnitForDeltaUpdate(unit: Unit)
 	{
 		this.#unitsPendingDeltaUpdate.add(unit);
 	}
 	
 	// When a unit is destroyed, ensure it is removed from any pending messages.
-	RemoveUnit(unit)
+	RemoveUnit(unit: Unit)
 	{
 		this.#unitsPendingFullUpdate.delete(unit);
 		this.#unitsPendingDeltaUpdate.delete(unit);
 	}
 	
-	AddNetworkEvent(networkEvent)
+	AddNetworkEvent(networkEvent: NetworkEvent)
 	{
 		this.#networkEvents.push(networkEvent);
 	}
@@ -284,7 +287,7 @@ export class ServerMessageHandler {
 		this.SendToRuntime(arrayBuffer, "r", null, [arrayBuffer])
 	}
 	
-	#WriteUnitFullUpdates(dataView, pos, sendUnits)
+	#WriteUnitFullUpdates(dataView: DataView, pos: number, sendUnits: Unit[])
 	{
 		const startPos = pos;
 		
@@ -308,7 +311,7 @@ export class ServerMessageHandler {
 		return pos;
 	}
 	
-	#WriteUnitDeltaUpdates(dataView, pos)
+	#WriteUnitDeltaUpdates(dataView: DataView, pos: number)
 	{
 		const startPos = pos;
 		
@@ -331,7 +334,7 @@ export class ServerMessageHandler {
 		return pos;
 	}
 	
-	#WriteNetworkEvents(dataView, pos)
+	#WriteNetworkEvents(dataView: DataView, pos: number)
 	{
 		const startPos = pos;
 		

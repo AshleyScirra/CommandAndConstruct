@@ -1,4 +1,6 @@
 
+import { GameServer } from "../gameServer.js";
+
 // The ObjectData class stores data about the game, such as the size of units, for GameServer.
 // It's passed from the runtime as that has access to the object details. This class is the
 // GameServer counterpart to the data collected in GameClientMessageHandler.#GetConstructObjectDataFor().
@@ -15,7 +17,7 @@ export class ObjectData {
 	#fullCollisionPoly = [];
 	#obstacleCollisionPoly = [];
 	
-	constructor(gameServer, entry)
+	constructor(gameServer: GameServer, entry: any)
 	{
 		this.#gameServer = gameServer;
 		

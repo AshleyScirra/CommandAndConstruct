@@ -1,4 +1,6 @@
 
+import { GameServer } from "./gameServer.js";
+
 // Pathfinding settings
 
 // GROUP_MAX_WORKERS sets how many workers are allowed to calculate pathfinding
@@ -24,12 +26,12 @@ export class ServerPathfinding {
 
 	#gameServer;
 	
-	constructor(gameServer)
+	constructor(gameServer: GameServer)
 	{
 		this.#gameServer = gameServer;
 	}
 	
-	FindPath(fromX, fromY, toX, toY)
+	FindPath(fromX: number, fromY: number, toX: number, toY: number): Promise<number[][] | null>
 	{
 		// Use SendToRuntimeAsync() to get the host player to calculate the
 		// path on behalf of the server. This returns a promise that resolves
@@ -38,7 +40,7 @@ export class ServerPathfinding {
 			"type": "find-path",
 			"from": [fromX, fromY],
 			"to": [toX, toY]
-		}, "", 0);
+		}, "", 0) as Promise<number[][] | null>;
 	}
 	
 	// The threshold is the minimum number of units moved simultaneously that

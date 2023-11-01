@@ -1,4 +1,5 @@
 
+import { GameServer } from "../gameServer.js";
 import { MovableUnitPlatform } from "./movableUnitPlatform.js";
 import { UnitTurret } from "./unitTurret.js";
 import * as MathUtils from "../utils/mathUtils.js";
@@ -14,7 +15,7 @@ const ENABLE_DEBUG_STATE = true;
 // Therefore it increments the value enough to skip over any in-use IDs.
 let nextId = 0;					// the ID to assign the next unit
 
-function GetNewUnitId(gameServer)
+function GetNewUnitId(gameServer: GameServer)
 {
 	// Keep incrementing the ID so long as the ID is still in use.
 	do {
@@ -60,7 +61,7 @@ export class Unit {
 	// For development purposes only: an extra byte sent to clients for debug info.
 	#debugState = 0;
 	
-	constructor(gameServer, player, x, y, angle)
+	constructor(gameServer: GameServer, player: number, x: number, y: number, angle: number)
 	{
 		this.#gameServer = gameServer;
 		this.#id = GetNewUnitId(gameServer);
@@ -107,7 +108,7 @@ export class Unit {
 		return this.#turret;
 	}
 	
-	ReduceHealth(amount)
+	ReduceHealth(amount: number)
 	{
 		this.#health -= amount;
 		
@@ -116,7 +117,7 @@ export class Unit {
 			this.GetGameServer().DestroyUnit(this);
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		this.#platform.Tick(dt);
 		this.#turret.Tick(dt);
@@ -124,7 +125,7 @@ export class Unit {
 	
 	// Called by GameServer when it's time to write a full update for this unit.
 	// This includes complete details about the unit.
-	WriteFullUpdate(dataView, pos)
+	WriteFullUpdate(dataView: DataView, pos: number)
 	{
 		// Write the unit ID
 		dataView.setUint16(pos, this.GetId());
@@ -216,7 +217,7 @@ export class Unit {
 	
 	// The debug state is an extra byte sent to clients for displaying debug info
 	// during development.
-	SetDebugState(n)
+	SetDebugState(n: number)
 	{
 		n = MathUtils.Clamp(Math.floor(n), 0, 255);
 		if (this.#debugState === n)
@@ -233,7 +234,7 @@ export class Unit {
 	
 	// Called by GameServer when it's time to write a delta update for this unit.
 	// This only writes changed values.
-	WriteDeltaUpdate(dataView, pos)
+	WriteDeltaUpdate(dataView: DataView, pos: number)
 	{
 		// Write the unit ID.
 		dataView.setUint16(pos, this.GetId());

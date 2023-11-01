@@ -1,4 +1,5 @@
 
+import { UnitMovementController } from "./unitMovementController.js";
 import { UnitMovementState } from "./unitMovementState.js";
 
 import * as MathUtils from "../../utils/mathUtils.js";
@@ -7,7 +8,7 @@ import * as MathUtils from "../../utils/mathUtils.js";
 // This brings the unit to a halt and then proceeds to the "rotate-first" state.
 export class UnitMovementStateStopping extends UnitMovementState {
 
-	constructor(controller)
+	constructor(controller: UnitMovementController)
 	{
 		super(controller);
 		
@@ -15,7 +16,7 @@ export class UnitMovementStateStopping extends UnitMovementState {
 		this.SetUnitDebugState(1);
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		const controller = this.GetController();
 		const unitPlatform = this.GetUnitPlatform();

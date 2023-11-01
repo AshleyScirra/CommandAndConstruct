@@ -1,3 +1,4 @@
+import { UnitMovementController } from "./unitMovementController.js";
 import { UnitMovementState } from "./unitMovementState.js";
 
 import * as MathUtils from "../../utils/mathUtils.js";
@@ -11,7 +12,7 @@ export class UnitMovementStateMoving extends UnitMovementState {
 	#curMaxSpeed = 0;		// Temporary maximum speed restriction
 	#targetSpeed = 0;		// Current speed to accelerate or brake towards
 	
-	constructor(controller)
+	constructor(controller: UnitMovementController)
 	{
 		super(controller);
 		
@@ -19,7 +20,7 @@ export class UnitMovementStateMoving extends UnitMovementState {
 		this.SetUnitDebugState(3);
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		const controller = this.GetController();
 		const unitPlatform = this.GetUnitPlatform();
@@ -59,7 +60,7 @@ export class UnitMovementStateMoving extends UnitMovementState {
 		}
 	}
 	
-	#TickMoreWaypoints(dt)
+	#TickMoreWaypoints(dt: number)
 	{
 		const unitPlatform = this.GetUnitPlatform();
 		const waypoints = this.GetWaypoints();
@@ -160,7 +161,7 @@ export class UnitMovementStateMoving extends UnitMovementState {
 		}
 	}
 	
-	#TickLastWaypoint(dt)
+	#TickLastWaypoint(dt: number)
 	{
 		const unitPlatform = this.GetUnitPlatform();
 		const waypoints = this.GetWaypoints();
@@ -229,7 +230,7 @@ export class UnitMovementStateMoving extends UnitMovementState {
 	//    avoiding the problem of units circling endlessly around targets they can't reach.
 	//    This is only used when moving towards the final waypoint, as other waypoints along
 	//    the way are often deliberately cut off by the turn circle.
-	#RotateTowardsAngle(targetAngle, dt, sqDistToTarget = Infinity)
+	#RotateTowardsAngle(targetAngle: number, dt: number, sqDistToTarget = Infinity)
 	{
 		const unitPlatform = this.GetUnitPlatform();
 		

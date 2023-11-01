@@ -1,4 +1,5 @@
 
+import { GameServer } from "../gameServer.js";
 import { PositionedObject } from "./positionedObject.js";
 
 const _2PI = 2 * Math.PI;
@@ -10,14 +11,14 @@ export class PositionedAndAngledObject extends PositionedObject {
 	// Private fields
 	#angle = 0;				// angle in radians
 	
-	constructor(gameServer, x, y, angle = 0)
+	constructor(gameServer: GameServer, x: number, y: number, angle = 0)
 	{
 		super(gameServer, x, y);
 		
 		this.#angle = angle;
 	}
 	
-	SetAngle(a)
+	SetAngle(a: number)
 	{
 		// Ensure the angle is always in the range [0, 2pi].
 		// This avoids precision issues if the angle ends up very large from

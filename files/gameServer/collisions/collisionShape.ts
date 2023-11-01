@@ -1,15 +1,16 @@
 
 import * as MathUtils from "../utils/mathUtils.js";
+import { GameServer } from "../gameServer.js";
 
 // CollisionShape represents a collision polygon, with the added ability to rotate it.
 // This allows the collision polygon to follow the rotation of unit platforms, for example.
 // Note the shape is relative to the origin, so callers must offset collision checks.
 export class CollisionShape {
 
-	#gameServer;				// reference to GameServer
-	#originalPolyPoints = [];	// reference to source list of polygon points from ObjectData
-	#angle = 0;					// current rotation of this CollisionShape
-	#polyPoints = [];			// current list of polygon points with rotation
+	#gameServer;							// reference to GameServer
+	#originalPolyPoints: number[][] = [];	// reference to source list of polygon points from ObjectData
+	#angle = 0;								// current rotation of this CollisionShape
+	#polyPoints: number[][] = [];			// current list of polygon points with rotation
 	
 	// The bounding box of the rotated collision shape
 	#boxLeft = 0;
@@ -17,7 +18,7 @@ export class CollisionShape {
 	#boxRight = 0;
 	#boxBottom = 0;
 	
-	constructor(gameServer, originalPolyPoints)
+	constructor(gameServer: GameServer, originalPolyPoints: number[][])
 	{
 		this.#gameServer = gameServer;
 		this.#originalPolyPoints = originalPolyPoints;
@@ -34,7 +35,7 @@ export class CollisionShape {
 	}
 	
 	// Update the collision shape for a given angle.
-	Update(angle)
+	Update(angle: number)
 	{
 		// If the angle is the same as the current angle of the collision shape,
 		// ignore this call, as the shape is already up-to-date.
@@ -106,7 +107,7 @@ export class CollisionShape {
 	
 	// Check if a given position is inside the collision shape.
 	// Note the point must be relative to the origin, like the collision polygon is itself.
-	ContainsPoint(x, y)
+	ContainsPoint(x: number, y: number)
 	{
 		// If the point is outside the collision shape's bounding box, it is definitely not inside
 		// the shape. This is also a faster way to test far-away points, since it avoids checking
@@ -148,7 +149,7 @@ export class CollisionShape {
 	// Check if a given collision shape intersects this collision shape.
 	// Since collision shape poly points are relative to their origins, the X and Y offset
 	// to the other shape must be provided.
-	IntersectsOther(collisionShape, offX, offY)
+	IntersectsOther(collisionShape: CollisionShape, offX: number, offY: number)
 	{
 		// First check if the bounding boxes of the collision shapes do not intersect.
 		// This is a fast way to reject far-apart collision shapes.

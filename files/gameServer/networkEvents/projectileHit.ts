@@ -1,17 +1,18 @@
 
 import { NetworkEvent } from "./networkEvent.js";
+import { Projectile } from "../units/projectile.js";
 
 // The ProjectileHit event represents a projectile hitting a target, such as a
 // different player's unit. Note that when this happens the projectile is destroyed
 // on the server side, and the event isn't sent until the end of the tick, so
 // the details about the projectile are saved inside the class.
-NetworkEvent.ProjectileHit = class ProjectileHit extends NetworkEvent {
+export class ProjectileHitEvent extends NetworkEvent {
 	
 	#id = 0;		// projectile ID
 	#x = 0;			// projectile position
 	#y = 0;
 	
-	constructor(projectile)
+	constructor(projectile: Projectile)
 	{
 		super();
 		
@@ -23,7 +24,7 @@ NetworkEvent.ProjectileHit = class ProjectileHit extends NetworkEvent {
 		this.#y = y;
 	}
 	
-	Write(dataView, pos)
+	Write(dataView: DataView, pos: number)
 	{
 		// Event type
 		dataView.setUint8(pos, NetworkEvent.TYPE_PROJECTILE_HIT);

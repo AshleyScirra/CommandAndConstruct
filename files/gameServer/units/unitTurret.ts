@@ -1,4 +1,6 @@
 
+import { Unit } from "./unit.js";
+import { UnitPlatform } from "./unitPlatform.js";
 import { PositionedAndAngledObject } from "../classes/positionedAndAngledObject.js";
 import { Projectile } from "./projectile.js";
 import * as MathUtils from "../utils/mathUtils.js";
@@ -40,7 +42,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 	// in order to reduce bandwidth.
 	#lastSentAngle = 0;
 	
-	constructor(unit, x, y)
+	constructor(unit: Unit, x: number, y: number)
 	{
 		super(unit.GetGameServer(), x, y);
 		
@@ -71,7 +73,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 	
 	// Override SetAngle() to call MarkTurretOffsetAngleChanged() on the unit
 	// when the angle is changed.
-	SetAngle(a)
+	SetAngle(a: number)
 	{
 		// Wrap the angle the same way it is in PositionedAndAngledObject
 		// to ensure the subsequent comparison works as intended
@@ -119,7 +121,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 		return this.#projectileSpeed;
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		// If there is no target to fire at, try to find a target. This can also rotate the turret
 		// towards targets that are outside of firing range, but inside the aim range.
@@ -134,7 +136,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 	// Secondly if there is nothing inside its firing range, it will rotate towards anything
 	// inside its aim range. In both cases if there are multiple targets, it will try to find
 	// the best one to target, based on different criteria (rotation vs. distance).
-	#FindTarget(dt)
+	#FindTarget(dt: number)
 	{
 		const forPlayer = this.GetUnit().GetPlayer();
 		
@@ -147,8 +149,8 @@ export class UnitTurret extends PositionedAndAngledObject {
 		// Collect all available targets within firing range and aiming range separately.
 		// Firing range takes priority, as there's no point merely aiming at a target outside of
 		// firing range when there's a target that could be fired at.
-		const fireTargets = [];
-		const aimTargets = [];
+		const fireTargets: Unit[] = [];
+		const aimTargets: Unit[] = [];
 		
 		// The turret's main range is the distance at which it can fire at targets. Calculate an additional
 		// range in which the turret can aim at targets if there is nothing to fire at.
@@ -164,12 +166,12 @@ export class UnitTurret extends PositionedAndAngledObject {
 		// either by angle or distance, and those algorithms works the same with duplicates.
 		this.GetGameServer().GetCollisionGrid().ForEachItemInArea(
 			fromX - aimRange, fromY - aimRange, fromX + aimRange, fromY + aimRange,
-			unitPlatform =>
+			(unitPlatform: UnitPlatform) =>
 			{
 				// Skip units from the same player
 				const unit = unitPlatform.GetUnit();
 				if (unit.GetPlayer() === forPlayer)
-					return;
+					return false;
 
 				// Check if this unit is within range.
 				// Use square distances to avoid computing a square root.
@@ -189,6 +191,8 @@ export class UnitTurret extends PositionedAndAngledObject {
 					// Add it to the list of available aim targets and keep looking.
 					aimTargets.push(unit);
 				}
+
+				return false;
 			});
 		
 		// Did not find any target in firing range. In this case, fall back to checking targets
@@ -234,7 +238,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 	// target with the minimum angular distance from the current turret angle.
 	// Note the availableTargets array could contain duplicates due to the way collision cells
 	// work; however this does not matter with this algorithm, it will work the same anyway.
-	#GetBestAvailableTargetByRotation(availableTargets)
+	#GetBestAvailableTargetByRotation(availableTargets: Unit[])
 	{
 		const turretAngle = this.GetOverallAngle();
 		const [fromX, fromY] = this.GetPlatform().GetPosition();
@@ -261,14 +265,14 @@ export class UnitTurret extends PositionedAndAngledObject {
 		
 		// Now the best target is set to the available target with the smallest angular distance to
 		// the turret's current angle. Return that target.
-		return bestTargetUnit;
+		return bestTargetUnit!;
 	}
 	
 	// If there are no targets in firing range but multiple targets within the extended aim range,
 	// then the best target to aim at is the nearest one. This is based on the assumption the nearest
 	// target is the most likely to enter the firing range first. This works similarly to the previous
 	// method but by distance instead of rotation.
-	#GetBestAvailableTargetByDistance(availableTargets)
+	#GetBestAvailableTargetByDistance(availableTargets: Unit[])
 	{
 		const [fromX, fromY] = this.GetPlatform().GetPosition();
 		
@@ -294,10 +298,10 @@ export class UnitTurret extends PositionedAndAngledObject {
 		}
 		
 		// Return the nearest available target.
-		return bestTargetUnit;
+		return bestTargetUnit!;
 	}
 	
-	#TrackTarget(dt)
+	#TrackTarget(dt: number)
 	{
 		const gameServer = this.GetGameServer();
 		
@@ -336,7 +340,7 @@ export class UnitTurret extends PositionedAndAngledObject {
 		}
 	}
 	
-	#RotateTowardsTarget(unit, dt)
+	#RotateTowardsTarget(unit: Unit, dt: number)
 	{
 		const targetPlatform = unit.GetPlatform();
 		const [targetX, targetY] = targetPlatform.GetPosition();

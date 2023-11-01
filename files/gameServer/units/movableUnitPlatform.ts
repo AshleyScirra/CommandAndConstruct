@@ -1,8 +1,16 @@
 
+import { Unit } from "./unit.js";
+import { ObjectData } from "./objectData.js";
 import { UnitPlatform } from "./unitPlatform.js";
 import { MovableObject } from "../classes/movableObject.js";
 import { UnitMovementController } from "./movement/unitMovementController.js";
 import * as MathUtils from "../utils/mathUtils.js";
+
+type SavedPosition = {
+	x: number,
+	y: number,
+	angle: number
+}
 
 const _2PI = 2 * Math.PI;
 
@@ -19,7 +27,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 	#movable;				// MovableObject to represent platform position
 	
 	// UnitMovementController manages actual navigation of unit along paths (lazy-created)
-	#movementController = null;
+	#movementController: UnitMovementController | null = null;
 	
 	#lastSpeed = 0;			// Speed on previous tick
 	#maxSpeed = 250;		// Maximum speed in px/s/s
@@ -34,7 +42,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 	// the value sent over the network changes.
 	#lastAngleAsUint16 = 0;
 	
-	constructor(unit, objectData, x, y, angle)
+	constructor(unit: Unit, objectData: ObjectData, x: number, y: number, angle: number)
 	{
 		super(unit, objectData);
 		
@@ -59,7 +67,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 		return this.#movable.GetPosition();
 	}
 	
-	SetPosition(x, y)
+	SetPosition(x: number, y: number)
 	{
 		// Prevent the position going outside the layout.
 		[x, y] = this.GetGameServer().ClampToLayout(x, y);
@@ -92,7 +100,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 		return this.#movable.GetSpeed();
 	}
 	
-	SetSpeed(s, sendDelta = true)
+	SetSpeed(s: number, sendDelta = true)
 	{
 		// Limit to maximum speed
 		s = MathUtils.Clamp(s, -this.#maxSpeed, this.#maxSpeed);
@@ -127,7 +135,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 		return this.#curAcceleration;
 	}
 	
-	SetAcceleration(a)
+	SetAcceleration(a: number)
 	{
 		// Apply limits of maximum allowed deceleration and acceleration
 		a = MathUtils.Clamp(a, -this.#maxDeceleration, this.#maxAcceleration);
@@ -156,7 +164,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 		return this.#movable.GetAngle();
 	}
 	
-	SetAngle(a)
+	SetAngle(a: number)
 	{
 		// Wrap the angle the same way it is in PositionedAndAngledObject
 		// to ensure the subsequent comparison works as intended
@@ -182,7 +190,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 		const angleAsUint16 = MathUtils.AngleToUint16(a);
 		if (this.#lastAngleAsUint16 !== angleAsUint16)
 		{
-			this.GetUnit().MarkPlatformAngleChanged(a);
+			this.GetUnit().MarkPlatformAngleChanged();
 			this.#lastAngleAsUint16 = angleAsUint16;
 		}
 	}
@@ -194,7 +202,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 	
 	// Unit has been commanded to move to the given position. Use pathfinding to find a series
 	// of waypoints to arrive at the destination.
-	async MoveToPosition(x, y)
+	async MoveToPosition(x: number, y: number)
 	{
 		// Clamp target position inside the layout area.
 		[x, y] = this.GetGameServer().ClampToLayout(x, y);
@@ -226,7 +234,7 @@ export class MovableUnitPlatform extends UnitPlatform {
 		this.#movementController.StartMovingAlongWaypoints(waypoints);
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		// If a movement controller exists, tick it to advance the unit movement.
 		if (this.#movementController)
@@ -253,15 +261,34 @@ export class MovableUnitPlatform extends UnitPlatform {
 	
 	// The base class ContainsPoint methods check the point relative to the origin.
 	// So first translate the point to be relative to the unit position.
-	ContainsPoint_Full(x, y)
+	ContainsPoint_Full(x: number, y: number)
 	{
 		const [myX, myY] = this.GetPosition();
 		return super.ContainsPoint_Full(x - myX, y - myY);
 	}
 	
-	ContainsPoint_Obstacle(x, y)
+	ContainsPoint_Obstacle(x: number, y: number)
 	{
 		const [myX, myY] = this.GetPosition();
 		return super.ContainsPoint_Obstacle(x - myX, y - myY);
+	}
+
+	// Methods to save and restore the unit position and angle, which is useful when stepping
+	// movement and detecting a collision.
+	SavePosition(): SavedPosition
+	{
+		const [x, y] = this.GetPosition();
+		
+		return {
+			x,
+			y,
+			angle: this.GetAngle()
+		};
+	}
+	
+	RestorePosition(p: SavedPosition)
+	{
+		this.SetPosition(p.x, p.y);
+		this.SetAngle(p.angle);
 	}
 }

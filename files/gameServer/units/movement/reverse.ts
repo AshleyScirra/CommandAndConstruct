@@ -1,4 +1,5 @@
 
+import { UnitMovementController, type UnitMovementStateType } from "./unitMovementController.js";
 import { UnitMovementState } from "./unitMovementState.js";
 
 import * as MathUtils from "../../utils/mathUtils.js";
@@ -8,10 +9,11 @@ import * as MathUtils from "../../utils/mathUtils.js";
 export class UnitMovementStateReverse extends UnitMovementState {
 
 	#reverseTime = 0.5;			// time in seconds to reverse for
-	#nextState = "moving";		// next movement state to return to after reversing
+	// next movement state to return to after reversing
+	#nextState: UnitMovementStateType = "moving";
 	#startTime = 0;				// game time when started reversing
 	
-	constructor(controller, reverseTime, nextState)
+	constructor(controller: UnitMovementController, reverseTime: number, nextState: UnitMovementStateType)
 	{
 		super(controller);
 		
@@ -23,7 +25,7 @@ export class UnitMovementStateReverse extends UnitMovementState {
 		this.SetUnitDebugState(4);
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		const controller = this.GetController();
 		

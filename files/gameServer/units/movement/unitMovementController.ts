@@ -1,13 +1,18 @@
 
+import { UnitMovementState } from "./unitMovementState.js";
 import { UnitMovementStateStopping } from "./stopping.js";
 import { UnitMovementStateRotateFirst } from "./rotateFirst.js";
 import { UnitMovementStateMoving } from "./moving.js";
 import { UnitMovementStateReverse } from "./reverse.js";
 
+import { MovableUnitPlatform } from "../movableUnitPlatform.js";
+
 import * as MathUtils from "../../utils/mathUtils.js";
 
+export type UnitMovementStateType = "" | "stopping" | "rotate-first" | "moving" | "reverse" | "released";
+
 // Map of state strings to state class to create for it.
-const STATE_CLASS_MAP = new Map([
+const STATE_CLASS_MAP = new Map<UnitMovementStateType, { new(...args: any[]): UnitMovementState }>([
 	["stopping",		UnitMovementStateStopping],
 	["rotate-first",	UnitMovementStateRotateFirst],
 	["moving",			UnitMovementStateMoving],
@@ -22,13 +27,17 @@ export class UnitMovementController {
 
 	#unitPlatform;			// MovableUnitPlatform this controller is managing
 	
-	#stateStr = "";			// String of current movement state
-	#stateObj = null;		// UnitMovementState derived class that manages the current state
-	#nextStateStr = "";		// String of next movement state to set (at end of tick)
-	#nextStateArgs = [];	// Arguments to pass to next state constructor
-	#waypoints = [];		// Remaining list of positions to move to
+	// String of current movement state
+	#stateStr: UnitMovementStateType = "";
+	// UnitMovementState derived class that manages the current state
+	#stateObj: UnitMovementState | null = null;
+	// String of next movement state to set (at end of tick)
+	#nextStateStr: UnitMovementStateType = "";
 
-	constructor(unitPlatform)
+	#nextStateArgs: any[] = [];		// Arguments to pass to next state constructor
+	#waypoints: number[][] = [];	// Remaining list of positions to move to
+
+	constructor(unitPlatform: MovableUnitPlatform)
 	{
 		this.#unitPlatform = unitPlatform;
 	}
@@ -36,7 +45,6 @@ export class UnitMovementController {
 	// Called via MovableUnitPlatform's ReleaseMovementController() method
 	Release()
 	{
-		this.#unitPlatform = null;
 		this.#waypoints.length = 0;
 	}
 	
@@ -66,14 +74,14 @@ export class UnitMovementController {
 		this.#waypoints = [];
 	}
 	
-	StartMovingAlongWaypoints(waypoints)
+	StartMovingAlongWaypoints(waypoints: number[][])
 	{
 		this.#waypoints = waypoints;
 		this.#SetState("stopping");
 	}
 	
 	// Immediately sets the current state, also releasing and replacing the current state object.
-	#SetState(stateStr, ...args)
+	#SetState(stateStr: UnitMovementStateType, ...args: any[])
 	{
 		// Release any prior state object
 		if (this.#stateObj)
@@ -105,13 +113,13 @@ export class UnitMovementController {
 	
 	// Set the next state to switch to at the end of the current tick. This avoids
 	// releasing the current state object while it is still processing in the middle of a tick.
-	SetNextState(stateStr, ...args)
+	SetNextState(stateStr: UnitMovementStateType, ...args: any[])
 	{
 		this.#nextStateStr = stateStr;
 		this.#nextStateArgs = args;
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		// Tick the current state object.
 		if (this.#stateObj)
@@ -130,7 +138,7 @@ export class UnitMovementController {
 	
 	// Apply acceleration/deceleration towards the current target speed, and then move the current
 	// position according to the current speed.
-	StepMovement(dt, targetSpeed)
+	StepMovement(dt: number, targetSpeed: number)
 	{
 		const unitPlatform = this.#unitPlatform;
 		

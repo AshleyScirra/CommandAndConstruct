@@ -1,3 +1,4 @@
+import { UnitMovementController } from "./unitMovementController.js";
 import { UnitMovementState } from "./unitMovementState.js";
 
 import * as MathUtils from "../../utils/mathUtils.js";
@@ -7,7 +8,7 @@ import * as MathUtils from "../../utils/mathUtils.js";
 // its first waypoint.
 export class UnitMovementStateRotateFirst extends UnitMovementState {
 
-	constructor(controller)
+	constructor(controller: UnitMovementController)
 	{
 		super(controller);
 		
@@ -15,7 +16,7 @@ export class UnitMovementStateRotateFirst extends UnitMovementState {
 		this.SetUnitDebugState(2);
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		const controller = this.GetController();
 		const unitPlatform = this.GetUnitPlatform();
