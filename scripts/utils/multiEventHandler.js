@@ -1,4 +1,3 @@
-
 // This is a small helper class to make it easier to add and remove
 // a list of event listeners.
 // Without it there would need to be long lists of event listeners with each
@@ -32,26 +31,17 @@
 // This reduces the repetition of event handlers, is less error prone
 // as all events are automatically removed, and avoids the need for
 // a property for each event handler function.
-
 export class MultiEventHandler {
-
-	#eventHandlers;
-	
-	constructor(arr)
-	{
-		this.#eventHandlers = arr;
-		
-		for (const [obj, eventName, handler] of this.#eventHandlers)
-		{
-			obj.addEventListener(eventName, handler);
-		}
-	}
-	
-	Release()
-	{
-		for (const [obj, eventName, handler] of this.#eventHandlers)
-		{
-			obj.removeEventListener(eventName, handler);
-		}
-	}
+    #eventHandlers;
+    constructor(arr) {
+        this.#eventHandlers = arr;
+        for (const [obj, eventName, handler] of this.#eventHandlers) {
+            obj.addEventListener(eventName, handler);
+        }
+    }
+    Release() {
+        for (const [obj, eventName, handler] of this.#eventHandlers) {
+            obj.removeEventListener(eventName, handler);
+        }
+    }
 }
