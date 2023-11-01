@@ -2,6 +2,7 @@
 import Globals from "../../globals.js";
 import * as MathUtils from "../../utils/clientMathUtils.js";
 
+import { GameClient, type UnitObjectTypeDataKind } from "../gameClient.js";
 import { ClientUnit } from "../../clientUnits/clientUnit.js";
 import { SteppedValueTimeline } from "./steppedValueTimeline.js";
 
@@ -21,6 +22,8 @@ const FLAG_CHANGED_TURRET_OFFSET_ANGLE = (1 << 4);
 
 const FLAG_CHANGED_DEBUG_STATE =		 (1 << 7);		// for development purposes only
 
+type EventList = Array<(lateness: number) => void>;
+
 // This class handles receiving messages from the GameServer (whether it's hosted locally or receiving
 // messages over the network). It calls the appropriate GameClient methods for each message.
 // This keeps all the message handling logic in its own class rather than cluttering GameClient.
@@ -32,26 +35,26 @@ export class ClientMessageHandler {
 	
 	// Network events are queued until the simulation time catches up with the event time.
 	// This is done with a stepped timeline.
-	#networkEventTimeline = new SteppedValueTimeline();
+	#networkEventTimeline = new SteppedValueTimeline<EventList>();
 	
-	constructor(gameClient)
+	constructor(gameClient: GameClient)
 	{
 		this.#gameClient = gameClient;
 		
 		// Create map of message types that can be received from GameServer
 		// and the function to call to handle each of them.
-		this.#messageMap = new Map([
+		this.#messageMap = new Map<string, (m: any) => void>([
 			["create-initial-state", m => this.#OnCreateInitialState(m)],
 			["pong", m => this.#OnPong(m)],
 			["game-over", m => this.#OnGameOver(m)],
 			["stats", m => this.#OnStats(m)],
 			["find-path", m => this.#OnFindPath(m)],
 			["pathfinding-start-group", m => this.#OnPathfindingStartGroup(m)],
-			["pathfinding-end-group", m => this.#OnPathfindingEndGroup(m)]
+			["pathfinding-end-group", () => this.#OnPathfindingEndGroup()]
 		]);
 	}
 	
-	HandleGameServerMessage(msg)
+	HandleGameServerMessage(msg: any)
 	{
 		// The host sends game state updates and events as binary ArrayBuffers.
 		// If the message is an ArrayBuffer, treat it as a binary update.
@@ -62,7 +65,7 @@ export class ClientMessageHandler {
 		else		// otherwise treat as JSON message
 		{
 			// Look up the function to call for this message type in the message map.
-			const messageType = msg["type"];
+			const messageType = msg["type"] as string;
 			const handlerFunc = this.#messageMap.get(messageType);
 
 			if (handlerFunc)
@@ -78,13 +81,13 @@ export class ClientMessageHandler {
 		}
 	}
 	
-	#OnCreateInitialState(msg)
+	#OnCreateInitialState(msg: any)
 	{
 		this.#gameClient.CreateInitialState(msg);
 	}
 	
 	// Called when received a new binary game state update from GameServer.
-	#OnBinaryMessage(arrayBuffer)
+	#OnBinaryMessage(arrayBuffer: ArrayBuffer)
 	{
 		// Catch and log any exceptions that happen while reading data from the server.
 		try {
@@ -108,7 +111,7 @@ export class ClientMessageHandler {
 	}
 	
 	// Pong messages are responses to pings. Forward them to PingManager.
-	#OnPong(m)
+	#OnPong(m: any)
 	{
 		const id = m["id"];
 		const time = m["time"];
@@ -117,7 +120,7 @@ export class ClientMessageHandler {
 	}
 	
 	// Receiving full and delta data updates about some units.
-	#OnGameUpdate(dataView, pos)
+	#OnGameUpdate(dataView: DataView, pos: number)
 	{
 		// Read the server time when the message was sent.
 		const serverTime = dataView.getFloat64(pos);
@@ -133,7 +136,7 @@ export class ClientMessageHandler {
 		this.#ReadNetworkEvents(dataView, pos, serverTime);
 	}
 	
-	#ReadFullUnitUpdates(dataView, pos, serverTime)
+	#ReadFullUnitUpdates(dataView: DataView, pos: number, serverTime: number)
 	{
 		// Read the total number of full updates in this update.
 		const unitCount = dataView.getUint16(pos);
@@ -214,7 +217,7 @@ export class ClientMessageHandler {
 		return pos;
 	}
 	
-	#ReadDeltaUnitUpdates(dataView, pos, serverTime)
+	#ReadDeltaUnitUpdates(dataView: DataView, pos: number, serverTime: number)
 	{
 		// Read the total number of delta updates in this message.
 		const updateCount = dataView.getUint16(pos);
@@ -312,14 +315,14 @@ export class ClientMessageHandler {
 		return pos;
 	}
 	
-	#ReadNetworkEvents(dataView, pos, serverTime)
+	#ReadNetworkEvents(dataView: DataView, pos: number, serverTime: number)
 	{
 		// Read the number of events.
 		const eventCount = dataView.getUint16(pos);
 		pos += 2;
 		
 		// Read each individual event, collecting the resulting data in to an array.
-		const eventList = [];
+		const eventList: EventList = [];
 		
 		for (let i = 0; i < eventCount; ++i)
 		{
@@ -347,7 +350,7 @@ export class ClientMessageHandler {
 		return pos;
 	}
 	
-	#ReadProjectileFiredEvent(dataView, pos, eventList)
+	#ReadProjectileFiredEvent(dataView: DataView, pos: number, eventList: EventList)
 	{
 		// Projectile ID
 		const id = dataView.getUint16(pos);
@@ -373,7 +376,7 @@ export class ClientMessageHandler {
 		return pos;
 	}
 	
-	#ReadProjectileHitEvent(dataView, pos, eventList)
+	#ReadProjectileHitEvent(dataView: DataView, pos: number, eventList: EventList)
 	{
 		// Projectile ID
 		const id = dataView.getUint16(pos);
@@ -391,7 +394,7 @@ export class ClientMessageHandler {
 		return pos;
 	}
 	
-	#ReadUnitDestroyedEvent(dataView, pos, eventList)
+	#ReadUnitDestroyedEvent(dataView: DataView, pos: number, eventList: EventList)
 	{
 		// Unit ID
 		const id = dataView.getUint16(pos);
@@ -403,7 +406,7 @@ export class ClientMessageHandler {
 		return pos;
 	}
 	
-	Tick(simulationTime)
+	Tick(simulationTime: number)
 	{
 		// Check the stepped value timeline with network events for anything that is now
 		// scheduled to happen. Note it is checked repeatedly: GetSteppedValue() will only
@@ -430,7 +433,7 @@ export class ClientMessageHandler {
 	// GameServer uses the Pathfinding behavior of the host player to perform pathfinding
 	// calculations for it. When receiving a find-path message, find the path and send
 	// the result back to GameServer.
-	async #OnFindPath(m)
+	async #OnFindPath(m: any)
 	{
 		const [fromX, fromY] = m["from"];
 		const [toX, toY] = m["to"];
@@ -446,7 +449,7 @@ export class ClientMessageHandler {
 	
 	// ServerPathfinding sends messages to start and stop pathfinding groups
 	// in the host player's PathfindingController.
-	#OnPathfindingStartGroup(m)
+	#OnPathfindingStartGroup(m: any)
 	{
 		const baseCost = m["baseCost"];
 		const cellSpread = m["cellSpread"];
@@ -472,7 +475,7 @@ export class ClientMessageHandler {
 	}
 	
 	// Get object data for a single Construct object type.
-	#GetConstructObjectDataFor(kind, objectType)
+	#GetConstructObjectDataFor(kind: UnitObjectTypeDataKind, objectType: IObjectType<ISpriteInstance>)
 	{
 		const inst = objectType.getFirstInstance();
 		
@@ -519,7 +522,7 @@ export class ClientMessageHandler {
 		};
 	}
 	
-	#GetCollisionPolygonPointsArray(inst)
+	#GetCollisionPolygonPointsArray(inst: ISpriteInstance)
 	{
 		// Get the collision poly points for an instance's currently showing animation frame,
 		// which also are returned in layout co-ordinates and so made relative to the object origin.
@@ -536,7 +539,7 @@ export class ClientMessageHandler {
 		return collisionPoly;
 	}
 	
-	#OnGameOver(m)
+	#OnGameOver(m: any)
 	{
 		const winningPlayer = m["winning-player"];
 		const didWin = (this.#gameClient.GetPlayer() === winningPlayer);
@@ -545,10 +548,10 @@ export class ClientMessageHandler {
 	
 	// Received every 1 second as the server sends stats messages.
 	// Display the received statistics in the StatsText object.
-	#OnStats(m)
+	#OnStats(m: any)
 	{
 		const runtime = this.#gameClient.GetRuntime();
-		const inst = runtime.objects.StatsText.getFirstInstance();
+		const inst = runtime.objects.StatsText.getFirstInstance()!;
 		const pingManager = this.#gameClient.GetPingManager();
 		
 		let statsStr = "";

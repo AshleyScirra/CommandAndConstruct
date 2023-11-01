@@ -1,12 +1,13 @@
 
 import Globals from "./globals.js";
 
+import { GameModeBase } from "./gameModes/gameModeBase.js";
 import { GameModeSinglePlayer } from "./gameModes/singlePlayer.js";
 import { GameModeMultiplayerHost } from "./gameModes/multiplayerHost.js";
 import { GameModeMultiplayerPeer } from "./gameModes/multiplayerPeer.js";
 
 // One of the three game mode classes to manage the game.
-let gameMode = null;
+let gameMode: GameModeBase | null = null;
 
 // Called on startup as game starts to load
 runOnStartup(async runtime =>
@@ -15,7 +16,7 @@ runOnStartup(async runtime =>
 	runtime.addEventListener("beforeprojectstart", () => OnBeforeProjectStart(runtime));
 });
 
-async function OnBeforeProjectStart(runtime)
+async function OnBeforeProjectStart(runtime: IRuntime)
 {
 	// Create and release classes when the game layout starts and ends.
 	const gameLayout = runtime.getLayout("Game");
@@ -24,7 +25,7 @@ async function OnBeforeProjectStart(runtime)
 }
 
 // Create a game mode class when the game layout starts.
-async function OnStartGameLayout(runtime)
+async function OnStartGameLayout(runtime: IRuntime)
 {
 	if (Globals.gameMode === "single-player")
 		gameMode = new GameModeSinglePlayer(runtime);
@@ -41,6 +42,6 @@ async function OnStartGameLayout(runtime)
 // Release the game mode class when ending the game layout.
 function OnEndGameLayout()
 {
-	gameMode.Release();
+	gameMode!.Release();
 	gameMode = null;
 }

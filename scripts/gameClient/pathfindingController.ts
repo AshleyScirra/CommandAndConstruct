@@ -1,22 +1,23 @@
 
 import * as MathUtils from "../utils/clientMathUtils.js";
+import { GameClient } from "./gameClient.js";
 
 // A class to manage pathfinding. It essentially wraps the Pathfinding behavior in the
 // PathfindingController object, so it can use Construct's built-in pathfinding calculations.
 export class PathfindingController {
 
-	#gameClient;			// reference to GameClient
-	#runtime;				// Construct runtime
-	#pathfindingBeh;		// the Pathfinding behavior in the PathfindingController object
-	#debugTilemapInst;		// a Tilemap instance for displaying the pathfinding map
+	#gameClient;				// reference to GameClient
+	#runtime;					// Construct runtime
+	#pathfindingBeh;			// the Pathfinding behavior in the PathfindingController object
+	#debugTilemapInst;			// a Tilemap instance for displaying the pathfinding map
 	
-	constructor(gameClient)
+	constructor(gameClient: GameClient)
 	{
 		this.#gameClient = gameClient;
 		
 		// Get the PathfindingController instance, and get the Pathfinding behavior from it.
 		this.#runtime = this.#gameClient.GetRuntime()
-		const pfControllerInst = this.#runtime.objects.PathfindingController.getFirstInstance();
+		const pfControllerInst = this.#runtime.objects.PathfindingController.getFirstInstance()!;
 		this.#pathfindingBeh = pfControllerInst.behaviors.Pathfinding;
 		
 		// Set the base movement cost to 100, rather than the default 10. This allows finer
@@ -24,7 +25,7 @@ export class PathfindingController {
 		this.#pathfindingBeh.map.moveCost = 100;
 		
 		// Get the debug tilemap for displaying the pathfinding map.
-		this.#debugTilemapInst = this.#runtime.objects.PFDebugTilemap.getFirstInstance();
+		this.#debugTilemapInst = this.#runtime.objects.PFDebugTilemap.getFirstInstance()!;
 	}
 	
 	// Called on startup to initialise pathfinding.
@@ -64,7 +65,7 @@ export class PathfindingController {
 	// Find a path between two points using the Pathfinding behavior. Return the result
 	// as a list of waypoints (i.e. [[x1, y1], [x2, y2], ...]) or null if no path
 	// was able to be calculated.
-	async FindPath(fromX, fromY, toX, toY)
+	async FindPath(fromX: number, fromY: number, toX: number, toY: number)
 	{
 		const foundPath = await this.#pathfindingBeh.calculatePath(fromX, fromY, toX, toY);
 		if (foundPath)
@@ -76,7 +77,7 @@ export class PathfindingController {
 			// rather than the middle of the nearest cell at the destination position.
 			if (!this.IsCellObstacle(toX, toY))
 			{
-				const lastNode = nodeList.at(-1);
+				const lastNode = nodeList.at(-1)!;
 				lastNode[0] = toX;
 				lastNode[1] = toY;
 			}
@@ -94,7 +95,7 @@ export class PathfindingController {
 	
 	// Create PFNode and PFNodeLine objects on the DebugOverlay layer to visualize calculated paths.
 	// The objects have the Fade behavior so after a while they fade out and disappear.
-	#DebugVisualizePath(fromX, fromY, nodeList)
+	#DebugVisualizePath(fromX: number, fromY: number, nodeList: number[][])
 	{
 		// Copy the node list and add the start position at the beginning as an extra node,
 		// so the start position is included in the visualization.
@@ -127,7 +128,7 @@ export class PathfindingController {
 	
 	// Return a boolean indicating if a given layout position is an obstacle.
 	// Used by the minimap to draw the terrain.
-	IsCellObstacle(x, y)
+	IsCellObstacle(x: number, y: number)
 	{
 		const pfMap = this.#pathfindingBeh.map;
 		const cellSize = pfMap.cellSize;
@@ -135,7 +136,7 @@ export class PathfindingController {
 	}
 	
 	// Forward calls to start and end pathfinding groups to the Pathfinding behavior.
-	StartGroup(baseCost, cellSpread, maxWorkers)
+	StartGroup(baseCost: number, cellSpread: number, maxWorkers: number)
 	{
 		this.#pathfindingBeh.map.startPathGroup(baseCost, cellSpread, maxWorkers);
 	}

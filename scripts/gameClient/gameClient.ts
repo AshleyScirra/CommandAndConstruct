@@ -1,4 +1,5 @@
 
+import { type GameModeType } from "../gameModes/gameModeBase.js";
 import { MultiEventHandler } from "../utils/multiEventHandler.js";
 import { KahanSum } from "../utils/clientKahanSum.js";
 import { ClientUnit } from "../clientUnits/clientUnit.js";
@@ -12,6 +13,12 @@ import { Minimap } from "./ui/minimap.js";
 import { PathfindingController } from "./pathfindingController.js";
 import * as MathUtils from "../utils/clientMathUtils.js";
 
+export type UnitObjectTypeDataKind = "platform" | "turret";
+export type UnitObjectTypeData = {
+	kind: UnitObjectTypeDataKind,
+	objectType: IObjectType<ISpriteInstance>
+};
+
 // The GameClient class is created while on a game layout, and handles representing the
 // state of the game for the runtime. Note that the authoritative state of the game lives
 // on GameServer, so the GameClient is mostly responsible for updating the state of the
@@ -22,13 +29,16 @@ export class GameClient {
 	#runtime;						// Construct runtime
 	#sendMessageFunc;				// SendMessageToGameServer function
 	#gameMode = "";					// current game mode
-	#allUnitsById = new Map();		// map of all units by id -> ClientUnit
-	#allProjectilesById = new Map();// map of all projectiles by id -> ClientProjectile
-	#unitsToTick = new Set();		// set of all units to call Tick() on
+	// map of all units by id -> ClientUnit
+	#allUnitsById = new Map<number, ClientUnit>();		
+	// map of all projectiles by id -> ClientProjectile
+	#allProjectilesById = new Map<number, ClientProjectile>();
+	// set of all units to call Tick() on
+	#unitsToTick = new Set<ClientUnit>();
 	
 	// For checking if units time out. If a unit is not heard from for too long,
 	// assume it was destroyed but the network event went missing.
-	#unitsToCheckTimeout = new Set();	// set of units to call CheckTimeout() on
+	#unitsToCheckTimeout = new Set<ClientUnit>();	// set of units to call CheckTimeout() on
 	#timeoutCheckCount = 0;			// total number of units to check for timeout
 	
 	#eventHandlers;					// MultiEventHandler for runtime events
@@ -44,7 +54,10 @@ export class GameClient {
 	
 	#player = 0;					// Player number this client controls
 	
-	constructor(runtime, sendMessageFunc, player, gameMode)
+	constructor(runtime: IRuntime,
+				sendMessageFunc: (msg: any, transmissionMode: MultiplayerTransmissionMode | "") => void,
+				player: number,
+				gameMode: GameModeType)
 	{
 		this.#runtime = runtime;
 		this.#sendMessageFunc = sendMessageFunc;
@@ -131,7 +144,7 @@ export class GameClient {
 	}
 	
 	// Return an array of all Construct object types used for units.
-	GetAllUnitObjectTypes()
+	GetAllUnitObjectTypes() : Array<UnitObjectTypeData>
 	{
 		const runtime = this.#runtime;
 		
@@ -162,19 +175,19 @@ export class GameClient {
 	}
 	
 	// Provide a GameClient method to send a message to GameServer.
-	SendToServer(msg, transmissionMode = "o")
+	SendToServer(msg: any, transmissionMode: MultiplayerTransmissionMode | "" = "o")
 	{
 		this.#sendMessageFunc(msg, transmissionMode);
 	}
 	
-	HandleGameServerMessage(msg)
+	HandleGameServerMessage(msg: any)
 	{
 		this.#messageHandler.HandleGameServerMessage(msg);
 	}
 	
 	// Called when GameServer sends the initial state of the game.
 	// The client needs to create objects to represent the server state.
-	async CreateInitialState(data)
+	async CreateInitialState(data: any)
 	{
 		// Set the layout size
 		const [layoutWidth, layoutHeight] = data["layoutSize"];
@@ -200,7 +213,7 @@ export class GameClient {
 	}
 	
 	// Called in the ClientUnit constructor
-	UnitWasCreated(unit)
+	UnitWasCreated(unit: ClientUnit)
 	{
 		// Add to map of all units.
 		this.#allUnitsById.set(unit.GetId(), unit);
@@ -210,7 +223,7 @@ export class GameClient {
 	}
 	
 	// Called in the ClientUnit Release() method
-	UnitWasDestroyed(unit)
+	UnitWasDestroyed(unit: ClientUnit)
 	{
 		// Set unselected so any selection box is destroyed and also so
 		// it's removed from SelectionManager's list of selected units.
@@ -228,7 +241,7 @@ export class GameClient {
 	
 	// Units get Tick() called every tick by default, but can opt out
 	// if they are not doing anything to save CPU time.
-	SetUnitTicking(unit, shouldTick)
+	SetUnitTicking(unit: ClientUnit, shouldTick: boolean)
 	{
 		if (shouldTick)
 			this.#unitsToTick.add(unit);
@@ -248,7 +261,7 @@ export class GameClient {
 	}
 	
 	// Iterates all units for a specific player.
-	*allUnitsForPlayer(player)
+	*allUnitsForPlayer(player: number)
 	{
 		for (const unit of this.allUnits())
 		{
@@ -263,13 +276,13 @@ export class GameClient {
 		return this.allUnitsForPlayer(this.GetPlayer());
 	}
 	
-	GetUnitById(id)
+	GetUnitById(id: number)
 	{
 		return this.#allUnitsById.get(id);
 	}
 	
 	// Called when the player commands some selected units to move to a position.
-	MoveUnits(unitsArray, targetX, targetY)
+	MoveUnits(unitsArray: Array<ClientUnit>, targetX: number, targetY: number)
 	{
 		if (unitsArray.length === 0)
 			return;
@@ -335,7 +348,7 @@ export class GameClient {
 	
 	// When a network event is received indicating a projectile was fired,
 	// create a ClientProjectile to represent it.
-	OnProjectileFired(lateness, id, x, y, angle, speed, range, distanceTravelled)
+	OnProjectileFired(lateness: number, id: number, x: number, y: number, angle: number, speed: number, range: number, distanceTravelled: number)
 	{
 		const projectile = new ClientProjectile(this, id, x, y, angle, speed, range, distanceTravelled);
 		this.#allProjectilesById.set(id, projectile);
@@ -349,7 +362,7 @@ export class GameClient {
 	
 	// When a network event is received indicating a projectile hit a target,
 	// destroy the projectile (if it can be found), and create an explosion at the reported location.
-	OnProjectileHit(lateness, id, x, y)
+	OnProjectileHit(lateness: number, id: number, x: number, y: number)
 	{
 		// If the client is not properly synchronised, it might not be able to find a
 		// projectile with the reported ID. In that case, just skip destroying it.
@@ -380,7 +393,7 @@ export class GameClient {
 	// When a network event is received indicating a unit was destroyed, remove its corresponding
 	// unit and also create an explosion to represent its destruction.
 	// isQuiet can also be set to not create an explosion, which is used when units time out.
-	OnUnitDestroyedEvent(lateness, unitId)
+	OnUnitDestroyedEvent(lateness: number, unitId: number)
 	{
 		const unit = this.#allUnitsById.get(unitId);
 		
@@ -483,7 +496,7 @@ export class GameClient {
 	// indicating it should be destroyed was lost. To make sure the game state eventually updates
 	// in this situation, all units are checked to see when they last had an update, and if it
 	// has been too long, they are destroyed.
-	#CheckForTimedOutUnits(dt, simulationTime)
+	#CheckForTimedOutUnits(dt: number, simulationTime: number)
 	{
 		// Checking every unit every tick would be performance intensive and defeat the optimisation
 		// where units can opt-out of being ticked. Therefore units are checked incrementally over
@@ -525,11 +538,11 @@ export class GameClient {
 		}
 	}
 	
-	#ShowGameOverMessage(text)
+	#ShowGameOverMessage(text: string)
 	{
 		// Create an instance of GameOverText to display the text.
 		// Do this on the top UI layer and position it in the middle of the viewport.
-		const uiLayer = this.#runtime.layout.getLayer("UI");
+		const uiLayer = this.#runtime.layout.getLayer("UI")!;
 		const viewport = uiLayer.getViewport();
 		const midX = (viewport.left + viewport.right) / 2;
 		const midY = (viewport.top + viewport.bottom) / 2;
@@ -542,7 +555,7 @@ export class GameClient {
 	}
 	
 	// Called when GameServer sends a "game-over" message
-	OnGameOver(didWin)
+	OnGameOver(didWin: boolean)
 	{
 		// Display the result on-screen
 		this.#ShowGameOverMessage(didWin ? "Victory!" : "Defeat...");

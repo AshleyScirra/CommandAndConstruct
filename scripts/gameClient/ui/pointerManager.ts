@@ -1,6 +1,7 @@
 
 import { MultiEventHandler } from "../../utils/multiEventHandler.js";
 import { PointerInfo } from "./pointerInfo.js";
+import { GameClient } from "../gameClient.js";
 import * as MathUtils from "../../utils/clientMathUtils.js";
 
 // PointerManager tracks pointers and decides how to interpret actions based on them.
@@ -10,7 +11,8 @@ export class PointerManager {
 	// Private fields
 	#gameClient;						// Reference to GameClient
 	#eventHandlers;						// MultiEventHandler for selection events
-	#pointerInfos = new Map();			// map of pointer id -> PointerInfo
+	// map of pointer id -> PointerInfo
+	#pointerInfos = new Map<number, PointerInfo>();
 	
 	// For tracking the last mouse position. Left at NaN if no mouse pointer is in use.
 	#lastMouseX = NaN;
@@ -20,7 +22,7 @@ export class PointerManager {
 	#didPinchZoomChange = false;		// set to true when any pinch-to-zoom pointer moves
 	#pinchStartZoom = 0;				// zoom level at the start of the pinch-to-zoom gesture
 	
-	constructor(gameClient)
+	constructor(gameClient: GameClient)
 	{
 		this.#gameClient = gameClient;
 		
@@ -61,9 +63,9 @@ export class PointerManager {
 		return this.#gameClient.GetViewManager();
 	}
 	
-	#OnPointerDown(e)
+	#OnPointerDown(e: PointerEvent)
 	{
-		if (this.#pointerInfos.has(e))
+		if (this.#pointerInfos.has(e.pointerId))
 			return;		// ignore if already got this pointer ID
 		
 		// Create a PointerInfo to track the state of this pointer over time.
@@ -77,7 +79,7 @@ export class PointerManager {
 		this.#pointerInfos.set(e.pointerId, pointerInfo);
 	}
 	
-	#OnPointerMove(e)
+	#OnPointerMove(e: PointerEvent)
 	{
 		// If this pointer is the mouse, track the last mouse position in client co-ordinates.
 		if (e.pointerType === "mouse")
@@ -93,7 +95,7 @@ export class PointerManager {
 		pointerInfo.OnMove(e);
 	}
 	
-	#OnPointerUp(e)
+	#OnPointerUp(e: PointerEvent)
 	{
 		const pointerInfo = this.#pointerInfos.get(e.pointerId);
 		if (!pointerInfo)
@@ -114,7 +116,7 @@ export class PointerManager {
 	// The pointercancel event means a pointer ended, but should not apply its action,
 	// such as if a pointer is lost because a different app was switched in to focus.
 	// As with pointerup the pointer must be removed, but it doesn't do anything else.
-	#OnPointerCancel(e)
+	#OnPointerCancel(e: PointerEvent)
 	{
 		const pointerInfo = this.#pointerInfos.get(e.pointerId);
 		if (!pointerInfo)
@@ -135,7 +137,7 @@ export class PointerManager {
 	}
 	
 	// Use the mouse wheel to zoom.
-	#OnMouseWheel(e)
+	#OnMouseWheel(e: WheelEvent)
 	{
 		// Ignore if the mouse position isn't known yet (e.g. mouse wheel before moving mouse).
 		if (Number.isNaN(this.#lastMouseX) || Number.isNaN(this.#lastMouseY))
@@ -158,9 +160,9 @@ export class PointerManager {
 	}
 	
 	// Set the current mouse cursor style.
-	SetMouseCursor(cursor)
+	SetMouseCursor(cursor: string)
 	{
-		this.GetRuntime().mouse.setCursorStyle(cursor);
+		this.GetRuntime().mouse!.setCursorStyle(cursor);
 	}
 	
 	// Get the current mouse position in game layer co-ordinates.
@@ -172,7 +174,7 @@ export class PointerManager {
 		if (Number.isNaN(this.#lastMouseX) || Number.isNaN(this.#lastMouseY))
 			return [NaN, NaN];
 		
-		const backgroundLayer = this.GetRuntime().layout.getLayer("Background");
+		const backgroundLayer = this.GetRuntime().layout.getLayer("Background")!;
 		return backgroundLayer.cssPxToLayer(this.#lastMouseX, this.#lastMouseY);
 	}
 	
@@ -187,7 +189,7 @@ export class PointerManager {
 		}
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		// Tick all pointers in case they change anything over time (like scrolling
 		// when dragging a selection box to the edge of the screen).
@@ -208,7 +210,7 @@ export class PointerManager {
 	// Called when a new touch pointer starts to check if a pinch-to-zoom gesture should start.
 	// The new touch pointer should be the second touch pointer, and there must not already be
 	// a pinch-to-zoom already happening with other touch pointers.
-	#MaybeStartPinchToZoom(newPointer)
+	#MaybeStartPinchToZoom(newPointer: PointerInfo)
 	{
 		let otherPointer = null;			// other existing pointer to pinch-to-zoom with
 		let numPinchZoomPointers = 0;		// count of any existing pinch-to-zoom pointers
@@ -282,14 +284,14 @@ export class PointerManager {
 		}
 	}
 	
-	#UpdatePinchZoom_1Pointer(pointerInfo)
+	#UpdatePinchZoom_1Pointer(pointerInfo: PointerInfo)
 	{
 		// Using just one pinch-to-zoom pointer keeps scrolling the view.
 		const [curX, curY] = pointerInfo.GetLastClientPosition();
 		this.GetViewManager().UpdatePan(curX, curY);
 	}
 	
-	#UpdatePinchZoom_2Pointers(pointer0, pointer1)
+	#UpdatePinchZoom_2Pointers(pointer0: PointerInfo, pointer1: PointerInfo)
 	{
 		const viewManager = this.GetViewManager();
 		

@@ -9,16 +9,16 @@
 // are received in advance of their being used, and allowing interpolation between them.
 // ValueTimeline is a base class that provides a basic timeline and Add() method.
 // There are two variants of timelines implemented in derived classes.
-export class ValueTimeline {
+export class ValueTimeline<ValueType = number> {
 
 	// The value timeline, as an array of objects with properties { timestamp, value }
 	// which are sorted by their timestamp. Note this is a public property as derived
 	// classes can't access private properties of a base class, but it is not meant to
 	// be used by external callers.
-	timeline = [];
+	timeline: Array<{timestamp: number, value: ValueType}> = [];
 	
 	// Insert a value to the timeline at the given timestamp.
-	Add(timestamp, value)
+	Add(timestamp: number, value: ValueType)
 	{
 		// Insert to the timeline as an object with two properties.
 		const toInsert = { timestamp, value };
@@ -63,6 +63,6 @@ export class ValueTimeline {
 		if (this.timeline.length === 0)
 			return -Infinity;
 		else
-			return this.timeline.at(-1).timestamp;
+			return this.timeline.at(-1)!.timestamp;
 	}
 }

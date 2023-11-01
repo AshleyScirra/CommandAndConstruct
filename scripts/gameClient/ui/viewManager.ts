@@ -1,5 +1,6 @@
 
 import * as MathUtils from "../../utils/clientMathUtils.js";
+import { GameClient } from "../gameClient.js";
 
 // ViewManager handles the game view, including the scroll position and zoom level.
 export class ViewManager {
@@ -16,7 +17,7 @@ export class ViewManager {
 	#zoomToX = 0;					// Position to zoom to or from
 	#zoomToY = 0;
 	
-	constructor(gameClient)
+	constructor(gameClient: GameClient)
 	{
 		this.#gameClient = gameClient;
 		
@@ -38,7 +39,7 @@ export class ViewManager {
 	}
 	
 	// Called during initialisation to set the size of the level.
-	SetLayoutSize(layoutWidth, layoutHeight)
+	SetLayoutSize(layoutWidth: number, layoutHeight: number)
 	{
 		// Set the layout size
 		const runtime = this.GetRuntime();
@@ -47,12 +48,12 @@ export class ViewManager {
 		layout.height = layoutHeight;
 		
 		// Resize the background to cover the layout
-		const backgroundInst = runtime.objects.DirtTerrainBackground.getFirstInstance();
+		const backgroundInst = runtime.objects.DirtTerrainBackground.getFirstInstance()!;
 		backgroundInst.width = layoutWidth;
 		backgroundInst.height = layoutHeight;
 		
 		// Resize the collision cell marker tiled background to cover the layout
-		const collisionGridMarkerInst = runtime.objects.CollisionGridMarker.getFirstInstance();
+		const collisionGridMarkerInst = runtime.objects.CollisionGridMarker.getFirstInstance()!;
 		collisionGridMarkerInst.width = layoutWidth;
 		collisionGridMarkerInst.height = layoutHeight;
 		
@@ -76,7 +77,7 @@ export class ViewManager {
 	// Called when the pan position moves during a middle-mouse or touch pan.
 	// It passes the current position in client co-ordinates, and uses the difference from
 	// the last pan client position to determine how far to scroll.
-	UpdatePan(clientX, clientY)
+	UpdatePan(clientX: number, clientY: number)
 	{
 		// The first time this method is called the last client pan position is NaN.
 		// In that case don't attempt to scroll, as we don't know what the difference is
@@ -91,7 +92,7 @@ export class ViewManager {
 			// find both (0, 0) and this position in layer co-ordinates, and use the distance between
 			// those points. Use that to offset the scroll position.
 			const layout = this.GetRuntime().layout;
-			const backgroundLayer = layout.getLayer("Background");
+			const backgroundLayer = layout.getLayer("Background")!;
 			const [ax, ay] = backgroundLayer.cssPxToLayer(0, 0);
 			const [bx, by] = backgroundLayer.cssPxToLayer(clientDx, clientDy);
 			this.ScrollTo(layout.scrollX + (ax - bx), layout.scrollY + (ay - by));
@@ -104,7 +105,7 @@ export class ViewManager {
 	
 	// Scroll to the given position, but apply scroll bounding so the player can't move the
 	// view past the edges of the layout.
-	ScrollTo(x, y)
+	ScrollTo(x: number, y: number)
 	{
 		// Calculate how large the viewport is at this zoom level and use half that
 		// size as a margin around the edge of the layout.
@@ -121,7 +122,7 @@ export class ViewManager {
 	}
 	
 	// Scroll by a given offset from the current scroll position.
-	OffsetScroll(dx, dy)
+	OffsetScroll(dx: number, dy: number)
 	{
 		const [scrollX, scrollY] = this.GetScrollPosition();
 		this.ScrollTo(scrollX + dx, scrollY + dy);
@@ -176,14 +177,14 @@ export class ViewManager {
 		return Math.max(viewportWidth / layoutWidth, viewportHeight / layoutHeight);
 	}
 	
-	SetZoomToPosition(zoomToX, zoomToY)
+	SetZoomToPosition(zoomToX: number, zoomToY: number)
 	{
 		this.#zoomToX = zoomToX;
 		this.#zoomToY = zoomToY;
 	}
 	
 	// Set the view to a given zoom level.
-	SetZoom(z)
+	SetZoom(z: number)
 	{
 		// Limit the provided zoom level to the allowed range (with 2x zoomed in the maximum allowed).
 		// Note this only sets the target zoom level. To smooth out zooms, the actual zoom level
@@ -198,7 +199,7 @@ export class ViewManager {
 	}
 	
 	// When ticking, smoothly move the actual zoom level towards the target zoom level.
-	Tick(dt)
+	Tick(dt: number)
 	{
 		// Once within 0.01% of the target zoom level, just jump to the target zoom level.
 		if (Math.abs(this.#targetZoom - this.#zoom) < this.#targetZoom * 0.0001)
@@ -214,7 +215,7 @@ export class ViewManager {
 		}
 	}
 	
-	#SetActualZoom(z, force = false)
+	#SetActualZoom(z: number, force = false)
 	{
 		// Forcing the zoom is used on startup to assign the zoom level with no animation.
 		if (force)
@@ -227,7 +228,7 @@ export class ViewManager {
 		
 		// Get the zoom position (from which to zoom in to/out from) on the background layer.
 		const layout = this.GetRuntime().layout;
-		const backgroundLayer = layout.getLayer("Background");
+		const backgroundLayer = layout.getLayer("Background")!;
 		const [zoomToX, zoomToY] = backgroundLayer.cssPxToLayer(this.#zoomToX, this.#zoomToY);
 		
 		// Adjust the scroll position to ensure the zoom happens towards the given position.
@@ -238,7 +239,7 @@ export class ViewManager {
 					  layout.scrollY + dy * zoomFactor);
 		
 		// Update all "Game" sub-layers to scale according to the zoom value.
-		const gameLayer = layout.getLayer("Game");
+		const gameLayer = layout.getLayer("Game")!;
 		for (const layer of gameLayer.allSubLayers())
 		{
 			layer.scale = this.#zoom;

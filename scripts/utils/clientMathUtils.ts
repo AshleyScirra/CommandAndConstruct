@@ -1,12 +1,12 @@
 
 // For converting a 16-bit angle back in to a float in the range [0, 2pi)
-export function Uint16ToAngle(a)
+export function Uint16ToAngle(a: number)
 {
 	return (a * 2 * Math.PI) / 65535;
 };
 
 // Same as equivalent GameServer function
-export function Clamp(x, lower, upper)
+export function Clamp(x: number, lower: number, upper: number)
 {
 	if (x < lower)
 		return lower;
@@ -17,37 +17,37 @@ export function Clamp(x, lower, upper)
 };
 
 // Same as equivalent GameServer function
-export function DistanceTo(x1, y1, x2, y2)
+export function DistanceTo(x1: number, y1: number, x2: number, y2: number)
 {
 	return Math.hypot(x2 - x1, y2 - y1);
 };
 
-export function DistanceSquared(x1, y1, x2, y2)
+export function DistanceSquared(x1: number, y1: number, x2: number, y2: number)
 {
 	const dx = x2 - x1;
 	const dy = y2 - y1;
 	return dx * dx + dy * dy;
 };
 
-export function IsPointInRectangle(x, y, left, top, right, bottom)
+export function IsPointInRectangle(x: number, y: number, left: number, top: number, right: number, bottom: number)
 {
 	return x >= left && x <= right && y >= top && y <= bottom;
 }
 
 // Linear interpolation
-export function lerp(a, b, x)
+export function lerp(a: number, b: number, x: number)
 {
 	return a + (b - a) * x;
 }
 
 // Return the angle in radians from the first position to the second.
-export function AngleTo(x1, y1, x2, y2)
+export function AngleTo(x1: number, y1: number, x2: number, y2: number)
 {
 	return Math.atan2(y2 - y1, x2 - x1);
 };
 
 // Calculate the difference between angles in the shortest direction.
-export function AngleDifference(a1, a2)
+export function AngleDifference(a1: number, a2: number)
 {
 	if (a1 === a2)
 		return 0;		// angles identical
@@ -67,7 +67,7 @@ export function AngleDifference(a1, a2)
 }
 
 // Test if a1 is clockwise of a2 in the shortest direction.
-export function AngleClockwise(a1, a2)
+export function AngleClockwise(a1: number, a2: number)
 {
 	const s1 = Math.sin(a1);
 	const c1 = Math.cos(a1);
@@ -77,7 +77,7 @@ export function AngleClockwise(a1, a2)
 };
 
 // Angular interpolation from angle a to b in the shortest direction.
-export function angleLerp(a, b, x)
+export function angleLerp(a: number, b: number, x: number)
 {
 	const diff = AngleDifference(a, b);
 	

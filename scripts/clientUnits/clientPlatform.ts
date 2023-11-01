@@ -1,4 +1,5 @@
 
+import { ClientUnit } from "./clientUnit.js";
 import { SteppedValueTimeline } from "../gameClient/net/steppedValueTimeline.js";
 import { InterpolatedValueTimeline } from "../gameClient/net/interpolatedValueTimeline.js";
 import * as MathUtils from "../utils/clientMathUtils.js";
@@ -13,8 +14,8 @@ export class ClientPlatform {
 	
 	// Timelines for upcoming position updates from the network, and a short history
 	// of the past position for handling late updates.
-	#timelinePos = new SteppedValueTimeline();
-	#timelinePosHistory = new InterpolatedValueTimeline("linear");
+	#timelinePos = new SteppedValueTimeline<number[]>();
+	#timelinePosHistory = new InterpolatedValueTimeline<number[]>("linear");
 	
 	// If the client realises the position is wrong, the error is spread out over
 	// time to make the correction less noticable. These are the correction still to apply.
@@ -30,9 +31,10 @@ export class ClientPlatform {
 	#maxSpeed = 250;	// maximum speed - TODO: sync with server-side value
 	#acceleration = 0;	// current acceleration in px/s/s
 	
-	#moveMarkerInst;	// Construct instance representing move destination
+	// Construct instance representing move destination
+	#moveMarkerInst: InstanceType.MoveMarker | null;
 	
-	constructor(unit, x, y, angle, speed)
+	constructor(unit: ClientUnit, x: number, y: number, angle: number, speed: number)
 	{
 		this.#unit = unit;
 		
@@ -41,6 +43,8 @@ export class ClientPlatform {
 		this.#inst = runtime.objects.TankPlatform.createInstance("UnitPlatforms", x, y);
 		this.#inst.angle = angle;
 		this.#speed = speed;
+		
+		this.#moveMarkerInst = null;
 		
 		// Add initial values to the timelines at a timestamp of 0.
 		this.#timelinePos.Add(0, [x, y]);
@@ -95,7 +99,7 @@ export class ClientPlatform {
 		return [x + this.#xCorrection, y + this.#yCorrection];
 	}
 	
-	SetPosition(x, y)
+	SetPosition(x: number, y: number)
 	{
 		const [curX, curY] = this.GetPosition();
 		if (curX === x && curY === y)
@@ -105,7 +109,7 @@ export class ClientPlatform {
 		this.#OnPositionOrAngleChanged();
 	}
 	
-	OffsetPosition(dx, dy)
+	OffsetPosition(dx: number, dy: number)
 	{
 		if (dx === 0 && dy === 0)
 			return;		// no change
@@ -130,7 +134,7 @@ export class ClientPlatform {
 		return this.#inst.angle;
 	}
 	
-	SetAngle(a)
+	SetAngle(a: number)
 	{
 		if (this.#inst.angle === a)
 			return;		// no change
@@ -150,7 +154,7 @@ export class ClientPlatform {
 	
 	// When receiving position, speed or angle updates from the network, insert the
 	// received values in to the timelines at the given timestamp.
-	OnNetworkUpdatePosition(serverTime, x, y)
+	OnNetworkUpdatePosition(serverTime: number, x: number, y: number)
 	{
 		// If a position update is received late (behind the current simulation time),
 		// we want to still use it if possible, as position updates are fairly infrequent.
@@ -167,7 +171,7 @@ export class ClientPlatform {
 				return;
 			
 			// Get platform position at timestamp of the message and find the offset.
-			const [oldX, oldY] = this.#timelinePosHistory.Get(serverTime, false /* deleteOldEntries */);
+			const [oldX, oldY] = this.#timelinePosHistory.Get(serverTime);
 			
 			// Store the offset to the position in the X/Y correction values.
 			// These will apply the offset over time making the update less noticable.
@@ -185,21 +189,21 @@ export class ClientPlatform {
 		this.#unit.SetTicking(true);
 	}
 	
-	OnNetworkUpdateSpeed(serverTime, speed)
+	OnNetworkUpdateSpeed(serverTime: number, speed: number)
 	{
 		this.#timelineSpeed.Add(serverTime, speed);
 		
 		this.#unit.SetTicking(true);
 	}
 	
-	OnNetworkUpdateAcceleration(serverTime, acceleration)
+	OnNetworkUpdateAcceleration(serverTime: number, acceleration: number)
 	{
 		this.#timelineAcceleration.Add(serverTime, acceleration);
 		
 		this.#unit.SetTicking(true);
 	}
 	
-	OnNetworkUpdateAngle(serverTime, angle)
+	OnNetworkUpdateAngle(serverTime: number, angle: number)
 	{
 		this.#timelineAngle.Add(serverTime, angle);
 		
@@ -207,7 +211,7 @@ export class ClientPlatform {
 	}
 	
 	// Called every tick to update the platform over time.
-	Tick(dt, simulationTime)
+	Tick(dt: number, simulationTime: number)
 	{
 		// Apply acceleration and movement at the current speed.
 		this.#TickMovement(dt, simulationTime);
@@ -223,7 +227,7 @@ export class ClientPlatform {
 	}
 	
 	// Apply acceleration and movement at the current speed.
-	#TickMovement(dt, simulationTime)
+	#TickMovement(dt: number, simulationTime: number)
 	{
 		// Acceleration changes are stepped values, as they are one-off changes
 		// with no interpolation. Apply any acceleration change for this tick.
@@ -270,7 +274,7 @@ export class ClientPlatform {
 		}
 	}
 	
-	#TickPosition(dt, simulationTime)
+	#TickPosition(dt: number, simulationTime: number)
 	{
 		// Position updates arrive irregularly (every couple of seconds). This is too
 		// infrequent to usefully interpolate between. Therefore position updates use a
@@ -334,7 +338,7 @@ export class ClientPlatform {
 		}
 	}
 	
-	#TickTimelines(simulationTime)
+	#TickTimelines(simulationTime: number)
 	{
 		// Add the current position of the platform on the client to the position history
 		// timeline. This is used to look up past positions if a network update arrives late.
@@ -360,7 +364,7 @@ export class ClientPlatform {
 	// the main goal of removing the vast majority of static units from needing ticking.
 	// Also note that timelines don't do forwards prediction. If they do, then platforms
 	// could still need ticking even when there is no entry past the current time.
-	#NeedsTicking(simulationTime)
+	#NeedsTicking(simulationTime: number)
 	{
 		return this.#xCorrection !== 0 ||
 				this.#yCorrection !== 0 ||
@@ -371,14 +375,14 @@ export class ClientPlatform {
 				this.#timelineAngle.GetNewestTimestamp() >= simulationTime;
 	}
 	
-	ContainsPoint(x, y)
+	ContainsPoint(x: number, y: number)
 	{
 		return this.#inst.containsPoint(x, y);
 	}
 	
 	// Create an instance of a MoveMarker at the given position, or if there's an existing
 	// instance for this unit, just move it to the new position.
-	ShowMoveMarker(moveX, moveY)
+	ShowMoveMarker(moveX: number, moveY: number)
 	{
 		const runtime = this.#unit.GetRuntime();
 		

@@ -1,4 +1,6 @@
 
+import { GameClient } from "../gameClient.js";
+
 // PingManager is responsible for measuring the latency to the server. It does this by
 // sending regular "ping" messages. As soon as the server receives a "ping" it immediately
 // sends back a "pong" message which also includes the server time. The latency can be
@@ -25,7 +27,7 @@ export class PingManager {
 	#pingId = 0;				// ID of last ping sent out
 	#pingSendTime = 0;			// time last ping was sent out
 	
-	#latencyMeasurements = [];	// array of last latencies measured
+	#latencyMeasurements: number[] = [];	// array of last latencies measured
 	#latency = 0;				// measured latency
 	#targetSimulationDelay = 0;	// raw intended client-side delay from server time
 	#curSimulationDelay = 0;	// client-side delay with smoothing
@@ -34,7 +36,7 @@ export class PingManager {
 	#curServerTimeDiff = 0;		// server time difference with smoothing
 	#curServerTime = 0;			// current estimated server time, updated every tick
 	
-	constructor(gameClient)
+	constructor(gameClient: GameClient)
 	{
 		this.#gameClient = gameClient;
 	}
@@ -78,7 +80,7 @@ export class PingManager {
 	}
 	
 	// Received a pong back from the server, in response to a ping.
-	OnPong(id, time)
+	OnPong(id: number, time: number)
 	{
 		// The server sends a pong with the same ID as the ping it received.
 		// If the ID is not the one we were expecting, ignore it so it doesn't mess up the measurements.
@@ -142,7 +144,7 @@ export class PingManager {
 		}
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		// In theory, the server time difference never changes - there is one true value that ought to stay
 		// the same throughout the game. However our time measurements aren't perfect and will have some variance.

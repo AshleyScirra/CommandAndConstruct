@@ -1,18 +1,25 @@
 
 import { GameClient } from "../gameClient/gameClient.js";
+import { GameModeBase } from "./gameModeBase.js";
 
 // This class manages a single player game. This means hosting a local copy of GameServer,
 // and does not involve any networking.
-export class GameModeSinglePlayer {
+export class GameModeSinglePlayer extends GameModeBase {
 
 	// Private fields
-	#runtime;					// Construct runtime
-	#gameClient;				// The local player's GameClient
-	#gameServerMessagePort;		// The MessagePort for communicating with the local GameServer
+	#runtime: IRuntime;					// Construct runtime
+	#gameClient: GameClient | null;		// The local player's GameClient
+
+	// The MessagePort for communicating with the local GameServer
+	#gameServerMessagePort: MessagePort | null;
 	
-	constructor(runtime)
+	constructor(runtime: IRuntime)
 	{
+		super();
+
 		this.#runtime = runtime;
+		this.#gameClient = null;
+		this.#gameServerMessagePort = null;
 	}
 	
 	async Init()
@@ -49,26 +56,26 @@ export class GameModeSinglePlayer {
 			"type": "release"
 		});
 		
-		this.#gameClient.Release();
+		this.#gameClient!.Release();
 		this.#gameClient = null;
 	}
 	
 	// Messages received from GameServer are directly handled by GameClient.
-	#HandleGameServerMessage(e)
+	#HandleGameServerMessage(e: MessageEvent)
 	{
 		const data = e.data;
 		const message = data["message"];
 		
-		this.#gameClient.HandleGameServerMessage(message);
+		this.#gameClient!.HandleGameServerMessage(message);
 	}
 	
 	// Messages sent to GameServer are directly posted to it in the worker.
-	#SendMessageToGameServer(msg, transmissionMode)
+	#SendMessageToGameServer(msg: any, transmissionMode?: string)
 	{
 		// Also attach the player the message is from and the transmission mode.
-		msg["player"] = this.#gameClient.GetPlayer();
+		msg["player"] = this.#gameClient!.GetPlayer();
 		msg["transmissionMode"] = transmissionMode;
 		
-		this.#gameServerMessagePort.postMessage(msg);
+		this.#gameServerMessagePort!.postMessage(msg);
 	}
 }

@@ -1,5 +1,6 @@
 
 import * as MathUtils from "../../utils/clientMathUtils.js";
+import { PointerManager } from "./pointerManager.js";
 
 // If a pointerup comes within this distance of the corresponding pointerdown,
 // it will be counted as a tap. Otherwise it will be counted as a drag.
@@ -20,9 +21,10 @@ export class PointerInfo {
 	#startLayerX = 0;		// start position on background layer
 	#startLayerY = 0;
 	
-	#selectionBoxInst;		// Construct instance for selection box
+	// Construct instance for selection box
+	#selectionBoxInst: InstanceType.DragSelectionBox | null;
 	
-	constructor(pointerManager, e)
+	constructor(pointerManager: PointerManager, e: PointerEvent)
 	{
 		this.#pointerManager = pointerManager;
 		this.#startClientX = e.clientX;
@@ -30,12 +32,13 @@ export class PointerInfo {
 		this.#lastClientX = e.clientX;
 		this.#lastClientY = e.clientY;
 		this.#pointerType = e.pointerType;
+		this.#selectionBoxInst = null;
 		
 		// Get the start position of this pointer on the background layer.
 		// This allows the start position of a selection box to remain in place regardless
 		// of scrolling and zooming.
 		const runtime = this.GetRuntime();
-		const backgroundLayer = runtime.layout.getLayer("Background");
+		const backgroundLayer = runtime.layout.getLayer("Background")!;
 		const [layerX, layerY] = backgroundLayer.cssPxToLayer(e.clientX, e.clientY);
 		this.#startLayerX = layerX;
 		this.#startLayerY = layerY;
@@ -82,7 +85,7 @@ export class PointerInfo {
 		return [this.#lastClientX, this.#lastClientY];
 	}
 	
-	OnMove(e)
+	OnMove(e: PointerEvent)
 	{
 		// Save the last client position.
 		this.#lastClientX = e.clientX;
@@ -126,7 +129,7 @@ export class PointerInfo {
 		}
 	}
 	
-	OnUp(e)
+	OnUp(e: PointerEvent)
 	{
 		// If this pointer moved far enough to count as a drag, finish the drag and select
 		// all units inside the dragged box.
@@ -161,7 +164,7 @@ export class PointerInfo {
 		// Destroy selection box if one was created for a drag
 		if (this.#actionType === "drag")
 		{
-			this.#selectionBoxInst.destroy();
+			this.#selectionBoxInst!.destroy();
 			this.#selectionBoxInst = null;
 		}
 		
@@ -186,8 +189,8 @@ export class PointerInfo {
 	{
 		// Get both the background and selection box layers.
 		const runtime = this.GetRuntime();
-		const backgroundLayer = runtime.layout.getLayer("Background");
-		const dragSelectionBoxLayer = runtime.layout.getLayer("DragSelectionBox");
+		const backgroundLayer = runtime.layout.getLayer("Background")!;
+		const dragSelectionBoxLayer = runtime.layout.getLayer("DragSelectionBox")!;
 		
 		// Translate the start position on the background layer on to the DragSelectionBox layer,
 		// since this is where the drag selection box starts from.
@@ -207,10 +210,11 @@ export class PointerInfo {
 		const maxX = Math.max(startX, endX);
 		const maxY = Math.max(startY, endY);
 		
-		this.#selectionBoxInst.x = minX;
-		this.#selectionBoxInst.y = minY;
-		this.#selectionBoxInst.width = maxX - minX;
-		this.#selectionBoxInst.height = maxY - minY;
+		const selectionBoxInst = this.#selectionBoxInst!;
+		selectionBoxInst.x = minX;
+		selectionBoxInst.y = minY;
+		selectionBoxInst.width = maxX - minX;
+		selectionBoxInst.height = maxY - minY;
 	}
 	
 	// For a dragging pointer, return the selection box area in game layer co-ordinates.
@@ -219,7 +223,7 @@ export class PointerInfo {
 	GetSelectionBoxArea()
 	{
 		const runtime = this.GetRuntime();
-		const backgroundLayer = runtime.layout.getLayer("Background");
+		const backgroundLayer = runtime.layout.getLayer("Background")!;
 		
 		// Get start and end positions in layer co-ordinates
 		const startX = this.#startLayerX;
@@ -237,12 +241,12 @@ export class PointerInfo {
 	}
 	
 	// Called when the pointer is released during a drag.
-	#EndDrag(e)
+	#EndDrag(e: PointerEvent)
 	{
 		// Get the end position of the selection box on the background layer,
 		// i.e. in the co-ordinate system of units.
 		const runtime = this.GetRuntime();
-		const backgroundLayer = runtime.layout.getLayer("Background");
+		const backgroundLayer = runtime.layout.getLayer("Background")!;
 		const [endLayerX, endLayerY] = backgroundLayer.cssPxToLayer(e.clientX, e.clientY);
 		
 		// Find the bounds of the selection area on the background layer, using the maximum
@@ -265,7 +269,7 @@ export class PointerInfo {
 		this.GetSelectionManager().SelectAllInRectangle(minX, minY, maxX, maxY);
 		
 		// Destroy the selection box instance as it's no longer needed.
-		this.#selectionBoxInst.destroy();
+		this.#selectionBoxInst!.destroy();
 	}
 	
 	#StartPan()
@@ -275,7 +279,7 @@ export class PointerInfo {
 		this.#pointerManager.SetMouseCursor("move");		// show move cursor
 	}
 	
-	#UpdatePan(e)
+	#UpdatePan(e: PointerEvent)
 	{
 		// Handle pan scrolling in ViewManager.
 		// Pass it where the pointer currently is in client co-ordinates.
@@ -308,7 +312,7 @@ export class PointerInfo {
 	
 	// Called every tick for any pointers that need to change over time, such as scrolling
 	// when a drag pointer moves to the edge of the screen.
-	Tick(dt)
+	Tick(dt: number)
 	{
 		if (this.#actionType === "drag")
 		{
@@ -319,11 +323,11 @@ export class PointerInfo {
 	// If a pointer moves all the way to the edge of the viewport while it is dragging a selection box,
 	// scroll the view in the direction of the viewport side the pointer is against.
 	// This lets the player select more content than is visible on-screen.
-	#TickDragPointer(dt)
+	#TickDragPointer(dt: number)
 	{
 		const runtime = this.GetRuntime();
 		const viewManager = this.GetViewManager();
-		const backgroundLayer = runtime.layout.getLayer("Background");
+		const backgroundLayer = runtime.layout.getLayer("Background")!;
 		
 		// Get the pointer's last position on the background layer.
 		const [layerX, layerY] = backgroundLayer.cssPxToLayer(this.#lastClientX, this.#lastClientY);

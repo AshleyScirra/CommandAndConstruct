@@ -1,4 +1,6 @@
 
+import { GameClient } from "../gameClient/gameClient.js";
+
 // The ClientProjectile class represents a projectile for GameClient. It is the client-side
 // counterpart to the Projectile class on the game server. Note that ClientProjectile does not
 // actually implement any real game logic such as collision detection: it only exists to
@@ -13,7 +15,7 @@ export class ClientProjectile {
 	#range = 0;
 	#distanceTravelled = 0;
 	
-	constructor(gameClient, id, x, y, angle, speed, range, distanceTravelled)
+	constructor(gameClient: GameClient, id: number, x: number, y: number, angle: number, speed: number, range: number, distanceTravelled: number)
 	{
 		this.#gameClient = gameClient;
 		this.#id = id;
@@ -38,7 +40,7 @@ export class ClientProjectile {
 		return this.#inst.getPosition();
 	}
 	
-	Tick(dt)
+	Tick(dt: number)
 	{
 		// Advance the projectile at its speed and angle
 		const moveDist = this.#speed * dt;

@@ -3,17 +3,19 @@ import { ValueTimeline } from "./valueTimeline.js";
 
 import * as MathUtils from "../../utils/clientMathUtils.js";
 
+type InterpolationType = "none" | "linear" | "angular";
+
 // InterpolatedValueTimeline is derived from ValueTimeline as an interpolating variant.
 // This is used for most values apart from positions (which use the stepped variant).
 // When retrieving the value for a given time, this allows for looking for the previous
 // and next values on the timeline around that given time, and then interpolating between
 // them to estimate the value at the requested time. This allows the client to smoothly
 // represent changes even from irregular network updates.
-export class InterpolatedValueTimeline extends ValueTimeline {
+export class InterpolatedValueTimeline<ValueType = number> extends ValueTimeline<ValueType> {
 
-	#interpolationType;		// "none", "linear" or "angular"
+	#interpolationType: InterpolationType;
 	
-	constructor(interpolationType)
+	constructor(interpolationType: InterpolationType)
 	{
 		super();
 		
@@ -21,7 +23,7 @@ export class InterpolatedValueTimeline extends ValueTimeline {
 	}
 	
 	// Get an interpolated value at the given time.
-	Get(simulationTime)
+	Get(simulationTime: number)
 	{
 		// Search through the timeline (which is ordered by timestamp) for the first entry that has
 		// a newer timestamp than the given time. This holds the destination value.
@@ -61,10 +63,10 @@ export class InterpolatedValueTimeline extends ValueTimeline {
 		// if the network failed to deliver the next updates. In the prior case, forwards interpolation
 		// is wrong, as it means overshooting the last value. Therefore forwards interpolation is
 		// not currently attempted.
-		return this.timeline.at(-1).value;
+		return this.timeline.at(-1)!.value;
 	}
 	
-	DeleteEntriesOlderThan(timestamp)
+	DeleteEntriesOlderThan(timestamp: number)
 	{
 		// Find the first entry newer than the given timestamp.
 		for (let i = 0, len = this.timeline.length; i < len; ++i)
@@ -86,21 +88,29 @@ export class InterpolatedValueTimeline extends ValueTimeline {
 	}
 	
 	// Interpolate between two values using this timeline's interpolation mode.
-	#Interpolate(a, b, x)
+	#Interpolate(a: ValueType, b: ValueType, x: number): ValueType
 	{
 		// If 'a' is an array, interpolate each element in the array.
 		// This allows interpolating positions as [x, y].
-		if (Array.isArray(a))
+		// TypeScript note: ValueType is generic and for InterpolatedValueTimeline, the only types
+		// used are number and number[]. However TypeScript doesn't seem to have a good way to express
+		// that ValueType is one of those two types. The code below is valid but doesn't pass type
+		// checking because of this, so just use 'as ValueType' to force the type check to pass.
+		if (Array.isArray(a) && Array.isArray(b))
 		{
-			return a.map((v, index) => this.#InterpolateSingleValue(v, b[index], x));
+			return a.map((v, index) => this.#InterpolateSingleValue(v, b[index], x)) as ValueType;
+		}
+		else if (typeof a === "number" && typeof b === "number")
+		{
+			return this.#InterpolateSingleValue(a, b, x) as ValueType;
 		}
 		else
 		{
-			return this.#InterpolateSingleValue(a, b, x);
+			throw new TypeError("invalid interpolation types");
 		}
 	}
 	
-	#InterpolateSingleValue(a, b, x)
+	#InterpolateSingleValue(a: number, b: number, x: number)
 	{
 		if (this.#interpolationType === "none")
 		{

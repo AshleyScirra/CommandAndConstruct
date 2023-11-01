@@ -1,5 +1,7 @@
 
 import * as MathUtils from "../../utils/clientMathUtils.js";
+import { GameClient } from "../gameClient.js";
+import { ClientUnit } from "../../clientUnits/clientUnit.js";
 
 // The SelectionManager class manages selecting units.
 // It has its own class to avoid cluttering GameClient and organise
@@ -7,10 +9,10 @@ import * as MathUtils from "../../utils/clientMathUtils.js";
 export class SelectionManager {
 
 	// Private fields
-	#gameClient;						// Reference to GameClient
-	#selectedUnits = new Set();			// Set of all currently selected units
+	#gameClient;								// Reference to GameClient
+	#selectedUnits = new Set<ClientUnit>();		// Set of all currently selected units
 	
-	constructor(gameClient)
+	constructor(gameClient: GameClient)
 	{
 		this.#gameClient = gameClient;
 	}
@@ -24,7 +26,7 @@ export class SelectionManager {
 		return this.#gameClient.GetRuntime();
 	}
 	
-	IsSelected(unit)
+	IsSelected(unit: ClientUnit)
 	{
 		return this.#selectedUnits.has(unit);
 	}
@@ -35,7 +37,7 @@ export class SelectionManager {
 	}
 	
 	// Set a given unit selected or unselected.
-	SetSelected(unit, isSelected)
+	SetSelected(unit: ClientUnit, isSelected: boolean)
 	{
 		if (isSelected)		// setting selected
 		{
@@ -74,11 +76,11 @@ export class SelectionManager {
 	}
 	
 	// Called by a PointerInfo when the pointer down and up positions are close.
-	OnTap_MainButton(e)
+	OnTap_MainButton(e: PointerEvent)
 	{
 		// Determine the position of the pointer on the UnitPlatforms layer.
 		const runtime = this.GetRuntime();
-		const unitPlatformsLayer = runtime.layout.getLayer("UnitPlatforms");
+		const unitPlatformsLayer = runtime.layout.getLayer("UnitPlatforms")!;
 		const [ layerX, layerY ] = unitPlatformsLayer.cssPxToLayer(e.clientX, e.clientY);
 		
 		// Clicking a unit directly should select it, but clicking elsewhere
@@ -139,7 +141,7 @@ export class SelectionManager {
 		this.UnselectAll();
 	}
 	
-	SelectAllInRectangle(left, top, right, bottom)
+	SelectAllInRectangle(left: number, top: number, right: number, bottom: number)
 	{
 		// Called when ending a selection box drag. Select any units whose position is
 		// inside the selection box rectangle.

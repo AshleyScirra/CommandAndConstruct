@@ -1,4 +1,5 @@
 
+import { ClientUnit } from "./clientUnit.js";
 import { InterpolatedValueTimeline } from "../gameClient/net/interpolatedValueTimeline.js";
 
 // The ClientTurret class represents the turret part of a ClientUnit,
@@ -13,7 +14,7 @@ export class ClientTurret {
 	// Timeline for offset angle updates from the network.
 	#timelineOffsetAngle = new InterpolatedValueTimeline("angular");
 	
-	constructor(unit, offsetAngle)
+	constructor(unit: ClientUnit, offsetAngle: number)
 	{
 		this.#unit = unit;
 		this.#offsetAngle = offsetAngle;
@@ -41,7 +42,7 @@ export class ClientTurret {
 		this.#inst.destroy();
 	}
 	
-	SetOffsetAngle(a)
+	SetOffsetAngle(a: number)
 	{
 		if (this.#offsetAngle === a)
 			return;		// no change
@@ -61,7 +62,7 @@ export class ClientTurret {
 	
 	// When receiving angle updates from the network, insert the received value
 	// into the angle timeline at the given timestamp.
-	OnNetworkUpdateOffsetAngle(serverTime, angle)
+	OnNetworkUpdateOffsetAngle(serverTime: number, angle: number)
 	{
 		this.#timelineOffsetAngle.Add(serverTime, angle);
 		
@@ -71,7 +72,7 @@ export class ClientTurret {
 	}
 	
 	// Called every tick to update the platform over time.
-	Tick(dt, simulationTime)
+	Tick(dt: number, simulationTime: number)
 	{
 		// Update the turret offset angle to the current interpolated value from the
 		// angle timeline.
@@ -86,7 +87,7 @@ export class ClientTurret {
 	
 	// This logic works similarly to the platform, but the only requirement for ticking the
 	// turret is if there is any upcoming entry in its offset angle timeline.
-	NeedsTicking(simulationTime)
+	NeedsTicking(simulationTime: number)
 	{
 		return this.#timelineOffsetAngle.GetNewestTimestamp() >= simulationTime;
 	}

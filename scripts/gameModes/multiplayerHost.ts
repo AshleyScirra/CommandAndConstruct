@@ -1,28 +1,38 @@
 
 import { GameClient } from "../gameClient/gameClient.js";
 import { MultiEventHandler } from "../utils/multiEventHandler.js";
+import { GameModeBase } from "./gameModeBase.js";
 
 // This class manages a multiplayer host's game. It runs a local copy of GameServer and also
 // communicates with other players over the network.
-export class GameModeMultiplayerHost {
+export class GameModeMultiplayerHost extends GameModeBase {
 
 	// Private fields
-	#runtime;					// Construct runtime
-	#gameClient;				// The local player's GameClient
-	#gameServerMessagePort;		// The MessagePort for communicating with the local GameServer
-	#eventHandlers;				// MultiEventHandler
+	#runtime: IRuntime;					// Construct runtime
+	#gameClient: GameClient | null;		// The local player's GameClient
+
+	// The MessagePort for communicating with the local GameServer
+	#gameServerMessagePort: MessagePort | null;
+	#eventHandlers: MultiEventHandler;
 	
-	#otherPeerId;				// Peer ID of the other player (TODO: support for more players)
-	#peerReadyResolve;			// for a promise that resolves when peer sends "ready" message
+	#otherPeerId: string = "";			// Peer ID of the other player (TODO: support for more players)
+
+	// for a promise that resolves when peer sends "ready" message
+	#peerReadyResolve: Function | null;
 	
-	constructor(runtime)
+	constructor(runtime: IRuntime)
 	{
+		super();
+
 		this.#runtime = runtime;
+		this.#gameClient = null;
+		this.#gameServerMessagePort = null;
+		this.#peerReadyResolve = null;
 		
 		this.#eventHandlers = new MultiEventHandler([
 			// Listen for incoming messages from peers over the network.
-			[this.#runtime.objects.Multiplayer, "message", e => this.#HandlePeerMessage(e)],
-			[this.#runtime.objects.Multiplayer, "peerdisconnect", e => this.#OnPeerDisconnect(e)]
+			[this.#runtime.objects.Multiplayer, "message", e => this.#HandlePeerMessage(e as MultiplayerMessageEvent)],
+			[this.#runtime.objects.Multiplayer, "peerdisconnect", () => this.#OnPeerDisconnect()]
 		]);
 	}
 	
@@ -59,21 +69,21 @@ export class GameModeMultiplayerHost {
 	
 	Release()
 	{
-		this.#eventHandlers.Release();
+		this.#eventHandlers!.Release();
 		
 		// Terminate the GameServer web worker.
 		this.#LocalSendMessageToGameServer({
 			"type": "release"
 		});
 		
-		this.#gameClient.Release();
+		this.#gameClient!.Release();
 		this.#gameClient = null;
 	}
 	
 	// Called when receiving a message over the network from a peer.
-	#HandlePeerMessage(e)
+	#HandlePeerMessage(e: MultiplayerMessageEvent)
 	{
-		const msg = e.message;
+		const msg = e.message as any;	// note easiest way to read unknown JSON is as 'any' type
 		
 		// Handle the "ready" message specially.
 		if (msg["type"] === "ready")
@@ -93,7 +103,7 @@ export class GameModeMultiplayerHost {
 	
 	// When the peer's "ready" message is received, resolve the ready promise.
 	// This makes sure both the host and peer are loaded and ready to proceed.
-	#OnPeerReady(fromId)
+	#OnPeerReady(fromId: string)
 	{
 		this.#otherPeerId = fromId;				// save ID of other player (TODO: more players)
 		
@@ -111,22 +121,22 @@ export class GameModeMultiplayerHost {
 	
 	// Called when the local GameClient wants to send a message to GameServer.
 	// Tag it with the local player number and transmission mode and post to the worker.
-	#LocalSendMessageToGameServer(msg, transmissionMode)
+	#LocalSendMessageToGameServer(msg: any, transmissionMode?: MultiplayerTransmissionMode | "")
 	{
-		msg["player"] = this.#gameClient.GetPlayer();
+		msg["player"] = this.#gameClient!.GetPlayer();
 		msg["transmissionMode"] = transmissionMode;
 		
 		this.#SendMessageToGameServer(msg);
 	}
 	
-	#SendMessageToGameServer(msg)
+	#SendMessageToGameServer(msg: any)
 	{
 		// Post the message to the GameServer worker.
-		this.#gameServerMessagePort.postMessage(msg);
+		this.#gameServerMessagePort!.postMessage(msg);
 	}
 	
 	// Called when receiving a message from the GameServer worker.
-	#HandleGameServerMessage(e)
+	#HandleGameServerMessage(e: MessageEvent)
 	{
 		const data = e.data;
 		const message = data["message"];
@@ -136,7 +146,7 @@ export class GameModeMultiplayerHost {
 		if (forPlayer === null)		// message for all players
 		{
 			// Handle this message with the local game client.
-			this.#gameClient.HandleGameServerMessage(message);
+			this.#gameClient!.HandleGameServerMessage(message);
 
 			// Relay this message over the network to connected peers.
 			// Use the transmission mode specified by GameServer.
@@ -145,7 +155,7 @@ export class GameModeMultiplayerHost {
 		else if (forPlayer === 0)
 		{
 			// Message for host only: handle with own GameClient
-			this.#gameClient.HandleGameServerMessage(message);
+			this.#gameClient!.HandleGameServerMessage(message);
 		}
 		else if (forPlayer === 1)
 		{
@@ -159,10 +169,10 @@ export class GameModeMultiplayerHost {
 		}
 	}
 	
-	#OnPeerDisconnect(e)
+	#OnPeerDisconnect()
 	{
 		// Show a disconnected message. TODO: this should probably be handled differently
 		// if supporting more than 2 players
-		this.#gameClient.OnDisconnected();
+		this.#gameClient!.OnDisconnected();
 	}
 }

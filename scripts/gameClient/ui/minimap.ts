@@ -1,4 +1,6 @@
 
+import { GameClient } from "../gameClient.js";
+
 // A basic way to detect mobile devices: check user agent string for
 // strings indicating iOS or Android. Note this doesn't detect modern iPads,
 // because they pretend to be macOS in their user agent string!
@@ -36,21 +38,21 @@ export class Minimap {
 	#lastTerrainDeviceHeight = 0;
 	#redrawTerrain = false;		// for forcing terrain to redraw
 	
-	constructor(gameClient)
+	constructor(gameClient: GameClient)
 	{
 		this.#gameClient = gameClient;
 		
 		// Get the background and three minimap DrawingCanvas instances
 		const runtime = this.#gameClient.GetRuntime();
-		this.#backgroundInst = runtime.objects.MinimapBackground.getFirstInstance();
-		this.#terrainInst = runtime.objects.MinimapCanvasTerrain.getFirstInstance();
-		this.#slowInst = runtime.objects.MinimapCanvasSlow.getFirstInstance();
-		this.#fastInst = runtime.objects.MinimapCanvasFast.getFirstInstance();
+		this.#backgroundInst = runtime.objects.MinimapBackground.getFirstInstance()!;
+		this.#terrainInst = runtime.objects.MinimapCanvasTerrain.getFirstInstance()!;
+		this.#slowInst = runtime.objects.MinimapCanvasSlow.getFirstInstance()!;
+		this.#fastInst = runtime.objects.MinimapCanvasFast.getFirstInstance()!;
 	}
 	
 	// On startup, when the layout size is set, adjust the minimap size according to
 	// the aspect ratio of the level and the allowed minimap area.
-	SetLayoutSize(layoutWidth, layoutHeight)
+	SetLayoutSize(layoutWidth: number, layoutHeight: number)
 	{
 		const aspectRatio = layoutWidth / layoutHeight;
 		const minimapWidth = Math.sqrt(aspectRatio * MINIMAP_AREA);
@@ -67,7 +69,7 @@ export class Minimap {
 	}
 	
 	// Called every tick to redraw the minimap.
-	Update(gameTime)
+	Update(gameTime: number)
 	{
 		// Save the device scale, i.e. the number of device pixels per object pixel.
 		// This is used for snapping co-ordinates to device pixels for precise drawing.
@@ -259,7 +261,7 @@ export class Minimap {
 	
 	// Convert layout co-ordinates to minimap co-ordinates, by scaling the position
 	// to fit within the minimap size.
-	#GameToMinimap(x, y)
+	#GameToMinimap(x: number, y: number)
 	{
 		const [layoutWidth, layoutHeight] = this.#gameClient.GetViewManager().GetLayoutSize();
 		return [x * this.#slowInst.width / layoutWidth, y * this.#slowInst.height / layoutHeight];
@@ -272,7 +274,7 @@ export class Minimap {
 	// To avoid this, the drawn positions are snapped to device pixels, and then converted back to
 	// object co-ordinates for drawing, since drawing commands are in object co-ordinates; when they
 	// are really drawn, they will consistently line up with device pixels which looks better.
-	#SnapRectangleToDevicePixels(left, top, width, height)
+	#SnapRectangleToDevicePixels(left: number, top: number, width: number, height: number)
 	{
 		const deviceScale = this.#deviceScale;
 		
@@ -291,7 +293,7 @@ export class Minimap {
 	
 	// Fill a rectangle with a color, but snap the given position to device co-ordinates
 	// for better rendering.
-	#FillRect(inst, left, top, width, height, color)
+	#FillRect(inst: IDrawingCanvasInstance, left: number, top: number, width: number, height: number, color: DrawingCanvasColor)
 	{
 		[left, top, width, height] = this.#SnapRectangleToDevicePixels(left, top, width, height);
 		
@@ -301,7 +303,7 @@ export class Minimap {
 	// Implement an outline as a series of filled rectangles instead.
 	// Drawing Canvas has an outlineRect method, but this way we can use the device pixel
 	// snapping on all four sides of the rectangle, which looks better.
-	#OutlineRect(inst, left, top, width, height, color, thickness)
+	#OutlineRect(inst: IDrawingCanvasInstance, left: number, top: number, width: number, height: number, color: DrawingCanvasColor, thickness: number)
 	{
 		this.#FillRect(inst, left, top, width, thickness, color);
 		this.#FillRect(inst, left, top, thickness, height, color);

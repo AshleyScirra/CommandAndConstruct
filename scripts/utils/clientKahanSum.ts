@@ -6,7 +6,7 @@ export class KahanSum {
 	#t = 0;
 	#sum = 0;
 	
-	Add(v)
+	Add(v: number)
 	{
 		this.#y = v - this.#c;
 		this.#t = this.#sum + this.#y;

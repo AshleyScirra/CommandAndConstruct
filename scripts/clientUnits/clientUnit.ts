@@ -1,4 +1,5 @@
 
+import { GameClient } from "../gameClient/gameClient.js";
 import { ClientPlatform } from "./clientPlatform.js";
 import { ClientTurret } from "./clientTurret.js";
 
@@ -12,6 +13,12 @@ const SHOW_UNIT_DEBUG_STATE = true;
 // missed 3 opportunities in a row for a full update.
 const CLIENT_UNIT_TIMEOUT = 7;
 
+type ClientUnitInfoType = {
+	id: number, player: number,
+	x: number, y: number, platformAngle: number, speed: number,
+	turretOffsetAngle: number
+}
+
 // The ClientUnit class represents a unit in GameClient.
 // Its main job is to synchronise state to match what is happening on GameServer,
 // which holds the real Unit class that represents the authoritative state of the game.
@@ -21,21 +28,23 @@ export class ClientUnit {
 	#gameClient;				// reference to GameClient unit belongs to
 	#id = -1;					// unique ID of this unit
 	#player = 0;				// player this unit belongs to
-	#platform;					// ClientPlatform for this unit's platform
-	#turret;					// ClientTurret for this unit's turret
-	#selectionBoxInst;			// Construct instance representing selection box
+	#platform?: ClientPlatform;	// ClientPlatform for this unit's platform
+	#turret?: ClientTurret;		// ClientTurret for this unit's turret
+	// Construct instance representing selection box
+	#selectionBoxInst: InstanceType.UnitSelectionBox | null;
 	#lastUpdateTime = 0;		// last time received any update from server
 	
 	// For development purposes only: current unit debug state and a Text object
 	// instance in which to display the debug state
 	#debugState = 0;
-	#debugTextInst;
+	#debugTextInst?: InstanceType.DebugStateText;
 	
-	constructor(gameClient, id, player)
+	constructor(gameClient: GameClient, id: number, player: number)
 	{
 		this.#gameClient = gameClient;
 		this.#id = id;
 		this.#player = player;
+		this.#selectionBoxInst = null;
 		
 		// If enabled, create a debug text instance for this unit
 		if (SHOW_UNIT_DEBUG_STATE)
@@ -49,7 +58,7 @@ export class ClientUnit {
 	}
 	
 	// Create a client unit with initial state specified in 'info' object
-	static Create(gameClient, info)
+	static Create(gameClient: GameClient, info: ClientUnitInfoType)
 	{
 		const unit = new ClientUnit(gameClient, info.id, info.player);
 		unit.#platform = new ClientPlatform(unit, info.x, info.y, info.platformAngle, info.speed);
@@ -65,8 +74,8 @@ export class ClientUnit {
 		this.#gameClient.UnitWasDestroyed(this);
 		
 		// Destroy turret and platform
-		this.#turret.Release();
-		this.#platform.Release();
+		this.#turret!.Release();
+		this.#platform!.Release();
 		
 		// Destroy any debug text instance
 		if (this.#debugTextInst)
@@ -95,40 +104,40 @@ export class ClientUnit {
 	
 	GetPlatform()
 	{
-		return this.#platform;
+		return this.#platform!;
 	}
 	
 	GetTurret()
 	{
-		return this.#turret;
+		return this.#turret!;
 	}
 	
 	// Called when any update about this unit is received over the network.
-	SetLastUpdateTime(serverTime)
+	SetLastUpdateTime(serverTime: number)
 	{
 		this.#lastUpdateTime = Math.max(this.#lastUpdateTime, serverTime);
 	}
 	
 	// Check if the unit has timed out, which is when it last got any update
 	// longer than CLIENT_UNIT_TIMEOUT ago from the current time.
-	IsTimedOut(simulationTime)
+	IsTimedOut(simulationTime: number)
 	{
 		return this.#lastUpdateTime < simulationTime - CLIENT_UNIT_TIMEOUT;
 	}
 	
 	// Set whether this unit will have Tick() called every tick.
-	SetTicking(shouldTick)
+	SetTicking(shouldTick: boolean)
 	{
 		this.#gameClient.SetUnitTicking(this, shouldTick);
 	}
 	
 	// Called every tick (if the unit is opted in to ticking).
-	Tick(dt, simulationTime)
+	Tick(dt: number, simulationTime: number)
 	{
 		// Tick the platform and turret. Both return a boolean indicating if they
 		// still need ticking.
-		const keepTickingPlatform = this.#platform.Tick(dt, simulationTime);
-		const keepTickingTurret = this.#turret.Tick(dt, simulationTime);
+		const keepTickingPlatform = this.#platform!.Tick(dt, simulationTime);
+		const keepTickingTurret = this.#turret!.Tick(dt, simulationTime);
 		
 		// If neither the platform nor turret needs ticking any more,
 		// opt out of ticking to save CPU time.
@@ -144,8 +153,8 @@ export class ClientUnit {
 		if (!this.#selectionBoxInst)
 			return;		// no selection box
 		
-		const [x, y] = this.#platform.GetPosition();
-		const angle = this.#platform.GetAngle();
+		const [x, y] = this.#platform!.GetPosition();
+		const angle = this.#platform!.GetAngle();
 		
 		this.#selectionBoxInst.setPosition(x, y);
 		this.#selectionBoxInst.angle = angle;
@@ -157,17 +166,17 @@ export class ClientUnit {
 		if (!this.#debugTextInst)
 			return;		// not in use
 		
-		const [x, y] = this.#platform.GetPosition();
+		const [x, y] = this.#platform!.GetPosition();
 		this.#debugTextInst.setPosition(x, y - 50);
 	}
 	
 	// Use the unit platform for collision checks.
-	ContainsPoint(x, y)
+	ContainsPoint(x: number, y: number)
 	{
-		return this.#platform.ContainsPoint(x, y);
+		return this.#platform!.ContainsPoint(x, y);
 	}
 	
-	SetSelectedState(isSelected)
+	SetSelectedState(isSelected: boolean)
 	{
 		if (isSelected)		// marking selected
 		{
@@ -179,9 +188,9 @@ export class ClientUnit {
 			// box match the position and angle of the unit platform, and size
 			// it a little larger so the green border is visible around it.
 			const runtime = this.GetRuntime();
-			const [x, y] = this.#platform.GetPosition();
-			const [w, h] = this.#platform.GetSize();
-			const angle = this.#platform.GetAngle();
+			const [x, y] = this.#platform!.GetPosition();
+			const [w, h] = this.#platform!.GetSize();
+			const angle = this.#platform!.GetAngle();
 
 			this.#selectionBoxInst = runtime.objects.UnitSelectionBox.createInstance("SelectionBoxes", x, y);
 			this.#selectionBoxInst.setSize(w + 8, h + 8);
@@ -198,7 +207,7 @@ export class ClientUnit {
 		}
 	}
 	
-	SetDebugState(n)
+	SetDebugState(n: number)
 	{
 		this.#debugState = n;
 		

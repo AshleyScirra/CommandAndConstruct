@@ -33,11 +33,16 @@
 // as all events are automatically removed, and avoids the need for
 // a property for each event handler function.
 
+// TypeScript note: to avoid the type for MultiEventHandler's array of handlers
+// becoming very complicated, just use the 'any' type for the event parameter 'e'.
+// Callbacks will need to cast the parameter type to the right thing with 'as'.
+type MultiEventHandlerArray = Array<[any, string, (e: any) => void]>;
+
 export class MultiEventHandler {
 
 	#eventHandlers;
 	
-	constructor(arr)
+	constructor(arr: MultiEventHandlerArray)
 	{
 		this.#eventHandlers = arr;
 		

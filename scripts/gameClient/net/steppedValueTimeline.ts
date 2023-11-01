@@ -5,12 +5,12 @@ import { ValueTimeline } from "./valueTimeline.js";
 // This is used for position values and events. Since these arrive only occasionally
 // as one-off updates, it's not appropriate to interpolate between them.
 // Instead the values are handled as updates when the simulation time reaches them.
-export class SteppedValueTimeline extends ValueTimeline {
+export class SteppedValueTimeline<ValueType = number> extends ValueTimeline<ValueType> {
 
 	// Return a timeline entry of { timestamp, value } if there is one older than
 	// the given simulation time, and remove it from the timeline. Otherwise if
 	// there is no update for this time, return null.
-	GetSteppedValue(simulationTime)
+	GetSteppedValue(simulationTime: number)
 	{
 		let ret = null;
 		
