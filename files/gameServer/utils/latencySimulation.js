@@ -9,7 +9,7 @@ function Wait(ms) {
 const sendThrottle = new PromiseThrottle();
 const receiveThrottle = new PromiseThrottle();
 // Latency simulation settings
-const ENABLE_LATENCY_SIMULTATION = false;
+const ENABLE_LATENCY_SIMULATION = false;
 const SIMULATE_BASE_LATENCY = 200; // base latency in ms
 const SIMULATE_PDV = 200; // packet delay variation in ms (as random addition)
 const SIMULATE_PACKET_LOSS = 0.2; // packet loss as a percentage
@@ -19,7 +19,7 @@ export async function WaitForSimulatedLatency(transmissionMode, direction) {
     // Skip if not simulating latency. Also skip if no transmission mode is specified;
     // this is used for control messages between the multiplayer host and GameServer
     // which never go over the network so shouldn't have any latency added.
-    if (!ENABLE_LATENCY_SIMULTATION || !transmissionMode)
+    if (!ENABLE_LATENCY_SIMULATION || !transmissionMode)
         return true;
     // Simulate packet loss for unreliable transmission by ignoring random messages
     if (transmissionMode === "u") {
